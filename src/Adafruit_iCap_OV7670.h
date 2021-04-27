@@ -1,19 +1,21 @@
 #pragma once
 #include <Adafruit_iCap_parallel.h>
 
+#define OV7670_ADDR 0x21 //< Default I2C address if unspecified
+typedef iCap_parallel_pins OV7670_pins;
+
 /*!
     @brief  Class encapsulating OmniVision OV7670 functionality.
 */
 class Adafruit_iCap_OV7670 : public Adafruit_iCap_parallel {
 public:
-  Adafruit_iCap_OV7670();
+ Adafruit_iCap_OV7670(iCap_parallel_pins &pins, TwoWire &twi = Wire,
+                       uint8_t addr = OV7670_ADDR);
   ~Adafruit_iCap_OV7670();
   ICAP_status begin();
 
 private:
 };
-
-#define OV7670_ADDR 0x21 //< Default I2C address if unspecified
 
 // OV7670 registers
 #define OV7670_REG_GAIN 0x00               //< AGC gain bits 7:0 (9:8 in VREF)

@@ -1,19 +1,21 @@
 #pragma once
 #include <Adafruit_iCap_parallel.h>
 
+#define OV2640_ADDR 0x30 //< Default I2C address if unspecified
+typedef iCap_parallel_pins OV2640_pins;
+
 /*!
     @brief  Class encapsulating OmniVision OV2640 functionality.
 */
 class Adafruit_iCap_OV2640 : public Adafruit_iCap_parallel {
 public:
-  Adafruit_iCap_OV2640();
+  Adafruit_iCap_OV2640(iCap_parallel_pins &pins, TwoWire &twi = Wire,
+                       uint8_t addr = OV2640_ADDR);
   ~Adafruit_iCap_OV2640();
   ICAP_status begin();
 
 private:
 };
-
-#define OV2640_ADDR 0x30 //< Default I2C address if unspecified
 
 #define OV2640_REG_RA_DLMT 0xFF    //< Register bank select
 #define OV2640_RA_DLMT_DSP 0x00    //< Bank 0 - DSP address
