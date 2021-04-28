@@ -60,6 +60,21 @@ public:
   */
   void writeList(const iCap_parallel_config *cfg, uint16_t len);
 
+  /*!
+    @brief  Pause DMA background capture (if supported by architecture)
+            before capturing, to avoid tearing. Returns as soon as the
+            current frame has finished loading. If DMA background capture
+            is not supported, this function has no effect. This is NOT a
+            camera sleep function!
+  */
+  void suspend(void);
+
+  /*!
+    @brief  Resume DMA background capture after suspend. If DMA is not
+            supported, this function has no effect.
+  */
+  void resume(void);
+
 private:
   TwoWire *wire;           ///< Associated I2C instance
   iCap_parallel_pins pins; ///< Pin structure (copied in constructor)

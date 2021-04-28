@@ -4,15 +4,71 @@
 #define OV7670_ADDR 0x21 //< Default I2C address if unspecified
 typedef iCap_parallel_pins OV7670_pins;
 
+/** Supported sizes (VGA division factor) for OV7670_set_size() */
+typedef enum {
+  OV7670_SIZE_DIV1 = 0, ///< 640 x 480
+  OV7670_SIZE_DIV2,     ///< 320 x 240
+  OV7670_SIZE_DIV4,     ///< 160 x 120
+  OV7670_SIZE_DIV8,     ///< 80 x 60
+  OV7670_SIZE_DIV16,    ///< 40 x 30
+} OV7670_size;
+
+typedef enum {
+  OV7670_TEST_PATTERN_NONE = 0,       ///< Disable test pattern
+  OV7670_TEST_PATTERN_SHIFTING_1,     ///< "Shifting 1" pattern
+  OV7670_TEST_PATTERN_COLOR_BAR,      ///< 8 color bars
+  OV7670_TEST_PATTERN_COLOR_BAR_FADE, ///< Color bars w/fade to white
+} OV7670_pattern;
+
+typedef enum {
+  OV7670_NIGHT_MODE_OFF = 0, ///< Disable night mode
+  OV7670_NIGHT_MODE_2,       ///< Night mode 1/2 frame rate
+  OV7670_NIGHT_MODE_4,       ///< Night mode 1/4 frame rate
+  OV7670_NIGHT_MODE_8,       ///< Night mode 1/8 frame rate
+} OV7670_night_mode;
+
 /*!
     @brief  Class encapsulating OmniVision OV7670 functionality.
 */
 class Adafruit_iCap_OV7670 : public Adafruit_iCap_parallel {
 public:
- Adafruit_iCap_OV7670(iCap_parallel_pins &pins, TwoWire &twi = Wire,
+  Adafruit_iCap_OV7670(iCap_parallel_pins &pins, TwoWire &twi = Wire,
                        uint8_t addr = OV7670_ADDR);
   ~Adafruit_iCap_OV7670();
-  ICAP_status begin();
+  /*!
+    @brief   Allocate and initialize resources behind an Adafruit_iCap_OV7670
+             instance.
+    @param   colorspace  ICAP_COLOR_RGB or ICAP_COLOR_YUV.
+    @param   size        Frame size as a power-of-two reduction of VGA
+                         resolution. Available sizes are OV7670_SIZE_DIV1
+                         (640x480), OV7670_SIZE_DIV2 (320x240),
+                         OV7670_SIZE_DIV4 (160x120), OV7670_SIZE_DIV8 and
+                         OV7670_SIZE_DIV16.
+    @param   fps         Desired capture framerate, in frames per second,
+                         as a float up to 30.0. Actual device frame rate may
+                         differ from this, depending on a host's available
+                         PWM timing. Generally, the actual device fps will
+                         be equal or nearest-available below the requested
+                         rate, only in rare cases of extremely low requested
+                         frame rates will a higher value be used. Since
+                         begin() only returns a status code, if you need to
+                         know the actual framerate you can call
+                         OV7670_set_fps(NULL, fps) at any time before or
+                         after begin() and that will return the actual
+                         resulting frame rate as a float.
+    @param   bufsiz      Image buffer size, in bytes. This is configurable so
+                         code can do things like change image sizes without
+                         reallocating (which risks losing the existing buffer)
+                         or double-buffered transfers. Pass 0 to use default
+                         buffer size equal to 2 bytes per pixel times the
+                         number of pixels corresponding to the 'size'
+                         argument. If you later call setSize() with an image
+                         size exceeding the buffer size, it will fail.
+    @return  Status code. ICAP_STATUS_OK on successful init.
+  */
+  ICAP_status begin(ICAP_colorspace colorspace = ICAP_COLOR_RGB565,
+                    OV7670_size size = OV7670_SIZE_DIV4, float fps = 30.0,
+                    uint32_t bufsiz = 0);
 
 private:
 };
@@ -201,3 +257,4 @@ private:
 #define OV7670_REG_ABLC1 0xB1              //< ABLC enable
 #define OV7670_REG_THL_ST 0xB3             //< ABLC target
 #define OV7670_REG_SATCTR 0xC9             //< Saturation control
+

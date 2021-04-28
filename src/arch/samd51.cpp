@@ -1,8 +1,21 @@
+#pragma once
 #if defined(__SAMD51__)
+#include <Adafruit_iCap_parallel.h>
+
 #include <Arduino.h>
 #include "wiring_private.h" // pinPeripheral() function
 #include <Adafruit_ZeroDMA.h>
 #include "samd51.h"
+
+
+void Adafruit_iCap_parallel::suspend(void) {
+}
+
+void Adafruit_iCap_parallel::resume(void) {
+}
+
+
+
 
 // Because interrupts exist outside the class context, but our interrupt
 // needs to access to an active ZeroDMA object, a separate ZeroDMA pointer

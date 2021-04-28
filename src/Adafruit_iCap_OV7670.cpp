@@ -7,7 +7,14 @@ Adafruit_iCap_OV7670::Adafruit_iCap_OV7670(OV7670_pins &pins,
 
 Adafruit_iCap_OV7670::~Adafruit_iCap_OV7670() {}
 
-ICAP_status Adafruit_iCap_OV7670::begin() {
+ICAP_status Adafruit_iCap_OV7670::begin(ICAP_colorspace colorspace,
+                    OV7670_size size, float fps, uint32_t bufsiz) {
+  // Do basic allocs here:
   Adafruit_iCap_parallel::begin();
+
+  // Do camera init here (command table, etc.)
+
+  resume(); // Start DMA cycle
+
   return ICAP_STATUS_OK;
 }

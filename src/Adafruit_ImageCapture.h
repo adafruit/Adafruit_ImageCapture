@@ -30,9 +30,16 @@ typedef enum {
 
 /** Supported color formats */
 typedef enum {
-  ICAP_COLOR_RGB = 0, ///< RGB565 big-endian
-  ICAP_COLOR_YUV,     ///< YUV/YCbCr 4:2:2 big-endian
+  ICAP_COLOR_RGB565 = 0, ///< RGB565 big-endian
+  ICAP_COLOR_YUV,        ///< YUV/YCbCr 4:2:2 big-endian
 } ICAP_colorspace;
+
+/** Buffer reallocation behaviors when changing captured image size */
+typedef enum {
+  ICAP_REALLOC_NONE = 0, ///< No realloc, error if new size > current buffer
+  ICAP_REALLOC_CHANGE,   ///< Reallocate image buffer if size changes
+  ICAP_REALLOC_LARGER,   ///< Realloc only if new size is larger
+} ICAP_realloc;
 
 /*!
     @brief  Class encapsulating common image sensor functionality.
@@ -57,6 +64,12 @@ public:
   */
   uint16_t height(void) { return _height; }
 
+  /*!
+    @brief   Get address of image buffer being used by camera.
+    @return  uint16_t pointer to image data in RGB565 format.
+  */
+  uint16_t *getBuffer(void) { return buffer[0]; }
+
 private:
   uint16_t *buffer[2];  ///< Camera buffer(s) allocated by lib
   uint32_t buffer_size; ///< Size of camera buffer, in bytes
@@ -71,3 +84,12 @@ private:
   uint8_t active_buffer;     ///< If double buffering, which index is capturing
 #endif
 };
+
+// Non-class functions
+
+// Convert Y (brightness) component YUV image in RAM to RGB565 big-
+// endian format for preview on TFT display. Data is overwritten in-place,
+// Y is truncated and UV elements are lost. No practical use outside TFT
+// preview. If you need actual grayscale 0-255 data, just access the low
+// byte of each 16-bit YUV pixel.
+void iCam_Y2RGB565(uint16_t *ptr, uint32_t len);
