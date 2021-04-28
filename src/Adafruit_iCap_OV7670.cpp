@@ -130,8 +130,19 @@ static const iCap_parallel_config
 ICAP_status Adafruit_iCap_OV7670::begin(ICAP_colorspace colorspace,
                     OV7670_size size, float fps, uint32_t bufsiz) {
 
+  ICAP_status status;
+
+// _width and _height need to be known before starting PCC
+// also, buffer prealloc (or is that in ImageCapture?).
+// setSize can do the size & alloc stuff, but tries to issue I2C
+// commands, which isn't valid until after begin here.
+  status = setSize(size, ICAP_REALLOC_CHANGE);
+  if(status != ICAP_STATUS_OK) {
+    return status;
+  }
+
   // Initialize memory, peripherals for parallel+I2C camera:
-  ICAP_status status = Adafruit_iCap_parallel::begin();
+  status = Adafruit_iCap_parallel::begin();
   if(status != ICAP_STATUS_OK) {
     return status;
   }
@@ -288,25 +299,27 @@ ICAP_status Adafruit_iCap_OV7670::setSize(OV7670_size size, ICAP_realloc allo) {
   _width = new_width;
   _height = new_height;
 
-  // Array of five window settings, index of each (0-4) aligns with the five
-  // OV7670_size enumeration values. If enum changes, list must change!
-  static struct {
-    uint8_t vstart;
-    uint8_t hstart;
-    uint8_t edge_offset;
-    uint8_t pclk_delay;
-  } window[] = {
-      // Window settings were tediously determined empirically.
-      // I hope there's a formula for this, if a do-over is needed.
-      {9, 162, 2, 2},  // SIZE_DIV1  640x480 VGA
-      {10, 174, 0, 2}, // SIZE_DIV2  320x240 QVGA
-      {11, 186, 2, 2}, // SIZE_DIV4  160x120 QQVGA
-      {12, 210, 0, 2}, // SIZE_DIV8  80x60   ...
-      {15, 252, 3, 2}, // SIZE_DIV16 40x30
-  };
+  if (i2c_started) {
+    // Array of five window settings, index of each (0-4) aligns with the five
+    // OV7670_size enumeration values. If enum changes, list must change!
+    static struct {
+      uint8_t vstart;
+      uint8_t hstart;
+      uint8_t edge_offset;
+      uint8_t pclk_delay;
+    } window[] = {
+        // Window settings were tediously determined empirically.
+        // I hope there's a formula for this, if a do-over is needed.
+        {9, 162, 2, 2},  // SIZE_DIV1  640x480 VGA
+        {10, 174, 0, 2}, // SIZE_DIV2  320x240 QVGA
+        {11, 186, 2, 2}, // SIZE_DIV4  160x120 QQVGA
+        {12, 210, 0, 2}, // SIZE_DIV8  80x60   ...
+        {15, 252, 3, 2}, // SIZE_DIV16 40x30
+    };
 
-  frameControl(size, window[size].vstart, window[size].hstart,
-               window[size].edge_offset, window[size].pclk_delay);
+    frameControl(size, window[size].vstart, window[size].hstart,
+                 window[size].edge_offset, window[size].pclk_delay);
+  }
 
   return ICAP_STATUS_OK;
 }

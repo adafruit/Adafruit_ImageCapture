@@ -14,6 +14,7 @@ Adafruit_iCap_parallel::Adafruit_iCap_parallel(iCap_parallel_pins *pins_ptr,
 Adafruit_iCap_parallel::~Adafruit_iCap_parallel() {}
 
 ICAP_status Adafruit_iCap_parallel::begin() {
+  // Alloc occurs here
   ICAP_status status = Adafruit_ImageCapture::begin();
   if (status != ICAP_STATUS_OK) {
     return status;
@@ -21,6 +22,7 @@ ICAP_status Adafruit_iCap_parallel::begin() {
 
   wire->begin();
   wire->setClock(i2c_speed);
+  i2c_started = true;
 
   // Set up XCLK out unless it's a self-clocking camera. This must be done
   // BEFORE any I2C commands, as cam may require clock for I2C timing.

@@ -77,9 +77,10 @@ public:
   void resume(void);
 
 protected:
-  TwoWire *wire;           ///< Associated I2C instance
-  iCap_parallel_pins pins; ///< Pin structure (copied in constructor)
-  uint32_t i2c_speed;      ///< I2C bus speed
-  uint32_t i2c_delay_us;   ///< Delay in microseconds between I2C writes
-  uint8_t i2c_address;     ///< Camera I2C address
+  TwoWire *wire;            ///< Associated I2C instance
+  iCap_parallel_pins pins;  ///< Pin structure (copied in constructor)
+  uint32_t i2c_speed;       ///< I2C bus speed
+  uint32_t i2c_delay_us;    ///< Delay in microseconds between I2C writes
+  uint8_t i2c_address;      ///< Camera I2C address
+  bool i2c_started = false; ///< Set true after I2C started
 };

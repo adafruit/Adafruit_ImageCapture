@@ -76,11 +76,11 @@ public:
   uint16_t *getBuffer(void) { return buffer[0]; }
 
 protected:
-  uint16_t *buffer[2];  ///< Camera buffer(s) allocated by lib
-  uint32_t buffer_size; ///< Size of camera buffer, in bytes
-  uint16_t _width;      ///< Current settings width in pixels
-  uint16_t _height;     ///< Current settings height in pixels
-  iCap_arch *arch;      ///< Device-specific data, if needed
+  uint16_t *buffer[2] = {NULL, NULL}; ///< Camera buffer(s) allocated by lib
+  uint32_t buffer_size = 0;           ///< Size of camera buffer, in bytes
+  uint16_t _width = 0;                ///< Current settings width in pixels
+  uint16_t _height = 0;               ///< Current settings height in pixels
+  iCap_arch *arch = NULL;             ///< Device-specific data, if needed
 #if 0
   uint8_t active_buffer;     ///< If double buffering, which index is capturing
 #endif
