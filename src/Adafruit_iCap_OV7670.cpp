@@ -284,7 +284,7 @@ ICAP_status Adafruit_iCap_OV7670::setSize(OV7670_size size, ICAP_realloc allo) {
   }
 
   if (ra) { // Reallocate?
-    uint16_t *new_buffer = (uint16_t *)realloc(buffer, new_buffer_size);
+    uint16_t *new_buffer = (uint16_t *)realloc(buffer[0], new_buffer_size);
     if (new_buffer == NULL) { // FAIL
       _width = _height = buffer_size = 0;
       buffer[0] = NULL;
@@ -293,6 +293,7 @@ ICAP_status Adafruit_iCap_OV7670::setSize(OV7670_size size, ICAP_realloc allo) {
       // to read camera data into unknown RAM.
       return ICAP_STATUS_ERR_MALLOC;
     }
+    buffer[0] = new_buffer;
     buffer_size = new_buffer_size;
   }
 

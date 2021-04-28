@@ -120,6 +120,7 @@ uint16_t frame = KEYFRAME; // Force 1st frame as keyframe
 uint16_t bmp_num = 1;      // Image number increments with each BMP saved
 
 void loop() {
+
   if (++frame >= KEYFRAME) { // Time to sync up a fresh address window?
     frame = 0;
     tft.dmaWait(); // Wait for prior transfer to complete
