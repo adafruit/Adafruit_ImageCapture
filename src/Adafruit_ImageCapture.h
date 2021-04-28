@@ -70,17 +70,12 @@ public:
   */
   uint16_t *getBuffer(void) { return buffer[0]; }
 
-private:
+protected:
   uint16_t *buffer[2];  ///< Camera buffer(s) allocated by lib
   uint32_t buffer_size; ///< Size of camera buffer, in bytes
   uint16_t _width;      ///< Current settings width in pixels
   uint16_t _height;     ///< Current settings height in pixels
 #if 0
-  OV7670_pins pins;          ///< Camera physical connections
-  OV7670_arch arch;          ///< Architecture-specific peripheral info
-  OV7670_colorspace space;   ///< RGB or YUV colorspace
-  const uint8_t i2c_address; ///< I2C address
-  const bool arch_defaults;  ///< If set, ignore arch struct, use defaults
   uint8_t active_buffer;     ///< If double buffering, which index is capturing
 #endif
 };

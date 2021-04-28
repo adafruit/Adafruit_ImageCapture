@@ -1,8 +1,23 @@
 #pragma once
 #include <Adafruit_iCap_parallel.h>
 
-#define OV7670_ADDR 0x21 //< Default I2C address if unspecified
 typedef iCap_parallel_pins OV7670_pins;
+
+#define OV7670_ADDR 0x21 //< Default I2C address if unspecified
+
+// OV7670 datasheet claims 10-48 MHz clock input, with 24 MHz typical.
+// 24(ish) MHz is OK if camera connection is super clean. If any trouble,
+// try dialing this down to 16 or 12 MHz. Even 8 MHz is OK if that's what's
+// available. OV7670 has internal PLL and can step up from lower frequencies
+// (to a point) if needed.
+#if defined(__SAMD51__)
+// SAMD timer peripheral as used by this code is clocked from a 48 MHz
+// source, so it's always going to be some integer divisor of that.
+#define OV7670_XCLK_HZ 24000000 ///< XCLK to camera, 8-24 MHz
+#elif defined(ARDUINO_ARCH_RP2040)
+// Might want to derive this from F_CPU instead
+#define OV7670_XCLK_HZ 12500000 ///< XCLK to camera, 8-24 MHz
+#endif
 
 /** Supported sizes (VGA division factor) for OV7670_set_size() */
 typedef enum {
@@ -69,6 +84,58 @@ public:
   ICAP_status begin(ICAP_colorspace colorspace = ICAP_COLOR_RGB565,
                     OV7670_size size = OV7670_SIZE_DIV4, float fps = 30.0,
                     uint32_t bufsiz = 0);
+
+  // Configure camera frame rate. Actual resulting frame rate (returned) may
+  // be different depending on available clock frequencies. Result will only
+  // exceed input if necessary for minimum supported rate, but this is very
+  // rare, typically below 1 fps. In all other cases, result will be equal
+  // or less than the requested rate, up to a maximum of 30 fps (the "or less"
+  // is because requested fps may be based on other host hardware timing
+  // constraints (e.g. screen) and rounding up to a closer-but-higher frame
+  // rate would be problematic). There is no hardcoded set of fixed frame
+  // rates because it varies with architecture, depending on OV7670_XCLK_HZ.
+  float setFPS(float fps = 30.0);
+
+  /*!
+    @brief   Change camera resolution post-begin().
+    @param   size  One of the OV7670_size values ranging from full VGA
+                   (640x480 pixels) to 1/16 VGA (40x30 pixels).
+    @param   allo  Camera buffer reallocation behavior:
+                   - ICAP_REALLOC_NONE to not reallocate buffer.
+                     Function will return ICAP_STATUS_OK if new size fits
+                     in existing buffer, or ICAP_ERR_MALLOC if existing
+                     buffer is too small (buffer is not freed and current
+                     camera size is maintained).
+                   - ICAP_REALLOC_CHANGE to reallocate buffer on ANY
+                     size change, up or down. Function will return
+                     ICAP_STATUS_OK if reallocation was successful and
+                     camera size changed, or ICAP_ERR_MALLOC if
+                     reallocation failed (camera width and height will
+                     subsequently both poll as 0, or buffer to NULL, in
+                     this case).
+                   - ICAP_REALLOC_LARGER to reallocate buffer ONLY if new
+                     size exceeds current buffer size. Function will return
+                     ICAP_STATUS_OK if reallocation was successful and
+                     camera size changed, or ICAP_ERR_MALLOC if
+                     reallocation failed (camera width and height will
+                     subsequently both poll as 0 in this case).
+    @return  Status code. ICAP_STATUS_OK on success (image buffer
+             successfully reallocated as requested, camera reconfigured),
+             ICAP_STATUS_ERR_MALLOC in several situations explained above.
+    @note    Reallocating the camera buffer is fraught with peril and should
+             only be done if you're prepared to handle any resulting error.
+             In most cases, code should pass the size of LARGEST buffer it
+             anticipates needing (including any double buffering, etc.) to
+             begin(), which allocates it once on startup. Some RAM will go
+             untilized at times, but it's favorable to entirely losing the
+             camera mid-run. The default request here is CHANGE in case one
+             passes an improper initial value to begin().
+  */
+  ICAP_status setSize(OV7670_size size,
+                      ICAP_realloc allo = ICAP_REALLOC_CHANGE);
+
+  void frameControl(OV7670_size size, uint8_t vstart, uint16_t hstart,
+                    uint8_t edge_offset, uint8_t pclk_delay);
 
 private:
 };

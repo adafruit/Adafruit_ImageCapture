@@ -49,7 +49,6 @@ OV7670_pins pins = {.enable = PIN_PCC_D8, .reset = PIN_PCC_D9,
 
 Adafruit_iCap_OV7670 cam(pins, CAM_I2C);
 
-
 // SHIELD AND DISPLAY CONFIG -----------------------------------------------
 
 Adafruit_TFTShield18 shield;
@@ -123,9 +122,7 @@ uint16_t bmp_num = 1;      // Image number increments with each BMP saved
 void loop() {
   if (++frame >= KEYFRAME) { // Time to sync up a fresh address window?
     frame = 0;
-#if defined(USE_SPI_DMA)
     tft.dmaWait(); // Wait for prior transfer to complete
-#endif
     tft.endWrite();   // Close out prior transfer
     tft.startWrite(); // and start a fresh one (required)
     // Address window centers QQVGA image on screen. NO CLIPPING IS
@@ -146,37 +143,32 @@ void loop() {
 
   // Camera data arrives in big-endian order...same as the TFT,
   // so data can just be issued directly, no byte-swap needed.
-#if defined(USE_SPI_DMA)
   tft.dmaWait();
   tft.writePixels(cam.getBuffer(), cam.width() * cam.height(), false, true);
-#else
-  tft.writePixels(cam.getBuffer(), cam.width() * cam.height(), false, true);
-#endif
 
   if(!(shield.readButtons() & TFTSHIELD_BUTTON_1)) {
     char filename[50];
     sprintf(filename, "/selfies/img%04d.bmp", bmp_num++);
-#if defined(USE_SPI_DMA)
     tft.dmaWait(); // Wait for prior transfer to complete
-#endif
     // Set camera capture to larger size (320x240). The REALLOC_NONE
     // tells it to keep the original buffer in place, which we allocated
     // large enough in setup() to handle these stills. Continual
     // reallocation would just be asking for trouble.
-//    cam.setSize(OV7670_SIZE_DIV2, ICAP_REALLOC_NONE);
+    cam.setSize(OV7670_SIZE_DIV2, ICAP_REALLOC_NONE);
     delay(100);         // Stabilize for a few frames
     tft.endWrite();     // Close out prior pixel write
+    cam.resume();
     tft.setRotation(1); // Put text in readable orientation
     tft.fillRect(42, 58, 74, 18, 0x0000);
     tft.setCursor(44, 60);
     tft.print("SAVING");
     tft.setRotation(3); // Go back to 180 degree screen rotation
     frame = 999;        // Force keyframe on next update
-//    cam.capture();      // Manual (non-DMA) capture
+    cam.suspend();
     write_bmp(filename, cam.getBuffer(), cam.width(), cam.height());
     // Restore the original preview size from camera. Again, use
     // REALLOC_NONE to maintain our original camera buffer.
-//    cam.setSize(CAM_SIZE, ICAP_REALLOC_NONE);
+    cam.setSize(CAM_SIZE, ICAP_REALLOC_NONE);
   }
 
   cam.resume(); // Resume DMA into camera buffer

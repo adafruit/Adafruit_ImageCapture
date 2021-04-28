@@ -75,7 +75,7 @@ public:
   */
   void resume(void);
 
-private:
+protected:
   TwoWire *wire;           ///< Associated I2C instance
   iCap_parallel_pins pins; ///< Pin structure (copied in constructor)
   uint32_t i2c_speed;      ///< I2C bus speed
