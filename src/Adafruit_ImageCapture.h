@@ -55,6 +55,8 @@ public:
   Adafruit_ImageCapture(iCap_arch *arch = NULL);
   ~Adafruit_ImageCapture(); // Destructor
 
+  ICAP_status begin(void);
+
   /*!
     @brief   Get image width of camera's current resolution setting.
     @return  Width in pixels.

@@ -15,6 +15,6 @@ typedef struct {
 extern ICAP_status iCap_xclk_start(iCap_pin pin, iCap_arch *arch = NULL,
                                    uint32_t freq = 12000000);
 
-extern ICAP_status iCap_pcc_start();
+extern ICAP_status iCap_pcc_start(uint16_t *dest, uint32_t num_pixels);
 
 #endif // end __SAMD51__

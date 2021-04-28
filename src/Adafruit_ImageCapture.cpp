@@ -34,6 +34,11 @@ Adafruit_ImageCapture::Adafruit_ImageCapture(iCap_arch *arch) : arch(arch) {}
 
 Adafruit_ImageCapture::~Adafruit_ImageCapture() {}
 
+ICAP_status Adafruit_ImageCapture::begin() {
+  // Do alloc here
+  return ICAP_STATUS_OK;
+}
+
 // Reformat YUV gray component to RGB565 for TFT preview.
 // Big-endian in and out.
 void iCam_Y2RGB565(uint16_t *ptr, uint32_t len) {

@@ -1,4 +1,9 @@
+// This is the SAMD51-specific parts of camera interfacing. It configures
+// and accesses hardware-specific peripherals (timer PWM and the parallel
+// capture controller, others might follow in the future if needed).
+
 #pragma once
+
 #if defined(__SAMD51__)
 #include <Arduino.h>
 #include <Adafruit_iCap_parallel.h>
@@ -13,8 +18,8 @@
 
 static Adafruit_ZeroDMA dma;
 static DmacDescriptor *descriptor;       ///< DMA descriptor
-static volatile bool frameReady = false; // true at end-of-frame
-static volatile bool suspended = false;
+static volatile bool frameReady = false; ///< true at end-of-frame
+static volatile bool suspended = true;   ///< Start in suspended state
 
 // Since ZeroDMA suspend/resume functions don't yet work, these functions
 // use static vars to indicate whether to trigger DMA transfers or hold off
@@ -48,7 +53,9 @@ static void startFrame(void) {
 // End-of-DMA-transfer callback
 static void dmaCallback(Adafruit_ZeroDMA *dma) { frameReady = true; }
 
-
+// XCLK clock out setup. For self-clocking cameras, don't call this function,
+// e.g. Adafruit_iCap_parallel.begin() checks the value of the xlck pin and
+// skips this if -1.
 ICAP_status iCap_xclk_start(iCap_pin pin, iCap_arch *arch, uint32_t freq) {
 
   // LOOK UP TIMER OR TCC BASED ON ADDRESS IN ARCH STRUCT ------------------
@@ -183,7 +190,7 @@ ICAP_status iCap_xclk_start(iCap_pin pin, iCap_arch *arch, uint32_t freq) {
 }
 
 // Start parallel capture peripheral
-ICAP_status iCap_pcc_start() {
+ICAP_status iCap_pcc_start(uint16_t *dest, uint32_t num_pixels) {
   PCC->MR.bit.PCEN = 0; // Make sure PCC is disabled before setting MR reg
 
   PCC->IDR.reg = 0b1111;       // Disable all PCC interrupts
@@ -222,15 +229,13 @@ ICAP_status iCap_pcc_start() {
   dma.setCallback(dmaCallback);
   dma.setPriority(DMA_PRIORITY_3);
 
-#if 0
   // Use 32-bit PCC transfers (4 bytes accumulate in RHR.reg)
   descriptor = dma.addDescriptor((void *)(&PCC->RHR.reg), // Move from here
-                                 (void *)buffer,          // to here
-                                 _width * _height / 2,    // this many
+                                 (void *)dest,            // to here
+                                 num_pixels / 2,          // this many
                                  DMA_BEAT_SIZE_WORD,      // 32-bit words
                                  false,                   // Don't src++
                                  true);                   // Do dest++
-#endif
 
   // A pin FALLING interrupt is used to detect the start of a new frame.
   // Seems like the PCC RXBUFF and/or ENDRX interrupts could take care
@@ -244,48 +249,7 @@ ICAP_status iCap_pcc_start() {
 #endif // end __SAMD51__
 
 
-
-
-
-
-
-
 #if 0
-
-// This is the SAMD51-specific parts of OV7670 camera interfacing (device-
-// agnostic parts are in ov7670.c). It configures and accesses hardware-
-// specific peripherals (timer PWM and the parallel capture controller).
-// It is mostly, but not entirely, platform agnostic. If compiling for the
-// Arduino platform, the pin MUXing function pinPeripheral() is used, and
-// other platforms will require different code or function calls in those
-// spots (commented throughout). Unlike some of the trivially-mapped
-// functions declared at the start of ov7670.h (e.g. OV7670_delay_ms()),
-// pinPeripheral() AND ESPECIALLY ITS ARGUMENTS are innately SAMD51-
-// Arduino-centric and it doesn't make sense to try to build a whole
-// platform-agnostic remap around that...instead, call or implement pin
-// MUXing functions "manually" in those few spots.
-
-#if defined(__SAMD51__)
-#include "ov7670.h"
-
-#if defined(ARDUINO)
-#include "wiring_private.h" // pinPeripheral() function
-#endif
-
-// Each supported architecture MUST provide this function with this name,
-// arguments and return type. It receives a pointer to a structure with
-// at least a list of pins, and usually additional device-specific data
-// attached to the 'arch' element.
-// SAMD51 host config sets up timer and parallel capture peripheral,
-// as these are mostly low-level register twiddles. It does NOT set up
-// DMA transfers, handled in higher-level calling code if needed.
-OV7670_status OV7670_arch_begin(OV7670_host *host) {
-
-
-
-
-  return OV7670_STATUS_OK;
-}
 
 // Non-DMA capture function using previously-initialized PCC peripheral.
 void OV7670_capture(uint32_t *dest, uint16_t width, uint16_t height,
@@ -314,16 +278,5 @@ void OV7670_capture(uint32_t *dest, uint16_t width, uint16_t height,
   OV7670_enable_interrupts();
 }
 
-#endif // end __SAMD51__
-
-// Notes from past self: early version of this code that I adopted used
-// GCLK5 to provide the XCLK signal to the camera, and was written before
-// the Grand Central SAMD51 Arduino definition was fully formed. GCLK5
-// became vital for other purposes (looks like it feeds PLLs that time
-// nearly everything else). Fortunately there's a timer peripheral (TCC1)
-// also available on that same pin, so that's what's now used to provide
-// PCC_XCLK. The choice of pin/timer for that will likely be different
-// for other SAMD51 boards (e.g. Feather, ItsyBitsy), but as written here
-// must be a TC or TCC, not a GCLK source.
-#endif
+#endif // 0
 

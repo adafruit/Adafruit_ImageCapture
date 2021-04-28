@@ -129,10 +129,12 @@ static const iCap_parallel_config
 
 ICAP_status Adafruit_iCap_OV7670::begin(ICAP_colorspace colorspace,
                     OV7670_size size, float fps, uint32_t bufsiz) {
-  // Do allocs & periphs here:
-  Adafruit_iCap_parallel::begin();
 
-  // Do camera init here (command table, etc.)
+  // Initialize memory, peripherals for parallel+I2C camera:
+  ICAP_status status = Adafruit_iCap_parallel::begin();
+  if(status != ICAP_STATUS_OK) {
+    return status;
+  }
 
   // ENABLE AND/OR RESET CAMERA --------------------------------------------
 
