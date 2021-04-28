@@ -10,7 +10,7 @@ typedef iCap_parallel_pins OV2640_pins;
 class Adafruit_iCap_OV2640 : public Adafruit_iCap_parallel {
 public:
   Adafruit_iCap_OV2640(iCap_parallel_pins &pins, TwoWire &twi = Wire,
-                       uint8_t addr = OV2640_ADDR);
+                       iCap_arch *arch = NULL, uint8_t addr = OV2640_ADDR);
   ~Adafruit_iCap_OV2640();
   ICAP_status begin();
 

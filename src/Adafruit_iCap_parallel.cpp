@@ -2,14 +2,13 @@
 #include <Adafruit_iCap_parallel.h>
 
 Adafruit_iCap_parallel::Adafruit_iCap_parallel(iCap_parallel_pins *pins_ptr,
-                                               TwoWire *twi_ptr, uint8_t addr,
+                                               TwoWire *twi_ptr,
+                                               iCap_arch *arch, uint8_t addr,
                                                uint32_t speed,
                                                uint32_t delay_us)
     : i2c_address(addr & 0x7F), i2c_speed(speed), i2c_delay_us(delay_us),
-      Adafruit_ImageCapture() {
-
+      wire(twi_ptr), Adafruit_ImageCapture(arch) {
   memcpy(&pins, pins_ptr, sizeof pins); // Save pins struct in object
-  wire = twi_ptr;                       // Save pointer to TwoWire object
 }
 
 Adafruit_iCap_parallel::~Adafruit_iCap_parallel() {}
@@ -22,7 +21,7 @@ ICAP_status Adafruit_iCap_parallel::begin() {
   // XCLK is PWM out
   // And then parallel capture
   if (pins.xclk >= 0) {
-    iCap_xclk_start(pins.xclk, 12000000);
+    iCap_xclk_start(pins.xclk, arch);
   }
 
   iCap_pcc_start();

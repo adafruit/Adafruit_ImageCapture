@@ -1,11 +1,9 @@
 #pragma once
 #if defined(__SAMD51__)
-#include <Adafruit_iCap_parallel.h>
-
 #include <Arduino.h>
-#include "wiring_private.h" // pinPeripheral() function
+#include <Adafruit_iCap_parallel.h>
 #include <Adafruit_ZeroDMA.h>
-#include "samd51.h"
+#include "wiring_private.h" // pinPeripheral() function
 
 // Because interrupts exist outside the class context, but our interrupt
 // needs to access to an active ZeroDMA object, a separate ZeroDMA pointer
@@ -51,23 +49,9 @@ static void startFrame(void) {
 static void dmaCallback(Adafruit_ZeroDMA *dma) { frameReady = true; }
 
 
-void iCap_xclk_start(iCap_pin pin, uint32_t freq) {
-// there is no digitalPinToTimer() func on SAMD
-// But we have const PinDescription g_APinDescription[]=
-// (which mentions what timers/channels are on pins)
-// the PinDescription struct includes:
-//  EPWMChannel     ulPWMChannel ;
-//  ETCChannel      ulTCChannel ;
-// BUT - because location of PCC is hardwired on specific pins,
-// the corresponding TC/TCC will generally be known. e.g. on
-// Grand Central, it's TCC1. Also the PDEC bit can be known at
-// compile-time due to board def.
-// Or - make a host struct with this stuff.
-// But for now, OK to hardcode
+ICAP_status iCap_xclk_start(iCap_pin pin, iCap_arch *arch, uint32_t freq) {
 
-
-#if 0
-  // LOOK UP TIMER OR TCC BASED ON ADDRESS IN HOST STRUCT ------------------
+  // LOOK UP TIMER OR TCC BASED ON ADDRESS IN ARCH STRUCT ------------------
 
   static const struct {
     void *base;       ///< TC or TCC peripheral base address
@@ -136,14 +120,14 @@ void iCap_xclk_start(iCap_pin pin, uint32_t freq) {
   // Scan timer[] list until a matching timer/TCC is found...
   for (timer_list_index = 0;
        (timer_list_index < sizeof timer / sizeof timer[0]) &&
-       (timer[timer_list_index].base != host->arch->timer);
+       (timer[timer_list_index].base != arch->timer);
        timer_list_index++) {
     if (!timer[timer_list_index].base) { // NULL separator?
       is_tcc = true; // In the TCC (not TC) part of the list now
     }
   }
   if (timer_list_index >= sizeof timer / sizeof timer[0]) {
-    return OV7670_STATUS_ERR_PERIPHERAL; // No matching TC/TCC found
+    return ICAP_STATUS_ERR_PERIPHERAL; // No matching TC/TCC found
   }
 
   // CONFIGURE TIMER FOR XCLK OUT ------------------------------------------
@@ -172,7 +156,7 @@ void iCap_xclk_start(iCap_pin pin, uint32_t freq) {
     while (tcc->SYNCBUSY.bit.WAVE)
       ;
 
-    uint16_t period = 48000000 / OV7670_XCLK_HZ - 1;
+    uint16_t period = 48000000 / freq - 1;
     tcc->PER.bit.PER = period;
     while (tcc->SYNCBUSY.bit.PER)
       ;
@@ -183,12 +167,7 @@ void iCap_xclk_start(iCap_pin pin, uint32_t freq) {
     while (tcc->SYNCBUSY.bit.ENABLE)
       ;
 
-#if defined(ARDUINO)
-    pinPeripheral(host->pins->xclk,
-                  host->arch->xclk_pdec ? PIO_TCC_PDEC : PIO_TIMER_ALT);
-#else
-      // CircuitPython, etc. pin mux here
-#endif
+    pinPeripheral(pin, arch->xclk_pdec ? PIO_TCC_PDEC : PIO_TIMER_ALT);
 
   } else { // Is a TC peripheral
 
@@ -196,23 +175,15 @@ void iCap_xclk_start(iCap_pin pin, uint32_t freq) {
 
     // TO DO: ADD TC PERIPHERAL (NOT TCC) CODE HERE
 
-#if defined(ARDUINO)
-    pinPeripheral(host->pins->xclk, PIO_TIMER);
-#else
-    // CircuitPython, etc. pin mux here
-#endif
+    pinPeripheral(pin, PIO_TIMER);
 
   } // end TC/TCC
 
-
-#endif
-
-
-
+  return ICAP_STATUS_OK;
 }
 
 // Start parallel capture peripheral
-void iCap_pcc_start() {
+ICAP_status iCap_pcc_start() {
   PCC->MR.bit.PCEN = 0; // Make sure PCC is disabled before setting MR reg
 
   PCC->IDR.reg = 0b1111;       // Disable all PCC interrupts
@@ -266,6 +237,8 @@ void iCap_pcc_start() {
   // of this, but in practice that didn't seem to work.
   // DEN1 is the PCC VSYNC pin.
   attachInterrupt(PIN_PCC_DEN1, startFrame, FALLING);
+
+  return ICAP_STATUS_OK;
 }
 
 #endif // end __SAMD51__

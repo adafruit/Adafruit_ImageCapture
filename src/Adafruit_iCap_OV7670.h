@@ -48,7 +48,7 @@ typedef enum {
 class Adafruit_iCap_OV7670 : public Adafruit_iCap_parallel {
 public:
   Adafruit_iCap_OV7670(iCap_parallel_pins &pins, TwoWire &twi = Wire,
-                       uint8_t addr = OV7670_ADDR);
+                       iCap_arch *arch = NULL, uint8_t addr = OV7670_ADDR);
   ~Adafruit_iCap_OV7670();
   /*!
     @brief   Allocate and initialize resources behind an Adafruit_iCap_OV7670

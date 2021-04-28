@@ -32,7 +32,8 @@ public:
   // Instead, a subclass is used (this is called implicitly, using any
   // defaults established by the subclass, hence no defaults here).
   Adafruit_iCap_parallel(iCap_parallel_pins *pins_ptr, TwoWire *twi_ptr,
-                       uint8_t addr, uint32_t speed, uint32_t delay_us);
+                         iCap_arch *arch, uint8_t addr, uint32_t speed,
+                         uint32_t delay_us);
   ~Adafruit_iCap_parallel();
   ICAP_status begin();
 

@@ -15,11 +15,8 @@
 
 #pragma once
 
+#include <stdlib.h> // NULL, etc.
 #include <stdint.h> // uint types, etc.
-
-// Must include ALL arch headers here. Each has #ifdefs to avoid mayhem.
-#include "arch/rp2040.h"
-#include "arch/samd51.h"
 
 /** Status codes returned by some functions */
 typedef enum {
@@ -27,6 +24,12 @@ typedef enum {
   ICAP_STATUS_ERR_MALLOC,     ///< malloc() call failed
   ICAP_STATUS_ERR_PERIPHERAL, ///< Peripheral (e.g. timer) not found
 } ICAP_status;
+
+// Must include ALL arch headers here. Each has #ifdefs to avoid mayhem.
+// Do this here, after the ICAP_status typedef, as functions declared in
+// these headers may rely on that.
+#include "arch/rp2040.h"
+#include "arch/samd51.h"
 
 /** Supported color formats */
 typedef enum {
@@ -49,7 +52,7 @@ public:
   /*!
     @brief  Constructor for Adafruit_ImageCapture class.
   */
-  Adafruit_ImageCapture();
+  Adafruit_ImageCapture(iCap_arch *arch = NULL);
   ~Adafruit_ImageCapture(); // Destructor
 
   /*!
@@ -75,6 +78,7 @@ protected:
   uint32_t buffer_size; ///< Size of camera buffer, in bytes
   uint16_t _width;      ///< Current settings width in pixels
   uint16_t _height;     ///< Current settings height in pixels
+  iCap_arch *arch;      ///< Device-specific data, if needed
 #if 0
   uint8_t active_buffer;     ///< If double buffering, which index is capturing
 #endif

@@ -30,7 +30,7 @@
 
 #include <Adafruit_ImageCapture.h>
 
-Adafruit_ImageCapture::Adafruit_ImageCapture() {}
+Adafruit_ImageCapture::Adafruit_ImageCapture(iCap_arch *arch) : arch(arch) {}
 
 Adafruit_ImageCapture::~Adafruit_ImageCapture() {}
 

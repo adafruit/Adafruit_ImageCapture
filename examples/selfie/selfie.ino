@@ -40,14 +40,14 @@ and BMP writing 180 degrees.
 
 // Set up arch and pins structures for Grand Central's SAMD51.
 // PCC data pins are not configurable and do not need specifying.
-//OV7670_arch arch = {.timer = TCC1, .xclk_pdec = false};
+iCap_arch arch = {.timer = TCC1, .xclk_pdec = false};
 OV7670_pins pins = {.enable = PIN_PCC_D8, .reset = PIN_PCC_D9,
                     .xclk = PIN_PCC_XCLK};
 #define CAM_I2C  Wire1 // Second I2C bus next to PCC pins
 #define CAM_SIZE OV7670_SIZE_DIV4  // QQVGA (160x120 pixels)
 #define CAM_MODE ICAP_COLOR_RGB565 // RGB plz
 
-Adafruit_iCap_OV7670 cam(pins, CAM_I2C);
+Adafruit_iCap_OV7670 cam(pins, CAM_I2C, &arch);
 
 // SHIELD AND DISPLAY CONFIG -----------------------------------------------
 

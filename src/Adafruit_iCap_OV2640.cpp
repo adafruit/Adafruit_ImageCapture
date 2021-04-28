@@ -1,9 +1,10 @@
 #include <Adafruit_iCap_OV2640.h>
 
 Adafruit_iCap_OV2640::Adafruit_iCap_OV2640(OV2640_pins &pins,
-                                           TwoWire &twi, uint8_t addr)
+                                           TwoWire &twi, iCap_arch *arch,
+                                           uint8_t addr)
     : Adafruit_iCap_parallel((iCap_parallel_pins *)&pins, (TwoWire *)&twi,
-                             addr, 100000, 1000) {}
+                             arch, addr, 100000, 1000) {}
 
 Adafruit_iCap_OV2640::~Adafruit_iCap_OV2640() {}
 
