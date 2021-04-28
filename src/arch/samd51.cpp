@@ -7,16 +7,6 @@
 #include <Adafruit_ZeroDMA.h>
 #include "samd51.h"
 
-
-void Adafruit_iCap_parallel::suspend(void) {
-}
-
-void Adafruit_iCap_parallel::resume(void) {
-}
-
-
-
-
 // Because interrupts exist outside the class context, but our interrupt
 // needs to access to an active ZeroDMA object, a separate ZeroDMA pointer
 // is kept (initialized in the begin() function). This does mean that only
@@ -27,6 +17,25 @@ static Adafruit_ZeroDMA dma;
 static DmacDescriptor *descriptor;       ///< DMA descriptor
 static volatile bool frameReady = false; // true at end-of-frame
 static volatile bool suspended = false;
+
+// Since ZeroDMA suspend/resume functions don't yet work, these functions
+// use static vars to indicate whether to trigger DMA transfers or hold off
+// (camera keeps running, data is simply ignored without a DMA transfer).
+
+// This is NOT a sleep function, it just pauses background DMA.
+
+void Adafruit_iCap_parallel::suspend(void) {
+  while (!frameReady)
+    ;               // Wait for current frame to finish loading
+  suspended = true; // Don't load next frame (camera runs, DMA stops)
+}
+
+// NOT a wake function, just resumes background DMA.
+
+void Adafruit_iCap_parallel::resume(void) {
+  frameReady = false;
+  suspended = false; // Resume DMA transfers
+}
 
 // INTERRUPT HANDLING AND RELATED CODE -------------------------------------
 
@@ -41,26 +50,6 @@ static void startFrame(void) {
 // End-of-DMA-transfer callback
 static void dmaCallback(Adafruit_ZeroDMA *dma) { frameReady = true; }
 
-// Since ZeroDMA suspend/resume functions don't yet work, these functions
-// use static vars to indicate whether to trigger DMA transfers or hold off
-// (camera keeps running, data is simply ignored without a DMA transfer).
-
-// This is NOT a sleep function, it just pauses background DMA.
-
-#if 0
-void Adafruit_OV7670::suspend(void) {
-  while (!frameReady)
-    ;               // Wait for current frame to finish loading
-  suspended = true; // Don't load next frame (camera runs, DMA stops)
-}
-
-// NOT a wake function, just resumes background DMA.
-
-void Adafruit_OV7670::resume(void) {
-  frameReady = false;
-  suspended = false; // Resume DMA transfers
-}
-#endif
 
 void iCap_xclk_start(iCap_pin pin, uint32_t freq) {
 // there is no digitalPinToTimer() func on SAMD
@@ -352,19 +341,6 @@ void OV7670_capture(uint32_t *dest, uint16_t width, uint16_t height,
   OV7670_enable_interrupts();
 }
 
-// DEVICE-SPECIFIC FUNCTIONS FOR NON-ARDUINO PLATFORMS ---------------------
-
-// If a platform doesn't offer a device-agnostic function for certain
-// operations (i.e. can't be trivially remapped in ov7670.h as is done for
-// Arduino), those device-specific functions can be declared here, with a
-// platform-specific #ifdef around them. These functions may include:
-// OV7670_delay_ms(x)
-// OV7670_pin_output(pin)
-// OV7670_pin_write(pin, hi)
-// OV7670_disable_interrupts()
-// OV7670_enable_interrupts()
-// Also see notes at top regarding pin MUXing in this file.
-
 #endif // end __SAMD51__
 
 // Notes from past self: early version of this code that I adopted used
@@ -375,8 +351,6 @@ void OV7670_capture(uint32_t *dest, uint16_t width, uint16_t height,
 // also available on that same pin, so that's what's now used to provide
 // PCC_XCLK. The choice of pin/timer for that will likely be different
 // for other SAMD51 boards (e.g. Feather, ItsyBitsy), but as written here
-// must be a TC or TCC, not a GCLK source. Also: early code required that
-// the cache be disabled. That no longer seems to be necessary, PCC and
-// related code runs fine even with cache.
+// must be a TC or TCC, not a GCLK source.
 #endif
 
