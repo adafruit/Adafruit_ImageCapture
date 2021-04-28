@@ -38,13 +38,3 @@ ICAP_status Adafruit_ImageCapture::begin() {
   // Do alloc here
   return ICAP_STATUS_OK;
 }
-
-// Reformat YUV gray component to RGB565 for TFT preview.
-// Big-endian in and out.
-void iCam_Y2RGB565(uint16_t *ptr, uint32_t len) {
-  while (len--) {
-    uint8_t y = *ptr & 0xFF; // Y (brightness) component of YUV
-    uint16_t rgb = ((y >> 3) * 0x801) | ((y & 0xFC) << 3); // to RGB565
-    *ptr++ = __builtin_bswap16(rgb); // Big-endianify RGB565 for TFT
-  }
-}

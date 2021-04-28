@@ -9,12 +9,30 @@ typedef iCap_parallel_pins OV2640_pins;
 */
 class Adafruit_iCap_OV2640 : public Adafruit_iCap_parallel {
 public:
+  /*!
+    @brief  Constructor for OV2640 camera class.
+    @param  pins  OV2640_pins structure, describing physical connection to
+                  the camera.
+    @param  twi   TwoWire instance (e.g. Wire or Wire1), used for I2C
+                  communication with camera.
+    @param  arch  Pointer to structure containing architecture-specific
+                  settings. For example, on SAMD51, this structure
+                  includes a pointer to a timer peripheral's base address,
+                  used to generate the xclk signal. The structure is
+                  always of type iCap_arch, but the specific elements
+                  within will vary with each supported architecture.
+    @param  addr  I2C address of camera.
+  */
   Adafruit_iCap_OV2640(iCap_parallel_pins &pins, TwoWire &twi = Wire,
                        iCap_arch *arch = NULL, uint8_t addr = OV2640_ADDR);
-  ~Adafruit_iCap_OV2640();
-  ICAP_status begin();
+  ~Adafruit_iCap_OV2640(); // Destructor
 
-private:
+  /*!
+    @brief   Allocate and initialize resources behind an Adafruit_OV7670
+             instance.
+    @return  Status code. ICAP_STATUS_OK on successful init.
+  */
+  ICAP_status begin();
 };
 
 #define OV2640_REG_RA_DLMT 0xFF    //< Register bank select

@@ -1,3 +1,16 @@
+#pragma once
+
+#include <stdint.h>
+
+// Non-class functions
+
+// Convert Y (brightness) component YUV image in RAM to RGB565 big-
+// endian format for preview on TFT display. Data is overwritten in-place,
+// Y is truncated and UV elements are lost. No practical use outside TFT
+// preview. If you need actual grayscale 0-255 data, just access the low
+// byte of each 16-bit YUV pixel.
+void iCap_Y2RGB565(uint16_t *ptr, uint32_t len);
+
 #if 0 // Don't compile yet -- names collide with old OV7670 lib
 
 #pragma once

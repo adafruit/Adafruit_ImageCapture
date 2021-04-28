@@ -17,6 +17,7 @@
 
 #include <stdlib.h> // NULL, etc.
 #include <stdint.h> // uint types, etc.
+#include "image_ops.h"
 
 /** Status codes returned by some functions */
 typedef enum {
@@ -51,10 +52,22 @@ class Adafruit_ImageCapture {
 public:
   /*!
     @brief  Constructor for Adafruit_ImageCapture class.
+    @param  arch  Pointer to structure containing architecture-specific
+                  settings. For example, on SAMD51, this structure
+                  includes a pointer to a timer peripheral's base address,
+                  used to generate the xclk signal. The structure is
+                  always of type iCap_arch, but the specific elements
+                  within will vary with each supported architecture.
+                  Can be NULL if not used/needed.
   */
   Adafruit_ImageCapture(iCap_arch *arch = NULL);
   ~Adafruit_ImageCapture(); // Destructor
 
+  /*!
+    @brief   Allocate and initialize resources behind an
+             Adafruit_ImageCapture instance.
+    @return  Status code. ICAP_STATUS_OK on successful init.
+  */
   ICAP_status begin(void);
 
   /*!
@@ -85,12 +98,3 @@ protected:
   uint8_t active_buffer;     ///< If double buffering, which index is capturing
 #endif
 };
-
-// Non-class functions
-
-// Convert Y (brightness) component YUV image in RAM to RGB565 big-
-// endian format for preview on TFT display. Data is overwritten in-place,
-// Y is truncated and UV elements are lost. No practical use outside TFT
-// preview. If you need actual grayscale 0-255 data, just access the low
-// byte of each 16-bit YUV pixel.
-void iCam_Y2RGB565(uint16_t *ptr, uint32_t len);

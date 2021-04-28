@@ -47,6 +47,20 @@ typedef enum {
 */
 class Adafruit_iCap_OV7670 : public Adafruit_iCap_parallel {
 public:
+  /*!
+    @brief  Constructor for OV7670 camera class.
+    @param  pins  OV7670_pins structure, describing physical connection to
+                  the camera.
+    @param  twi   TwoWire instance (e.g. Wire or Wire1), used for I2C
+                  communication with camera.
+    @param  arch  Pointer to structure containing architecture-specific
+                  settings. For example, on SAMD51, this structure
+                  includes a pointer to a timer peripheral's base address,
+                  used to generate the xclk signal. The structure is
+                  always of type iCap_arch, but the specific elements
+                  within will vary with each supported architecture.
+    @param  addr  I2C address of camera.
+  */
   Adafruit_iCap_OV7670(iCap_parallel_pins &pins, TwoWire &twi = Wire,
                        iCap_arch *arch = NULL, uint8_t addr = OV7670_ADDR);
   ~Adafruit_iCap_OV7670();
@@ -94,6 +108,11 @@ public:
   // constraints (e.g. screen) and rounding up to a closer-but-higher frame
   // rate would be problematic). There is no hardcoded set of fixed frame
   // rates because it varies with architecture, depending on OV7670_XCLK_HZ.
+  /*!
+    @brief   Configure camera frame rate.
+    @param   fps  Desired frames-per-second, floating-point value.
+    @return  Nearest fps value supported by hardware.
+  */
   float setFPS(float fps = 30.0);
 
   /*!

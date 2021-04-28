@@ -2,10 +2,11 @@
 #include <Wire.h>
 #include <Adafruit_ImageCapture.h>
 
+/** Pin identifiers for parallel+I2C cameras. */
 typedef struct {
   iCap_pin enable;  ///< Also called PWDN, or set to -1 and tie to GND
   iCap_pin reset;   ///< Cam reset, or set to -1 and tie to 3.3V
-  iCap_pin xclk;    ///< MCU clock out / cam clock in
+  iCap_pin xclk;    ///< MCU clock out / cam clock in, -1 if self-clocking
   iCap_pin pclk;    ///< Cam clock out / MCU clock in
   iCap_pin vsync;   ///< Also called DEN1
   iCap_pin hsync;   ///< Also called DEN2
@@ -28,13 +29,37 @@ typedef struct {
 */
 class Adafruit_iCap_parallel : public Adafruit_ImageCapture {
 public:
-  // This constructor is never called directly by user code.
-  // Instead, a subclass is used (this is called implicitly, using any
-  // defaults established by the subclass, hence no defaults here).
+  /*!
+    @brief  Constructor for Adafruit_iCap_parallel class. This constructor
+            is never called directly by user code. Instead, a subclass is
+            used, which implicitly calls this constructor...hence no
+            defaults here.
+    @param  pins_ptr  Pointer iCap_parallel_pins structure, describing
+                      physical connection to the camera.
+    @param  twi_ptr   Pointer to TwoWire instance (e.g. &Wire or &Wire1),
+                      used for I2C communication with camera.
+    @param  arch      Pointer to structure containing architecture-specific
+                      settings. For example, on SAMD51, this structure
+                      includes a pointer to a timer peripheral's base address,
+                      used to generate the xclk signal. The structure is
+                      always of type iCap_arch, but the specific elements
+                      within will vary with each supported architecture.
+    @param  addr      I2C address of camera.
+    @param  speed     I2C speed in Hz (100000 typ.)
+    @param  delay_us  Delay, in microseconds, between I2C commands (some
+                      MCUs and/or cameras may cause lockup without some
+                      delay).
+  */
   Adafruit_iCap_parallel(iCap_parallel_pins *pins_ptr, TwoWire *twi_ptr,
                          iCap_arch *arch, uint8_t addr, uint32_t speed,
                          uint32_t delay_us);
-  ~Adafruit_iCap_parallel();
+  ~Adafruit_iCap_parallel(); // Destructor
+
+  /*!
+    @brief   Allocate and initialize resources behind an Adafruit_OV7670
+             instance.
+    @return  Status code. ICAP_STATUS_OK on successful init.
+  */
   ICAP_status begin();
 
   /*!

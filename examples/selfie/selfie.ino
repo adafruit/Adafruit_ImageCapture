@@ -139,7 +139,7 @@ void loop() {
 
   if(CAM_MODE == ICAP_COLOR_YUV) {
     // Convert grayscale for TFT preview
-    iCam_Y2RGB565(cam.getBuffer(), cam.width() * cam.height());
+    iCap_Y2RGB565(cam.getBuffer(), cam.width() * cam.height());
   }
 
   // Camera data arrives in big-endian order...same as the TFT,
