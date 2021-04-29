@@ -1,5 +1,5 @@
-#include <Arduino.h>
 #include <Adafruit_iCap_parallel.h>
+#include <Arduino.h>
 
 Adafruit_iCap_parallel::Adafruit_iCap_parallel(iCap_parallel_pins *pins_ptr,
                                                TwoWire *twi_ptr,

@@ -1,6 +1,6 @@
 #pragma once
-#include <Wire.h>
 #include <Adafruit_ImageCapture.h>
+#include <Wire.h>
 
 /** Pin identifiers for parallel+I2C cameras. */
 typedef struct {
