@@ -60,7 +60,7 @@ public:
              instance.
     @return  Status code. ICAP_STATUS_OK on successful init.
   */
-  ICAP_status begin();
+  iCap_status begin();
 
   /*!
     @brief   Reads value of one register from the camera over I2C.
@@ -81,7 +81,7 @@ public:
 
   /*!
     @brief  Writes a list of settings to the camera over I2C.
-    @param  reg  Array (pointer-to) of settings to write.
+    @param  cfg  Array (pointer-to) of settings to write.
     @param  len  Length of array.
   */
   void writeList(const iCap_parallel_config *cfg, uint16_t len);

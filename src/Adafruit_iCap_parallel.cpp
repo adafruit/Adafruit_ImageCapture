@@ -13,9 +13,9 @@ Adafruit_iCap_parallel::Adafruit_iCap_parallel(iCap_parallel_pins *pins_ptr,
 
 Adafruit_iCap_parallel::~Adafruit_iCap_parallel() {}
 
-ICAP_status Adafruit_iCap_parallel::begin() {
+iCap_status Adafruit_iCap_parallel::begin() {
   // Alloc occurs here
-  ICAP_status status = Adafruit_ImageCapture::begin();
+  iCap_status status = Adafruit_ImageCapture::begin();
   if (status != ICAP_STATUS_OK) {
     return status;
   }

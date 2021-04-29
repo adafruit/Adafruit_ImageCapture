@@ -56,7 +56,7 @@ static void dmaCallback(Adafruit_ZeroDMA *dma) { frameReady = true; }
 // XCLK clock out setup. For self-clocking cameras, don't call this function,
 // e.g. Adafruit_iCap_parallel.begin() checks the value of the xlck pin and
 // skips this if -1.
-ICAP_status iCap_xclk_start(iCap_pin pin, iCap_arch *arch, uint32_t freq) {
+iCap_status iCap_xclk_start(iCap_pin pin, iCap_arch *arch, uint32_t freq) {
 
   // LOOK UP TIMER OR TCC BASED ON ADDRESS IN ARCH STRUCT ------------------
 
@@ -190,7 +190,7 @@ ICAP_status iCap_xclk_start(iCap_pin pin, iCap_arch *arch, uint32_t freq) {
 }
 
 // Start parallel capture peripheral
-ICAP_status iCap_pcc_start(uint16_t *dest, uint32_t num_pixels) {
+iCap_status iCap_pcc_start(uint16_t *dest, uint32_t num_pixels) {
   PCC->MR.bit.PCEN = 0; // Make sure PCC is disabled before setting MR reg
 
   PCC->IDR.reg = 0b1111;       // Disable all PCC interrupts

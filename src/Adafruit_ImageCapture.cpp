@@ -34,7 +34,7 @@ Adafruit_ImageCapture::Adafruit_ImageCapture(iCap_arch *arch) : arch(arch) {}
 
 Adafruit_ImageCapture::~Adafruit_ImageCapture() {}
 
-ICAP_status Adafruit_ImageCapture::begin() {
+iCap_status Adafruit_ImageCapture::begin() {
   // Do alloc here
   return ICAP_STATUS_OK;
 }

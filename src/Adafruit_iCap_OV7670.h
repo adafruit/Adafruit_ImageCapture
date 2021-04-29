@@ -95,7 +95,7 @@ public:
                          size exceeding the buffer size, it will fail.
     @return  Status code. ICAP_STATUS_OK on successful init.
   */
-  ICAP_status begin(ICAP_colorspace colorspace = ICAP_COLOR_RGB565,
+  iCap_status begin(iCap_colorspace colorspace = ICAP_COLOR_RGB565,
                     OV7670_size size = OV7670_SIZE_DIV4, float fps = 30.0,
                     uint32_t bufsiz = 0);
 
@@ -150,9 +150,18 @@ public:
              camera mid-run. The default request here is CHANGE in case one
              passes an improper initial value to begin().
   */
-  ICAP_status setSize(OV7670_size size,
-                      ICAP_realloc allo = ICAP_REALLOC_CHANGE);
+  iCap_status setSize(OV7670_size size,
+                      iCap_realloc allo = ICAP_REALLOC_CHANGE);
 
+  /*!
+    @brief  Lower-level resolution register fiddling function, exposed so
+            dev code can test variations for setSize() windowing defaults.
+    @param  size         One of the OV7670_size enumeration values.
+    @param  vstart       Vertical start.
+    @param  hstart       Horizontal start.
+    @param  edge_offset  Edge offset.
+    @param  pclk_delay   PCLK delay.
+  */
   void frameControl(OV7670_size size, uint8_t vstart, uint16_t hstart,
                     uint8_t edge_offset, uint8_t pclk_delay);
 
@@ -343,4 +352,3 @@ private:
 #define OV7670_REG_ABLC1 0xB1              //< ABLC enable
 #define OV7670_REG_THL_ST 0xB3             //< ABLC target
 #define OV7670_REG_SATCTR 0xC9             //< Saturation control
-

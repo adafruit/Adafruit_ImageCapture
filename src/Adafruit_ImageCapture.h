@@ -15,19 +15,19 @@
 
 #pragma once
 
-#include <stdlib.h> // NULL, etc.
-#include <stdint.h> // uint types, etc.
 #include "image_ops.h"
+#include <stdint.h> // uint types, etc.
+#include <stdlib.h> // NULL, etc.
 
 /** Status codes returned by some functions */
 typedef enum {
   ICAP_STATUS_OK = 0,         ///< Success
   ICAP_STATUS_ERR_MALLOC,     ///< malloc() call failed
   ICAP_STATUS_ERR_PERIPHERAL, ///< Peripheral (e.g. timer) not found
-} ICAP_status;
+} iCap_status;
 
 // Must include ALL arch headers here. Each has #ifdefs to avoid mayhem.
-// Do this here, after the ICAP_status typedef, as functions declared in
+// Do this here, after the iCap_status typedef, as functions declared in
 // these headers may rely on that.
 #include "arch/rp2040.h"
 #include "arch/samd51.h"
@@ -36,14 +36,14 @@ typedef enum {
 typedef enum {
   ICAP_COLOR_RGB565 = 0, ///< RGB565 big-endian
   ICAP_COLOR_YUV,        ///< YUV/YCbCr 4:2:2 big-endian
-} ICAP_colorspace;
+} iCap_colorspace;
 
 /** Buffer reallocation behaviors when changing captured image size */
 typedef enum {
   ICAP_REALLOC_NONE = 0, ///< No realloc, error if new size > current buffer
   ICAP_REALLOC_CHANGE,   ///< Reallocate image buffer if size changes
   ICAP_REALLOC_LARGER,   ///< Realloc only if new size is larger
-} ICAP_realloc;
+} iCap_realloc;
 
 /*!
     @brief  Class encapsulating common image sensor functionality.
@@ -68,7 +68,7 @@ public:
              Adafruit_ImageCapture instance.
     @return  Status code. ICAP_STATUS_OK on successful init.
   */
-  ICAP_status begin(void);
+  iCap_status begin(void);
 
   /*!
     @brief   Get image width of camera's current resolution setting.

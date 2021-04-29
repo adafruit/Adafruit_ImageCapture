@@ -32,7 +32,7 @@ public:
              instance.
     @return  Status code. ICAP_STATUS_OK on successful init.
   */
-  ICAP_status begin();
+  iCap_status begin();
 };
 
 #define OV2640_REG_RA_DLMT 0xFF    //< Register bank select

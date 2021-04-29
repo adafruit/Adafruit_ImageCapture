@@ -78,4 +78,3 @@ extern void OV7670_image_edges(OV7670_colorspace space, uint16_t *pixels,
 #endif
 
 #endif // 0
-

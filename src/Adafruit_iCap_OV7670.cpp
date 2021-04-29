@@ -1,11 +1,10 @@
-#include <Arduino.h>
 #include <Adafruit_iCap_OV7670.h>
+#include <Arduino.h>
 
-Adafruit_iCap_OV7670::Adafruit_iCap_OV7670(OV7670_pins &pins,
-                                           TwoWire &twi, iCap_arch *arch,
-                                           uint8_t addr)
-    : Adafruit_iCap_parallel((iCap_parallel_pins *)&pins, (TwoWire *)&twi,
-                             arch, addr, 100000, 1000) {}
+Adafruit_iCap_OV7670::Adafruit_iCap_OV7670(OV7670_pins &pins, TwoWire &twi,
+                                           iCap_arch *arch, uint8_t addr)
+    : Adafruit_iCap_parallel((iCap_parallel_pins *)&pins, (TwoWire *)&twi, arch,
+                             addr, 100000, 1000) {}
 
 Adafruit_iCap_OV7670::~Adafruit_iCap_OV7670() {}
 
@@ -121,29 +120,26 @@ static const iCap_parallel_config
             {OV7670_REG_COM7, OV7670_COM7_RGB},
             {OV7670_REG_RGB444, 0},
             {OV7670_REG_COM15, OV7670_COM15_RGB565 | OV7670_COM15_R00FF}},
-    OV7670_yuv[] =
-        {
-            // Manual output format, YUV, use full output range
-            {OV7670_REG_COM7, OV7670_COM7_YUV},
-            {OV7670_REG_COM15, OV7670_COM15_R00FF}};
+    OV7670_yuv[] = {
+        // Manual output format, YUV, use full output range
+        {OV7670_REG_COM7, OV7670_COM7_YUV},
+        {OV7670_REG_COM15, OV7670_COM15_R00FF}};
 
-ICAP_status Adafruit_iCap_OV7670::begin(ICAP_colorspace colorspace,
-                    OV7670_size size, float fps, uint32_t bufsiz) {
+iCap_status Adafruit_iCap_OV7670::begin(iCap_colorspace colorspace,
+                                        OV7670_size size, float fps,
+                                        uint32_t bufsiz) {
 
-  ICAP_status status;
+  iCap_status status;
 
-// _width and _height need to be known before starting PCC
-// also, buffer prealloc (or is that in ImageCapture?).
-// setSize can do the size & alloc stuff, but tries to issue I2C
-// commands, which isn't valid until after begin here.
+  // Sets up width & height vars, doesn't yet issue commands
   status = setSize(size, ICAP_REALLOC_CHANGE);
-  if(status != ICAP_STATUS_OK) {
+  if (status != ICAP_STATUS_OK) {
     return status;
   }
 
   // Initialize memory, peripherals for parallel+I2C camera:
   status = Adafruit_iCap_parallel::begin();
-  if(status != ICAP_STATUS_OK) {
+  if (status != ICAP_STATUS_OK) {
     return status;
   }
 
@@ -262,7 +258,7 @@ float Adafruit_iCap_OV7670::setFPS(float fps) {
   return fps - best_delta; // Return actual frame rate
 }
 
-ICAP_status Adafruit_iCap_OV7670::setSize(OV7670_size size, ICAP_realloc allo) {
+iCap_status Adafruit_iCap_OV7670::setSize(OV7670_size size, iCap_realloc allo) {
   uint16_t new_width = 640 >> (int)size;
   uint16_t new_height = 480 >> (int)size;
   uint32_t new_buffer_size = new_width * new_height * sizeof(uint16_t);
@@ -329,7 +325,8 @@ ICAP_status Adafruit_iCap_OV7670::setSize(OV7670_size size, ICAP_realloc allo) {
 // rolling this into OV7670_set_size(), it's kept separate so test code
 // can experiment with different settings to find ideal defaults.
 void Adafruit_iCap_OV7670::frameControl(OV7670_size size, uint8_t vstart,
-  uint16_t hstart, uint8_t edge_offset, uint8_t pclk_delay) {
+                                        uint16_t hstart, uint8_t edge_offset,
+                                        uint8_t pclk_delay) {
   uint8_t value;
 
   // Enable downsampling if sub-VGA, and zoom if 1:16 scale
@@ -369,21 +366,14 @@ void Adafruit_iCap_OV7670::frameControl(OV7670_size size, uint8_t vstart,
   uint16_t hstop = (hstart + 640) % 784;
   writeRegister(OV7670_REG_HSTART, hstart >> 3);
   writeRegister(OV7670_REG_HSTOP, hstop >> 3);
-  writeRegister(OV7670_REG_HREF, (edge_offset << 6) | ((hstop & 0b111) << 3) |
-                                 (hstart & 0b111));
+  writeRegister(OV7670_REG_HREF,
+                (edge_offset << 6) | ((hstop & 0b111) << 3) | (hstart & 0b111));
   writeRegister(OV7670_REG_VSTART, vstart >> 2);
   writeRegister(OV7670_REG_VSTOP, vstop >> 2);
   writeRegister(OV7670_REG_VREF, ((vstop & 0b11) << 2) | (vstart & 0b11));
 
   writeRegister(OV7670_REG_SCALING_PCLK_DELAY, pclk_delay);
 }
-
-
-
-
-
-
-
 
 #if 0
 OV7670_status OV7670_begin(OV7670_host *host, OV7670_colorspace colorspace,

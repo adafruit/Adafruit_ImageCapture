@@ -95,7 +95,7 @@ void setup() {
   // though the preview is only 160x120. This is to ensure that the
   // RAM is available later when we go to take a higher-resolution
   // still to save.
-  ICAP_status status = cam.begin(CAM_MODE, CAM_SIZE, 30.0, 320 * 240 * 2);
+  iCap_status status = cam.begin(CAM_MODE, CAM_SIZE, 30.0, 320 * 240 * 2);
   if (status != ICAP_STATUS_OK) {
     Serial.println("Camera begin() fail");
     for(;;);
