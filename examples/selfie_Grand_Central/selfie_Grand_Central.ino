@@ -1,3 +1,4 @@
+#if defined(ADAFRUIT_GRAND_CENTRAL_M4)
 /*
 Example for Adafruit_iCap_OV7670 library. With camera plugged directly
 into Grand Central PCC pins, it faces "up," same way as a TFT shield,
@@ -251,3 +252,4 @@ void write_bmp(char *filename, uint16_t *addr,
     file.close();
   }
 }
+#endif // ADAFRUIT_GRAND_CENTRAL_M4

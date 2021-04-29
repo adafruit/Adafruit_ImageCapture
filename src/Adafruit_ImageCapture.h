@@ -15,7 +15,6 @@
 
 #pragma once
 
-#include "image_ops.h"
 #include <stdint.h> // uint types, etc.
 #include <stdlib.h> // NULL, etc.
 
