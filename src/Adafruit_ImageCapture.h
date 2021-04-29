@@ -21,13 +21,14 @@
 /** Status codes returned by some functions */
 typedef enum {
   ICAP_STATUS_OK = 0,         ///< Success
-  ICAP_STATUS_ERR_MALLOC,     ///< malloc() call failed
+  ICAP_STATUS_ERR_MALLOC,     ///< malloc() or realloc() call failed
   ICAP_STATUS_ERR_PERIPHERAL, ///< Peripheral (e.g. timer) not found
+  ICAP_STATUS_ERR_PINS,       ///< Pin config doesn't align with peripheral(s)
 } iCap_status;
 
-// Must include ALL arch headers here. Each has #ifdefs to avoid mayhem.
-// Do this here, after the iCap_status typedef, as functions declared in
-// these headers may rely on that.
+// Must include ALL arch headers here (each has #ifdef checks for specific
+// architectures). Do this here, after the iCap_status typedef, as functions
+// declared in these headers may rely on that.
 #include "arch/rp2040.h"
 #include "arch/samd51.h"
 

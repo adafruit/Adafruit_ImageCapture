@@ -2,8 +2,6 @@
 // and accesses hardware-specific peripherals (timer PWM and the parallel
 // capture controller, others might follow in the future if needed).
 
-#pragma once
-
 #if defined(__SAMD51__)
 #include <Adafruit_ZeroDMA.h>
 #include <Adafruit_iCap_parallel.h>
@@ -56,7 +54,12 @@ static void dmaCallback(Adafruit_ZeroDMA *dma) { frameReady = true; }
 // XCLK clock out setup. For self-clocking cameras, don't call this function,
 // e.g. Adafruit_iCap_parallel.begin() checks the value of the xlck pin and
 // skips this if -1.
+#if 0
 iCap_status iCap_xclk_start(iCap_pin pin, iCap_arch *arch, uint32_t freq) {
+#else
+iCap_status Adafruit_iCap_parallel::xclk_start(uint32_t freq) {
+int pin = pins.xclk;
+#endif
 
   // LOOK UP TIMER OR TCC BASED ON ADDRESS IN ARCH STRUCT ------------------
 
@@ -190,7 +193,14 @@ iCap_status iCap_xclk_start(iCap_pin pin, iCap_arch *arch, uint32_t freq) {
 }
 
 // Start parallel capture peripheral
-iCap_status iCap_pcc_start(uint16_t *dest, uint32_t num_pixels) {
+#if 0
+iCap_status iCap_pcc_start(iCap_parallel_pins *pins, iCap_arch *arch,
+                           uint16_t *dest, uint32_t num_pixels) {
+#else
+iCap_status Adafruit_iCap_parallel::pcc_start(uint16_t *dest,
+                                              uint32_t num_pixels) {
+#endif
+
   PCC->MR.bit.PCEN = 0; // Make sure PCC is disabled before setting MR reg
 
   PCC->IDR.reg = 0b1111;       // Disable all PCC interrupts

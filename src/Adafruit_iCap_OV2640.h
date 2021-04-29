@@ -1,4 +1,5 @@
 #pragma once
+
 #include <Adafruit_iCap_parallel.h>
 
 #define OV2640_ADDR 0x30 //< Default I2C address if unspecified

@@ -1,4 +1,5 @@
 #pragma once
+
 #include <Adafruit_ImageCapture.h>
 #include <Wire.h>
 
@@ -102,6 +103,23 @@ public:
   void resume(void);
 
 protected:
+  /*!
+    @brief   Starter function for the XCLK output signal.
+    @param   freq  Desired XCLK frequency in Hz. Typically the ICAP_XCLK_HZ
+                   value defined in the arch-specific header would be used,
+                   but leaving this open to future options.
+    @return  ICAP_STATUS_OK on success.
+  */
+  iCap_status xclk_start(uint32_t freq);
+
+  /*!
+    @brief   Starter function for parallel capture DMA, etc.
+    @param   dest        Destination for data received from camera.
+    @param   num_pixels  Number of pixels in image.
+    @return  ICAP_STATUS_OK on success.
+  */
+  iCap_status pcc_start(uint16_t *dest, uint32_t num_pixels);
+
   TwoWire *wire;            ///< Associated I2C instance
   iCap_parallel_pins pins;  ///< Pin structure (copied in constructor)
   uint32_t i2c_speed;       ///< I2C bus speed

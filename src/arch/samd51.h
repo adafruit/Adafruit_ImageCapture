@@ -1,7 +1,8 @@
 #pragma once
 
 #if defined(__SAMD51__)
-#include <Adafruit_ImageCapture.h>
+
+#define ICAP_XCLK_HZ 12000000
 
 typedef int8_t iCap_pin;
 
@@ -11,10 +12,5 @@ typedef struct {
   void *timer;    ///< TC or TCC peripheral base address for XCLK out
   bool xclk_pdec; ///< If true, XCLK needs special PDEC pin mux
 } iCap_arch;
-
-extern iCap_status iCap_xclk_start(iCap_pin pin, iCap_arch *arch = NULL,
-                                   uint32_t freq = 12000000);
-
-extern iCap_status iCap_pcc_start(uint16_t *dest, uint32_t num_pixels);
 
 #endif // end __SAMD51__

@@ -24,6 +24,7 @@ iCap_status Adafruit_iCap_parallel::begin() {
   wire->setClock(i2c_speed);
   i2c_started = true;
 
+#if 0
   // Set up XCLK out unless it's a self-clocking camera. This must be done
   // BEFORE any I2C commands, as cam may require clock for I2C timing.
   if (pins.xclk >= 0) {
@@ -32,7 +33,18 @@ iCap_status Adafruit_iCap_parallel::begin() {
 
   // Set up parallel capture & DMA. Camera is initially suspended,
   // calling code resumes cam DMA after I2C init sequence is sent.
-  iCap_pcc_start(buffer[0], _width * _height);
+  iCap_pcc_start(&pins, arch, buffer[0], _width * _height);
+#else
+  // Set up XCLK out unless it's a self-clocking camera. This must be done
+  // BEFORE any I2C commands, as cam may require clock for I2C timing.
+  if (pins.xclk >= 0) {
+    xclk_start(ICAP_XCLK_HZ);
+  }
+
+  // Set up parallel capture & DMA. Camera is initially suspended,
+  // calling code resumes cam DMA after I2C init sequence is sent.
+  pcc_start(buffer[0], _width * _height);
+#endif
 
   return ICAP_STATUS_OK;
 }

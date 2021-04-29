@@ -1,4 +1,5 @@
 #pragma once
+
 #include <Adafruit_iCap_parallel.h>
 
 typedef iCap_parallel_pins OV7670_pins;

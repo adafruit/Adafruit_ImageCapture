@@ -1,18 +1,22 @@
 #pragma once
 
 #if defined(ARDUINO_ARCH_RP2040)
-#include <stdint.h>
+#include "../../hardware_dma/include/hardware/dma.h"
+#include "hardware/gpio.h"
+#include "hardware/pio.h"
+#include "hardware/pwm.h"
+
+#define ICAP_XCLK_HZ 12500000
 
 typedef int8_t iCap_pin;
 
 // Device-specific structure attached to Adafruit_ImageCapture.arch,
 // if low-level peripherals can't be inferred from pin numbers.
 typedef struct {
+  PIO pio;                       ///< PIO peripheral
+  uint8_t sm;                    ///< State machine #
+  int dma_channel;               ///< DMA channel #
+  dma_channel_config dma_config; ///< DMA configuration
 } iCap_arch;
-
-extern iCap_status iCap_xclk_start(iCap_pin pin, iCap_arch *arch = NULL,
-                                   uint32_t freq = 12500000);
-
-extern iCap_status iCap_pcc_start(uint16_t *dest, uint32_t num_pixels);
 
 #endif // end ARDUINO_ARCH_RP2040
