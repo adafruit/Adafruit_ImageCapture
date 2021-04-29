@@ -5,10 +5,10 @@
 #pragma once
 
 #if defined(__SAMD51__)
-#include <Arduino.h>
-#include <Adafruit_iCap_parallel.h>
 #include <Adafruit_ZeroDMA.h>
-#include "wiring_private.h" // pinPeripheral() function
+#include <Adafruit_iCap_parallel.h>
+#include <Arduino.h>
+#include <wiring_private.h> // pinPeripheral() function
 
 // Because interrupts exist outside the class context, but our interrupt
 // needs to access to an active ZeroDMA object, a separate ZeroDMA pointer
@@ -248,7 +248,6 @@ iCap_status iCap_pcc_start(uint16_t *dest, uint32_t num_pixels) {
 
 #endif // end __SAMD51__
 
-
 #if 0
 
 // Non-DMA capture function using previously-initialized PCC peripheral.
@@ -279,4 +278,3 @@ void OV7670_capture(uint32_t *dest, uint16_t width, uint16_t height,
 }
 
 #endif // 0
-
