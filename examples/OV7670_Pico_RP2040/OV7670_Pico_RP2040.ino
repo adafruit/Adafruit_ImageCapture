@@ -21,6 +21,9 @@ HARDWARE REQUIRED:
 // Set up arch and pins structures for Pico RP2040.
 iCap_arch arch = {
   .pio = pio0, // Which PIO peripheral to use (pio0 or pio1)
+  .bswap = false,
+  // Other elements are set by the library at runtime and should not be
+  // specified by user code (will be overwritten).
 };
 OV7670_pins pins = {
   .enable = -1, // Also called PWDN, or set to -1 and tie to GND
@@ -52,20 +55,16 @@ Adafruit_ST7789 tft(TFT_CS, TFT_DC, TFT_RST);
 
 void setup() {
   Serial.begin(9600);
-  //while(!Serial);
+  while(!Serial);
   delay(1000);
   Serial.println("Hello! Camera Test.");
 
-// LED pin
   pinMode(25, OUTPUT);
   digitalWrite(25, LOW);
 
   // These are currently RP2040 Philhower-specific
-  // Put these in the lib
-  SPI.setSCK(18); // SPI0
+  SPI.setSCK(18); // SPI0 (for display)
   SPI.setTX(19);
-  Wire.setSDA(pins.sda); // I2C0
-  Wire.setSCL(pins.scl);
 
   tft.init(240, 240);
   tft.setSPISpeed(48000000);

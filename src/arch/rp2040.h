@@ -2,9 +2,7 @@
 
 #if defined(ARDUINO_ARCH_RP2040)
 #include "../../hardware_dma/include/hardware/dma.h"
-#include "hardware/gpio.h"
 #include "hardware/pio.h"
-#include "hardware/pwm.h"
 
 #define ICAP_XCLK_HZ 12500000
 
@@ -17,6 +15,7 @@ typedef struct {
   uint8_t sm;                    ///< State machine #
   int dma_channel;               ///< DMA channel #
   dma_channel_config dma_config; ///< DMA configuration
+  bool bswap;                    ///< DMA byte-swap behavior
 } iCap_arch;
 
 #endif // end ARDUINO_ARCH_RP2040

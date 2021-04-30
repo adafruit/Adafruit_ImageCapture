@@ -1,29 +1,26 @@
 #if defined(ARDUINO_ARCH_RP2040)
+#include "../../hardware_dma/include/hardware/dma.h"
+#include "hardware/gpio.h"
+#include "hardware/irq.h"
+#include "hardware/pio.h"
+#include "hardware/pwm.h"
 #include <Adafruit_iCap_parallel.h>
 
 // PIO code in this table is modified at runtime so that PCLK is
 // configurable (rather than fixed GP## or PIN offset). Data pins
 // must be contiguous but are otherwise configurable.
-static uint16_t ov7670_pio_opcodes[] = {
-#if 0
-    // Since PCLK is masked through HSYNC, and FIFO is cleared on VSYNC,
-    // no pins other than PCLK need the wait checks.
-    0b0010000000000000, // WAIT 0 GPIO 0 (mask in PCLK pin before use)
-    0b0010000010000000, // WAIT 1 GPIO 0 -- rising edge
-    0b0100000000001000, // IN PINS 8 -- 8 bits into RX FIFO
-#else
+static uint16_t iCap_pio_opcodes[] = {
     // Only monitor PCLK when HSYNC is high. This is more noise-immune
-    // than the prior approach.
+    // than letting it fly.
     0b0010000010000000, // WAIT 1 GPIO 0 (mask in HSYNC pin before use)
     0b0010000010000000, // WAIT 1 GPIO 0 (mask in PCLK pin before use)
     0b0100000000001000, // IN PINS 8 -- 8 bits into RX FIFO
     0b0010000000000000, // WAIT 0 GPIO 0 (mask in PCLK pin before use)
-#endif
 };
 
-struct pio_program ov7670_pio_program = {
-    .instructions = ov7670_pio_opcodes,
-    .length = sizeof ov7670_pio_opcodes / sizeof ov7670_pio_opcodes[0],
+static struct pio_program iCap_pio_program = {
+    .instructions = iCap_pio_opcodes,
+    .length = sizeof iCap_pio_opcodes / sizeof iCap_pio_opcodes[0],
     .origin = -1,
 };
 
@@ -31,9 +28,9 @@ struct pio_program ov7670_pio_program = {
 // needs to access to object- and arch-specific data like the camera buffer
 // and DMA settings, pointers are kept (initialized in the begin() function).
 // This does mean that only a single OV7670 can be active.
-static Adafruit_iCap_parallel *platformptr = NULL; // Camera buffer, size, etc.
-static iCap_arch *archptr = NULL;                  // DMA settings
-static volatile bool frameReady = false;           // true at end-of-frame
+static Adafruit_ImageCapture *capptr = NULL; // Camera buffer, size, etc.
+static iCap_arch *archptr = NULL;            // DMA settings
+static volatile bool frameReady = false;     // true at end-of-frame
 static volatile bool suspended = false;
 
 // This is NOT a sleep function, it just pauses background DMA.
@@ -56,7 +53,7 @@ void Adafruit_iCap_parallel::resume(void) {
 // To do: use the arch state variable to detect when a VSYNC IRQ occurs
 // before the last DMA transfer is complete (suggesting one or more pixels
 // dropped, likely bad PCLK signal). If that happens, abort the DMA
-// transfer and return, skip frames and  don't begin next DMA until abort
+// transfer and return, skip frames and don't begin next DMA until abort
 // has completed (this is what state var is for, to detect if in this
 // holding pattern).
 
@@ -75,24 +72,20 @@ static void iCap_dma_finish_irq() {
   frameReady = true;
   // Channel MUST be reconfigured each time (to reset the dest address).
   dma_channel_set_write_addr(archptr->dma_channel,
-                             (uint8_t *)(platformptr->getBuffer()), false);
+                             (uint8_t *)(capptr->getBuffer()), false);
   dma_hw->ints0 = 1u << archptr->dma_channel; // Clear IRQ
+  Serial.println("HEY");
 }
 
 // XCLK clock out setup. For self-clocking cameras, don't call this function,
 // e.g. Adafruit_iCap_parallel.begin() checks the value of the xlck pin and
 // skips this if -1.
-#if 0
-iCap_status iCap_xclk_start(iCap_pin pin, iCap_arch *arch, uint32_t freq) {
-#else
 iCap_status Adafruit_iCap_parallel::xclk_start(uint32_t freq) {
-int pin = pins.xclk;
-#endif
 
   // LOOK UP PWM SLICE & CHANNEL BASED ON XCLK PIN -------------------------
 
-  uint8_t slice = pwm_gpio_to_slice_num(pin);
-  uint8_t channel = pwm_gpio_to_channel(pin);
+  uint8_t slice = pwm_gpio_to_slice_num(pins.xclk);
+  uint8_t channel = pwm_gpio_to_channel(pins.xclk);
 
   // CONFIGURE PWM FOR XCLK OUT --------------------------------------------
   // XCLK to camera is required for it to communicate over I2C!
@@ -109,82 +102,87 @@ int pin = pins.xclk;
   pwm_init(slice, &config, true);
   pwm_set_chan_level(slice, channel, F_CPU / freq / 2); // 50% duty
 #endif
-  gpio_set_function(pin, GPIO_FUNC_PWM);
+  gpio_set_function(pins.xclk, GPIO_FUNC_PWM);
 
   return ICAP_STATUS_OK;
 }
 
 // Start parallel capture
 // Also, dest might not be known yet.
-#if 0
-iCap_status iCap_pcc_start(iCap_parallel_pins *pins, iCap_arch *arch,
-                           uint16_t *dest, uint32_t num_pixels) {
-#else
 iCap_status Adafruit_iCap_parallel::pcc_start(uint16_t *dest,
                                               uint32_t num_pixels) {
-#endif
 
-#if 0
   // TO DO: verify the DATA pins are contiguous.
 
+  archptr = arch; // Save arch pointer for interrupts
+  capptr = this;  // Save object pointer, same
+
   // Set up GPIO pins (other than I2C, done in the Wire lib)
-  gpio_init(host->pins->pclk);
-  gpio_set_dir(host->pins->pclk, GPIO_IN);
-  gpio_init(host->pins->vsync);
-  gpio_set_dir(host->pins->vsync, GPIO_IN);
-  gpio_init(host->pins->hsync);
-  gpio_set_dir(host->pins->hsync, GPIO_IN);
+  gpio_init(pins.pclk);
+  gpio_set_dir(pins.pclk, GPIO_IN);
+  gpio_init(pins.vsync);
+  gpio_set_dir(pins.vsync, GPIO_IN);
+  gpio_init(pins.hsync);
+  gpio_set_dir(pins.hsync, GPIO_IN);
   for (uint8_t i = 0; i < 8; i++) {
-    gpio_init(host->pins->data[i]);
-    gpio_set_dir(host->pins->data[i], GPIO_IN);
+    gpio_init(pins.data[i]);
+    gpio_set_dir(pins.data[i], GPIO_IN);
   }
 
-  // Initially by default this always uses pio0, but I suppose this could be
-  // written to use whatever pio has resources. Or it could be passed in.
-  host->arch->pio = pio0;
+  // PIO periph to use is currently specified by the user in the arch struct,
+  // but I suppose this could be written to use whatever PIO has resources.
 
   // Mask the GPIO pin used PCLK into the PIO opcodes -- see notes at top
-  // Oh - need to pass in pins struct for this!
-  // SAMD code will need to follow suit, even though not used there.
-#if 0
-  ov7670_pio_opcodes[0] |= (host->pins->pclk & 31);
-  ov7670_pio_opcodes[1] |= (host->pins->pclk & 31);
-#else
-  ov7670_pio_opcodes[0] |= (host->pins->hsync & 31);
-  ov7670_pio_opcodes[1] |= (host->pins->pclk & 31);
-  ov7670_pio_opcodes[3] |= (host->pins->pclk & 31);
-#endif
+  iCap_pio_opcodes[0] |= (pins.hsync & 31);
+  iCap_pio_opcodes[1] |= (pins.pclk & 31);
+  iCap_pio_opcodes[3] |= (pins.pclk & 31);
 
-  // Here's where resource check & switch to pio1 might go
-  uint offset = pio_add_program(host->arch->pio, &ov7670_pio_program);
-  host->arch->sm = pio_claim_unused_sm(host->arch->pio, true); // 0-3
+  // Here's where resource check & switch between pio0/1 might go
+  uint offset = pio_add_program(arch->pio, &iCap_pio_program);
+  arch->sm = pio_claim_unused_sm(arch->pio, true); // 0-3
 
   // host->pins->data[0] is data bit 0. PIO code requires all 8 data be
   // contiguous.
-  pio_sm_set_consecutive_pindirs(host->arch->pio, host->arch->sm,
-                                 host->pins->data[0], 8, false);
+  pio_sm_set_consecutive_pindirs(arch->pio, arch->sm, pins.data[0], 8, false);
 
   pio_sm_config c = pio_get_default_sm_config();
   c.pinctrl = 0; // SDK fails to set this
-  sm_config_set_wrap(&c, offset, offset + ov7670_pio_program.length - 1);
+  sm_config_set_wrap(&c, offset, offset + iCap_pio_program.length - 1);
 
-  sm_config_set_in_pins(&c, host->pins->data[0]);
+  sm_config_set_in_pins(&c, pins.data[0]);
   sm_config_set_in_shift(&c, false, true, 16); // 1 pixel (16b) ISR to FIFO
   sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_RX);
 
-  pio_sm_init(host->arch->pio, host->arch->sm, offset, &c);
-  pio_sm_set_enabled(host->arch->pio, host->arch->sm, true);
+  pio_sm_init(arch->pio, arch->sm, offset, &c);
+  pio_sm_set_enabled(arch->pio, arch->sm, true);
 
-  // This can improve GPIO responsiveness but is less noise-immune.
-  uint32_t mask = (0xFF << host->pins->data[0]) | (1 << host->pins->pclk);
-  // Maybe not. Disabled for now.
-  // host->arch->pio->input_sync_bypass = mask;
+  // SET UP DMA ------------------------------------------------------------
 
-  // PIO read from camera also requires DMA and interrupts, which are NOT
-  // set up here! These are done in the platform arch_begin(), as they
-  // require platform-specific information such as the camera buffer
-  // address and dimensions).
-#endif
+  arch->dma_channel = dma_claim_unused_channel(false); // don't panic
+
+  arch->dma_config = dma_channel_get_default_config(arch->dma_channel);
+  channel_config_set_transfer_data_size(&arch->dma_config, DMA_SIZE_16);
+  channel_config_set_read_increment(&arch->dma_config, false);
+  channel_config_set_write_increment(&arch->dma_config, true);
+  channel_config_set_bswap(&arch->dma_config, arch->bswap);
+  // Set PIO RX as DMA trigger. Input shift register saturates at 16 bits
+  // (1 pixel), configured in data size above and in PIO setup elsewhere.
+  channel_config_set_dreq(&arch->dma_config,
+                          pio_get_dreq(arch->pio, arch->sm, false));
+  // Set up initial DMA xfer, but don't trigger (that's done in interrupt)
+  dma_channel_configure(arch->dma_channel, &arch->dma_config, dest,
+                        &arch->pio->rxf[arch->sm], num_pixels, false);
+
+  // Set up end-of-DMA interrupt
+  dma_channel_set_irq0_enabled(arch->dma_channel, true);
+  irq_set_exclusive_handler(DMA_IRQ_0, iCap_dma_finish_irq);
+  irq_set_enabled(DMA_IRQ_0, true);
+
+  // SET UP VSYNC INTERRUPT ------------------------------------------------
+
+  gpio_set_irq_enabled_with_callback(pins.vsync, GPIO_IRQ_EDGE_RISE, true,
+                                     &iCap_vsync_irq);
+
   return ICAP_STATUS_OK;
 }
 
