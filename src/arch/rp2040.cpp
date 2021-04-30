@@ -74,7 +74,6 @@ static void iCap_dma_finish_irq() {
   dma_channel_set_write_addr(archptr->dma_channel,
                              (uint8_t *)(capptr->getBuffer()), false);
   dma_hw->ints0 = 1u << archptr->dma_channel; // Clear IRQ
-  Serial.println("HEY");
 }
 
 // XCLK clock out setup. For self-clocking cameras, don't call this function,
