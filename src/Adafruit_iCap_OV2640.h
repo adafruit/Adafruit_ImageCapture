@@ -103,7 +103,7 @@ public:
 #define OV2640_VHYX_V_SIZE_8 0x80         //< V_SIZE[8] bit
 #define OV2640_VHYX_OFFSET_Y_MASK 0x70    //< OFFSET_Y[10:8] mask
 #define OV2640_VHYX_H_SIZE_8 0x08         //< H_SIZE[8] bit
-#define OV2640_VHYX_OFFSET_X_MASK 0x7     //< OFFSET_X[10:8] mask
+#define OV2640_VHYX_OFFSET_X_MASK 0x07    //< OFFSET_X[10:8] mask
 #define OV2640_REG0_DPRP 0x56             //< ?
 #define OV2640_DPRP_DP_SELY_MASK 0xF0     //< DP_SELY mask
 #define OV2640_DPRP_DP_SELX_MASK 0x0F     //< DP_SELX mask
@@ -129,9 +129,9 @@ public:
 #define OV2640_CTRL3_WPC 0x40             //< WPC enable
 #define OV2640_CTRL3_RESERVED_MASK 0x3F   //< Reserved bits
 #define OV2640_REG0_SIZEL 0x8C            //< HSIZE, VSIZE more bits
-#define OV2640_SIZEL_HSIZE11 0x10         //< HSIZE[11]
-#define OV2640_SIZEL_HSIZE_MASK 0x0C      //< HSIZE[2:0]
-#define OV2640_SIZEL_VSIZE_MASK 0x03      //< VSIZE[2:0]
+#define OV2640_SIZEL_HSIZE11 0x40         //< HSIZE[11]
+#define OV2640_SIZEL_HSIZE_MASK 0x38      //< HSIZE[2:0]
+#define OV2640_SIZEL_VSIZE_MASK 0x07      //< VSIZE[2:0]
 #define OV2640_REG0_HSIZE8 0xC0           //< Image horiz size HSIZE[10:3]
 #define OV2640_REG0_VSIZE8 0xC1           //< Image vert size VSIZE[10:3]
 #define OV2640_REG0_CTRL0 0xC2            //< Module enable, continued
@@ -223,14 +223,14 @@ public:
 #define OV2640_REG1_PIDH 0x0A              //< Product ID MSB (read only)
 #define OV2640_REG1_PIDL 0x0B              //< Product ID LSB (read only)
 #define OV2640_REG1_COM3 0x0C              //< Common control 3
-#define OV2640_COM3_RESERVED_MASK 9xF8     //< Reserved bits
+#define OV2640_COM3_RESERVED_MASK 0xF8     //< Reserved bits
 #define OV2640_COM3_BANDING_MASK 0x04      //< Manual banding bit mask
 #define OV2640_COM3_BANDING_60HZ 0x00      //< 60 Hz
 #define OV2640_COM3_BANDING_50HZ 0x04      //< 50 Hz
 #define OV2640_COM3_AUTO_BANDING 0x02      //< Auto-set banding
 #define OV2640_COM3_SNAPSHOT 0x01          //< Snapshot option
 #define OV2640_REG1_COM4 0x0D              //< Common control 4
-#define OV2640_COM4_RESERVED_MASK 0xFB     //< Reserved bits
+#define OV2640_COM4_RESERVED_MASK 0xF8     //< Reserved bits
 #define OV2640_COM4_CLOCK_PIN_STATUS 0x04  //< Clock output power pin status
 #define OV2640_REG1_AEC 0x10               //< AEC[9:2] auto exposure ctrl
 #define OV2640_REG1_CLKRC 0x11             //< Clock rate control

@@ -21,7 +21,7 @@ HARDWARE REQUIRED:
 // Set up arch and pins structures for Pico RP2040.
 iCap_arch arch = {
   .pio = pio0, // Which PIO peripheral to use (pio0 or pio1)
-  .bswap = false,
+  .bswap = true,
   // Other elements are set by the library at runtime and should not be
   // specified by user code (will be overwritten).
 };

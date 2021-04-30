@@ -13,7 +13,6 @@ static const iCap_parallel_config OV2640_init[] =
     {
         // OV2640 camera initialization after reset
         // WIP STUFF, don't take this seriously yet
-        // Also, this will be put in separate file later
         {OV2640_REG_RA_DLMT, OV2640_RA_DLMT_DSP},    // DSP bank select 0
         {0x2C, 0xFF},                                // Reserved
         {0x2E, 0xDF},                                // Reserved
@@ -35,6 +34,7 @@ static const iCap_parallel_config OV2640_init[] =
         {0x16, 0x10},            // Reserved
         {0x4A, 0x81},            // Reserved
         {0x21, 0x99},            // Reserved
+// Verified up to here
         {OV2640_REG1_AEW, 0x40}, // High range for AEC/AGC
         {OV2640_REG1_AEB, 0x38}, // Low range for AEC/AGC
         {OV2640_REG1_VV, 0x82},  // Fast mode thresholds
@@ -268,7 +268,7 @@ static const iCap_parallel_config OV2640_init[] =
         {OV2640_REG0_VSIZE8, 0x4B}, // VSIZE high bits
         {OV2640_REG0_CTRL2, OV2640_CTRL2_DCW | OV2640_CTRL2_SDE |
                                 OV2640_CTRL2_UV_AVG | OV2640_CTRL2_CMX},
-        {OV2640_REG0_CTRLI, OV2640_REG0_TEST | 0x12},
+        {OV2640_REG0_CTRLI, OV2640_CTRLI_LP_DP | 0x12},
         {OV2640_REG0_HSIZE, 0xC8},    // H_SIZE low bits
         {OV2640_REG0_VSIZE, 0x96},    // V_SIZE low bits
         {OV2640_REG0_XOFFL, 0x00},    // OFFSET_X low bits
@@ -312,9 +312,9 @@ iCap_status Adafruit_iCap_OV2640::begin() {
     digitalWrite(pins.reset, LOW);
     delay(1);
     digitalWrite(pins.reset, HIGH);
-  } else {                                                 // Soft reset
-    writeRegister(OV2640_REG_RA_DLMT, OV2640_RA_DLMT_DSP); // Bank select 0
-    writeRegister(OV2640_REG0_RESET, 0xFF);                // Reset everything
+  } else {                                                    // Soft reset
+    writeRegister(OV2640_REG_RA_DLMT, OV2640_RA_DLMT_SENSOR); // Bank select 1
+    writeRegister(OV2640_REG1_COM7, OV2640_COM7_SRST);        // System reset
   }
   delay(1); // Datasheet: tS:RESET = 1 ms
 
