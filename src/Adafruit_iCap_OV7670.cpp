@@ -174,7 +174,7 @@ iCap_status Adafruit_iCap_OV7670::begin(iCap_colorspace colorspace,
   writeList(OV7670_init, sizeof OV7670_init / sizeof OV7670_init[0]);
   setSize(size); // Frame size
 
-  delayMicroseconds(300000); // tS:REG = 300 ms (settling time = 10 frames)
+  delayMicroseconds(300000); // 10 frame settling time
 
   resume(); // Start DMA cycle
 
@@ -374,22 +374,3 @@ void Adafruit_iCap_OV7670::frameControl(OV7670_size size, uint8_t vstart,
 
   writeRegister(OV7670_REG_SCALING_PCLK_DELAY, pclk_delay);
 }
-
-#if 0
-OV7670_status OV7670_begin(OV7670_host *host, OV7670_colorspace colorspace,
-                           OV7670_size size, float fps) {
-  OV7670_status status;
-
-  // I2C must already be set up and running (@ 100 KHz) in calling code
-
-  // Do device-specific (but platform-agnostic) setup. e.g. on SAMD this
-  // function will fiddle registers to start a timer for XCLK output and
-  // enable the parallel capture peripheral.
-  status = OV7670_arch_begin(host);
-  if (status != OV7670_STATUS_OK) {
-    return status;
-  }
-
-
-}
-#endif

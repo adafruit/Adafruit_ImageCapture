@@ -1,6 +1,6 @@
 #if defined(ARDUINO_ARCH_RP2040)
 /*
-Adafruit_iCap_OV7670 example for Pico RP2040 + ST7789 240x240 display.
+Adafruit_iCap_OV2640 example for Pico RP2040 + ST7789 240x240 display.
 Simple camera test - input is shown on display.
 
 HARDWARE REQUIRED:
@@ -11,7 +11,7 @@ HARDWARE REQUIRED:
 */
 
 #include <Wire.h>                 // I2C comm to camera
-#include <Adafruit_iCap_OV7670.h> // Camera library
+#include <Adafruit_iCap_OV2640.h> // Camera library
 #include <Adafruit_ST7789.h>      // Hardware-specific library for ST7789
 
 // CAMERA CONFIG -----------------------------------------------------------
@@ -25,7 +25,7 @@ iCap_arch arch = {
   // Other elements are set by the library at runtime and should not be
   // specified by user code (will be overwritten).
 };
-OV7670_pins pins = {
+OV2640_pins pins = {
   .enable = -1, // Also called PWDN, or set to -1 and tie to GND
   .reset  = 14, // Cam reset, or set to -1 and tie to 3.3V
   .xclk   = 13, // MCU clock out / cam clock in
@@ -38,10 +38,10 @@ OV7670_pins pins = {
 };
 
 #define CAM_I2C Wire
-#define CAM_SIZE OV7670_SIZE_DIV4  // QQVGA (160x120 pixels)
+#define CAM_SIZE 0 // OV7670_SIZE_DIV4  // QQVGA (160x120 pixels)
 #define CAM_MODE ICAP_COLOR_RGB565 // RGB plz
 
-Adafruit_iCap_OV7670 cam(pins, CAM_I2C, &arch);
+Adafruit_iCap_OV2640 cam(pins, CAM_I2C, &arch);
 
 // DISPLAY CONFIG ----------------------------------------------------------
 
@@ -73,16 +73,20 @@ void setup() {
   tft.setRotation(3);
   // Once started, the camera continually fills a frame buffer
   // automagically; no need to request a frame.
-  iCap_status status = cam.begin(CAM_MODE, CAM_SIZE, 30.0);
+  iCap_status status = cam.begin();
   if (status != ICAP_STATUS_OK) {
     Serial.println("Camera begin() fail");
     for(;;);
   }
 
-  uint8_t pid = cam.readRegister(OV7670_REG_PID); // Should be 0x76
-  uint8_t ver = cam.readRegister(OV7670_REG_VER); // Should be 0x73
+  // Read manufacturer and product IDs -- these are Bank 1 registers
+  cam.writeRegister(OV2640_REG_RA_DLMT, OV2640_RA_DLMT_SENSOR);
+  uint16_t mid = (cam.readRegister(OV2640_REG1_MIDH) << 8) |
+                  cam.readRegister(OV2640_REG1_MIDL);
+  uint16_t pid = (cam.readRegister(OV2640_REG1_PIDH) << 8) |
+                  cam.readRegister(OV2640_REG1_PIDL);
+  Serial.println(mid, HEX);
   Serial.println(pid, HEX);
-  Serial.println(ver, HEX);
 }
 
 // MAIN LOOP - RUNS REPEATEDLY UNTIL RESET OR POWER OFF --------------------
@@ -99,18 +103,6 @@ uint16_t frame = KEYFRAME; // Force 1st frame as keyframe
 void loop() {
 
   gpio_xor_mask(1 << 25); // Toggle LED each frame
-
-  // This was for empirically testing window settings in src/arch/ov7670.c.
-  // Your code doesn't need this. Just keeping around for future reference.
-  if(Serial.available()) {
-    uint32_t vstart = Serial.parseInt();
-    uint32_t hstart = Serial.parseInt();
-    uint32_t edge_offset = Serial.parseInt();
-    uint32_t pclk_delay = Serial.parseInt();
-    while(Serial.read() >= 0); // Delete line ending or other cruft
-    cam.frameControl(CAM_SIZE, vstart, hstart,
-                     edge_offset, pclk_delay);
-  }
 
   if (++frame >= KEYFRAME) { // Time to sync up a fresh address window?
     frame = 0;

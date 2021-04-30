@@ -5,6 +5,11 @@
 #define OV2640_ADDR 0x30 //< Default I2C address if unspecified
 typedef iCap_parallel_pins OV2640_pins;
 
+/** Supported sizes for OV2640_set_size() */
+typedef enum {
+  OV2640_SIZE_QQVGA = 0, ///< 160x120
+} OV2640_size;
+
 /*!
     @brief  Class encapsulating OmniVision OV2640 functionality.
 */
@@ -34,6 +39,43 @@ public:
     @return  Status code. ICAP_STATUS_OK on successful init.
   */
   iCap_status begin();
+
+  /*!
+    @brief   Change camera resolution post-begin().
+    @param   size  One of the OV2640_size values (TBD).
+    @param   allo  Camera buffer reallocation behavior:
+                   - ICAP_REALLOC_NONE to not reallocate buffer.
+                     Function will return ICAP_STATUS_OK if new size fits
+                     in existing buffer, or ICAP_ERR_MALLOC if existing
+                     buffer is too small (buffer is not freed and current
+                     camera size is maintained).
+                   - ICAP_REALLOC_CHANGE to reallocate buffer on ANY
+                     size change, up or down. Function will return
+                     ICAP_STATUS_OK if reallocation was successful and
+                     camera size changed, or ICAP_ERR_MALLOC if
+                     reallocation failed (camera width and height will
+                     subsequently both poll as 0, or buffer to NULL, in
+                     this case).
+                   - ICAP_REALLOC_LARGER to reallocate buffer ONLY if new
+                     size exceeds current buffer size. Function will return
+                     ICAP_STATUS_OK if reallocation was successful and
+                     camera size changed, or ICAP_ERR_MALLOC if
+                     reallocation failed (camera width and height will
+                     subsequently both poll as 0 in this case).
+    @return  Status code. ICAP_STATUS_OK on success (image buffer
+             successfully reallocated as requested, camera reconfigured),
+             ICAP_STATUS_ERR_MALLOC in several situations explained above.
+    @note    Reallocating the camera buffer is fraught with peril and should
+             only be done if you're prepared to handle any resulting error.
+             In most cases, code should pass the size of LARGEST buffer it
+             anticipates needing (including any double buffering, etc.) to
+             begin(), which allocates it once on startup. Some RAM will go
+             untilized at times, but it's favorable to entirely losing the
+             camera mid-run. The default request here is CHANGE in case one
+             passes an improper initial value to begin().
+  */
+  iCap_status setSize(OV2640_size size,
+                      iCap_realloc allo = ICAP_REALLOC_CHANGE);
 };
 
 #define OV2640_REG_RA_DLMT 0xFF    //< Register bank select
