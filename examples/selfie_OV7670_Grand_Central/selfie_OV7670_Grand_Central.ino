@@ -252,4 +252,8 @@ void write_bmp(char *filename, uint16_t *addr,
     file.close();
   }
 }
+#else
+// Empty code to make this pass CI for now
+void setup() {}
+void loop() {}
 #endif // ADAFRUIT_GRAND_CENTRAL_M4

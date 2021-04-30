@@ -137,5 +137,8 @@ void loop() {
 
 //  cam.resume(); // Resume DMA into camera buffer
 }
-
+#else
+// Empty code to make this pass CI for now
+void setup() {}
+void loop() {}
 #endif // ARDUINO_ARCH_RP2040
