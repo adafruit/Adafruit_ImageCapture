@@ -1,4 +1,5 @@
 #include <Adafruit_iCap_OV2640.h>
+#include <Arduino.h>
 
 Adafruit_iCap_OV2640::Adafruit_iCap_OV2640(OV2640_pins &pins, TwoWire &twi,
                                            iCap_arch *arch, uint8_t addr)
@@ -9,8 +10,7 @@ Adafruit_iCap_OV2640::~Adafruit_iCap_OV2640() {}
 
 // CAMERA STARTUP ----------------------------------------------------------
 
-static const iCap_parallel_config OV2640_init[] =
-    {
+static const iCap_parallel_config OV2640_init[] = {
 #if 0
 // Ideas from esp32-camera
 // not working yet (scrambled image)
@@ -424,35 +424,35 @@ static const iCap_parallel_config OV2640_init[] =
         {OV2640_REG0_R_DVP_SP, 0x02}, // Manual DVP PCLK setting
         {OV2640_REG0_RESET, 0x00}},   // Go
 #endif
-    OV2640_qqvga[] = {
-        // Configure OV2640 for QQVGA output
-        {OV2640_REG_RA_DLMT, OV2640_RA_DLMT_DSP}, // DSP bank select 0
-        {OV2640_REG0_RESET, OV2640_RESET_DVP},
-        {OV2640_REG0_HSIZE8, 0x64}, // HSIZE high bits
-        {OV2640_REG0_VSIZE8, 0x4B}, // VSIZE high bits
-        {OV2640_REG0_CTRL2, OV2640_CTRL2_DCW | OV2640_CTRL2_SDE |
-                                OV2640_CTRL2_UV_AVG | OV2640_CTRL2_CMX},
-        {OV2640_REG0_CTRLI, OV2640_CTRLI_LP_DP | 0x12},
-        {OV2640_REG0_HSIZE, 0xC8},    // H_SIZE low bits
-        {OV2640_REG0_VSIZE, 0x96},    // V_SIZE low bits
-        {OV2640_REG0_XOFFL, 0x00},    // OFFSET_X low bits
-        {OV2640_REG0_YOFFL, 0x00},    // OFFSET_Y low bits
-        {OV2640_REG0_VHYX, 0x00},     // V/H/Y/X high bits
-        {OV2640_REG0_TEST, 0x00},     // ?
-        {OV2640_REG0_ZMOW, 0x28},     // OUTW low bits
-        {OV2640_REG0_ZMOH, 0x1E},     // OUTH low bits
-        {OV2640_REG0_ZMHH, 0x00},     // OUTW/H high bits
-        {OV2640_REG0_R_DVP_SP, 0x08}, // Manual DVP PCLK setting
-        {OV2640_REG0_RESET, 0x00}},   // Go
-    OV2640_rgb[] = {
-        {OV2640_REG_RA_DLMT, OV2640_RA_DLMT_DSP}, // DSP bank select 0
-        {OV2640_REG0_RESET, OV2640_RESET_DVP},
-        {OV2640_REG0_IMAGE_MODE,
-         OV2640_IMAGE_MODE_DVP_RGB565 | OV2640_IMAGE_MODE_BYTE_SWAP},
-        {0xD7, 0x03},               // Mystery init values
-        {0xE1, 0x77},               // seen in other examples
-        {OV2640_REG0_RESET, 0x00}}, // Go
-    OV2640_yuv[] =  {
+    OV2640_qqvga[] =
+        {// Configure OV2640 for QQVGA output
+         {OV2640_REG_RA_DLMT, OV2640_RA_DLMT_DSP}, // DSP bank select 0
+         {OV2640_REG0_RESET, OV2640_RESET_DVP},
+         {OV2640_REG0_HSIZE8, 0x64}, // HSIZE high bits
+         {OV2640_REG0_VSIZE8, 0x4B}, // VSIZE high bits
+         {OV2640_REG0_CTRL2, OV2640_CTRL2_DCW | OV2640_CTRL2_SDE |
+                                 OV2640_CTRL2_UV_AVG | OV2640_CTRL2_CMX},
+         {OV2640_REG0_CTRLI, OV2640_CTRLI_LP_DP | 0x12},
+         {OV2640_REG0_HSIZE, 0xC8},    // H_SIZE low bits
+         {OV2640_REG0_VSIZE, 0x96},    // V_SIZE low bits
+         {OV2640_REG0_XOFFL, 0x00},    // OFFSET_X low bits
+         {OV2640_REG0_YOFFL, 0x00},    // OFFSET_Y low bits
+         {OV2640_REG0_VHYX, 0x00},     // V/H/Y/X high bits
+         {OV2640_REG0_TEST, 0x00},     // ?
+         {OV2640_REG0_ZMOW, 0x28},     // OUTW low bits
+         {OV2640_REG0_ZMOH, 0x1E},     // OUTH low bits
+         {OV2640_REG0_ZMHH, 0x00},     // OUTW/H high bits
+         {OV2640_REG0_R_DVP_SP, 0x08}, // Manual DVP PCLK setting
+         {OV2640_REG0_RESET, 0x00}},   // Go
+    OV2640_rgb[] = {{OV2640_REG_RA_DLMT,
+                     OV2640_RA_DLMT_DSP}, // DSP bank select 0
+                    {OV2640_REG0_RESET, OV2640_RESET_DVP},
+                    {OV2640_REG0_IMAGE_MODE, OV2640_IMAGE_MODE_DVP_RGB565 |
+                                                 OV2640_IMAGE_MODE_BYTE_SWAP},
+                    {0xD7, 0x03},               // Mystery init values
+                    {0xE1, 0x77},               // seen in other examples
+                    {OV2640_REG0_RESET, 0x00}}, // Go
+    OV2640_yuv[] = {
         {OV2640_REG_RA_DLMT, OV2640_RA_DLMT_DSP}, // DSP bank select 0
         {OV2640_REG0_RESET, OV2640_RESET_DVP},
         {OV2640_REG0_IMAGE_MODE,
