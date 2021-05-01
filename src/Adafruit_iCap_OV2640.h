@@ -34,11 +34,28 @@ public:
   ~Adafruit_iCap_OV2640(); // Destructor
 
   /*!
-    @brief   Allocate and initialize resources behind an Adafruit_OV7670
+    @brief   Allocate and initialize resources behind an Adafruit_OV2640
              instance.
+    @param   colorspace  ICAP_COLOR_RGB or ICAP_COLOR_YUV.
+    @param   size        Frame size as a OV2640_size enum value.
+    @param   fps         Desired capture framerate, in frames per second,
+                         as a float up to 30.0. Actual device frame rate may
+                         differ from this, depending on a host's available
+                         PWM timing.
+    @param   bufsiz      Image buffer size, in bytes. This is configurable so
+                         code can do things like change image sizes without
+                         reallocating (which risks losing the existing buffer)
+                         or double-buffered transfers. Pass 0 to use default
+                         buffer size equal to 2 bytes per pixel times the
+                         number of pixels corresponding to the 'size'
+                         argument. If you later call setSize() with an image
+                         size exceeding the buffer size, it will fail.
+
     @return  Status code. ICAP_STATUS_OK on successful init.
   */
-  iCap_status begin();
+  iCap_status begin(iCap_colorspace colorspace = ICAP_COLOR_RGB565,
+                    OV2640_size size = OV2640_SIZE_QQVGA, float fps = 30.0,
+                    uint32_t bufsiz = 0);
 
   /*!
     @brief   Change camera resolution post-begin().

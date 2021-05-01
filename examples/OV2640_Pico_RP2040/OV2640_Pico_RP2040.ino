@@ -70,7 +70,6 @@ void setup() {
   tft.setSPISpeed(48000000);
   tft.fillScreen(ST77XX_BLACK);
   tft.println("Howdy");
-  tft.setRotation(3);
   // Once started, the camera continually fills a frame buffer
   // automagically; no need to request a frame.
   iCap_status status = cam.begin();
