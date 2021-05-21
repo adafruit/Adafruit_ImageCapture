@@ -1,0 +1,140 @@
+/*!
+ * @file Adafruit_iCap_ImageOps.h
+ *
+ * This is documentation for Adafruit's Image Capture library for Arduino,
+ * providing drivers for image sensors such as OV7670 and OV2640.
+ *
+ * Adafruit invests time and resources providing this open source code,
+ * please support Adafruit and open-source hardware by purchasing
+ * products from Adafruit!
+ *
+ * Written by Phil "PaintYourDragon" Burgess for Adafruit Industries.
+ *
+ * MIT license, all text here must be included in any redistribution.
+ */
+
+#pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// NON-CLASS FUNCTIONS -----------------------------------------------------
+
+// These functions are not tied to the Adafruit_ImageCapture class and can
+// work on arbitrary buffers, but are part of the library (not a second lib
+// or include). The functions perform postprocessing on (currently) a 16-bit
+// image, either RGB565 or sometimes YUV. These are not in-camera effects,
+// though some might be possible to implement as such. Image is
+// overwritten -- destination buffer is always the same as the source
+// buffer, same dimensions, usually same colorspace. Not all functions work
+// in all colorspaces, see notes for each.
+
+/*!
+  @brief  Convert Y (brightness) component YUV image in RAM to RGB565 big-
+          endian format for preview on TFT display. Data is overwritten in-
+          place, Y is truncated and UV elements are lost. No practical use
+          outside TFT preview. If you need actual grayscale 0-255 data, just
+          access the low byte of each 16-bit YUV pixel.
+  @param  pixels  Pointer to 16-bit YUV pixel data.
+  @param  len     Number of pixels.
+*/
+void iCap_Y2RGB565(uint16_t *pixels, uint32_t len);
+
+/*!
+  @brief  Image invert -- produces a negative image. This could probably be
+          done in-camera with a different gamma curve or something, but for
+          now it's available as a postprocess filter. Works in RGB and YUV
+          colorspaces.
+  @param  pixels  Pointer to 16-bit RGB565 or YUV pixel data.
+  @param  width   Image width in pixels.
+  @param  height  Image width in pixels.
+*/
+extern void iCap_image_negative(uint16_t *pixels, uint16_t width,
+                                uint16_t height);
+
+/*!
+  @brief  Image threshold -- decimates an image to only its min/max values
+          (ostensibly "black and white," but works on color channels
+          separately so that's not strictly the case). Works in RGB and YUV
+          colorspaces. Might be possible as an in-camera effect using gamma
+          curve.
+  @param  space      Image colorspace.
+  @param  pixels     Pointer to 16-bit RGB565 or YUV pixel data.
+  @param  width      Image width in pixels.
+  @param  height     Image width in pixels.
+  @param  threshold  Threshold value, 0-255 (may be scaled down as
+                     appropriate to color space and channel). Pixel values
+                     equal or greater than this value will be set to max,
+                     values below set to min.
+*/
+extern void iCap_image_threshold(iCap_colorspace space, uint16_t *pixels,
+                                 uint16_t width, uint16_t height,
+                                 uint8_t threshold);
+
+/*!
+  @brief  Image posterize -- decimates an image to a limited number of
+          brightness levels -- 2 to 32 levels in RGB colorspace, 2 to 255
+          levels in YUV. As with threshold, color channels are separately
+          processed. Might be possible as an in-camera effect using gamma
+          curve.
+  @param  space   Image colorspace.
+  @param  pixels  Pointer to 16-bit RGB565 or YUV pixel data.
+  @param  width   Image width in pixels.
+  @param  height  Image width in pixels.
+  @param  levels  Number of levels on output.
+*/
+extern void iCap_image_posterize(iCap_colorspace space, uint16_t *pixels,
+                                 uint16_t width, uint16_t height,
+                                 uint8_t levels);
+
+/*!
+  @brief  Image mosaic -- or "shower door effect," downsamples an image into
+          rectangular "tiles" of selectable width and height, each tile's
+          color being the average of all source image pixels within that
+          tile's area. For some tile sizes (2x2, 4x4, etc.) it might be more
+          efficient to use a lower-resolution camera setting and upscale (if
+          needed) in your own code...but this function is easy if you need to
+          maintain a specific image size, or want arbitrary X/Y tile sizes.
+          If image size does not divide equally by tile size, fractional
+          tiles will always be along the right and/or bottom edge(s); top
+          left corner is always a full tile.
+  @param  space        Image colorspace.
+  @param  pixels       Pointer to 16-bit RGB565 or YUV pixel data.
+  @param  width        Image width in pixels.
+  @param  height       Image width in pixels.
+  @param  tile_width   Tile width in pixels.
+  @param  tile_height  Tile width in pixels.
+*/
+extern void iCap_image_mosaic(iCap_colorspace space, uint16_t *pixels,
+                              uint16_t width, uint16_t height,
+                              uint8_t tile_width, uint8_t tile_height);
+
+/*!
+  @brief  3x3 median filter, typically for noise reduction.
+  @param  space   Image colorspace.
+  @param  pixels  Pointer to 16-bit RGB565 pixel data (YUV is not currently
+                  supported).
+  @param  width   Image width in pixels.
+  @param  height  Image width in pixels.
+*/
+extern void iCap_image_median(iCap_colorspace space, uint16_t *pixels,
+                              uint16_t width, uint16_t height);
+
+/*!
+  @brief  Basic edge detection.
+  @param  space   Image colorspace.
+  @param  pixels       Pointer to 16-bit RGB565 pixel data (YUV is not
+                       currently supported).
+  @param  width        Image width in pixels.
+  @param  height       Image width in pixels.
+  @param  sensitivity  Threshold of difference between adjacent pixels to
+                       trigger an edge -- values equal or above this will
+                       be set to max, below will be set to min.
+*/
+extern void iCap_image_edges(iCap_colorspace space, uint16_t *pixels,
+                             uint16_t width, uint16_t height,
+                             uint8_t sensitivity);
+#ifdef __cplusplus
+};
+#endif
