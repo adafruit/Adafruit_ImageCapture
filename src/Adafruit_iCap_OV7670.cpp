@@ -125,9 +125,8 @@ static const iCap_parallel_config
         {OV7670_REG_COM7, OV7670_COM7_YUV},
         {OV7670_REG_COM15, OV7670_COM15_R00FF}};
 
-iCap_status Adafruit_iCap_OV7670::begin(iCap_colorspace colorspace,
-                                        OV7670_size size, float fps,
-                                        uint32_t bufsiz) {
+iCap_status Adafruit_iCap_OV7670::begin(iCap_colorspace space, OV7670_size size,
+                                        float fps, uint32_t bufsiz) {
 
   iCap_status status;
 
@@ -138,7 +137,7 @@ iCap_status Adafruit_iCap_OV7670::begin(iCap_colorspace colorspace,
   }
 
   // Initialize memory, peripherals for parallel+I2C camera:
-  status = Adafruit_iCap_parallel::begin();
+  status = Adafruit_iCap_parallel::begin(space);
   if (status != ICAP_STATUS_OK) {
     return status;
   }
@@ -373,4 +372,73 @@ void Adafruit_iCap_OV7670::frameControl(OV7670_size size, uint8_t vstart,
   writeRegister(OV7670_REG_VREF, ((vstop & 0b11) << 2) | (vstart & 0b11));
 
   writeRegister(OV7670_REG_SCALING_PCLK_DELAY, pclk_delay);
+}
+
+// Select one of the camera's night modes (or disable).
+// Trades off frame rate for less grainy images in low light.
+// Note: seems that frame rate is somewhat automatic despite
+//       the requested setting, i.e. if 1:8 is selected, might
+//       still get normal frame rate or something higher than
+//       1:8, if the scene lighting permits. Also the setting
+//       seems to 'stick' in some cases when trying to turn
+//       this off. Might want to try always having night mode
+//       enabled but using 1:1 frame setting as 'off'.
+void Adafruit_iCap_OV7670::night(OV7670_night_mode night) {
+  // Table of bit patterns for the different supported night modes.
+  // There's a "same frame rate" option for OV7670 night mode but it
+  // doesn't seem to do anything useful and can be skipped over.
+  static const uint8_t night_bits[] = {0b00000000, 0b10100000, 0b11000000,
+                                       0b11100000};
+  // Read current COM11 register setting so unrelated bits aren't corrupted
+  uint8_t com11 = readRegister(OV7670_REG_COM11);
+  com11 &= 0b00011111;        // Clear night mode bits
+  com11 |= night_bits[night]; // Set night bits for desired mode
+  // Write modified result back to COM11 register
+  writeRegister(OV7670_REG_COM11, com11);
+}
+
+// Flips camera output on horizontal and/or vertical axes.
+// Note: datasheet refers to horizontal flip as "mirroring," but
+// avoiding that terminology here that it might be mistaken for a
+// split-down-middle-and-reflect funhouse effect, which it isn't.
+// Also note: mirrored image isn't always centered quite the same,
+// looks like frame control settings might need to be tweaked
+// depending on flips. Similar issue to color bars?
+void Adafruit_iCap_OV7670::flip(bool flip_x, bool flip_y) {
+  // Read current MVFP register setting, so we don't corrupt any
+  // reserved bits or the "black sun" bit if it was previously set.
+  uint8_t mvfp = readRegister(OV7670_REG_MVFP);
+  if (flip_x) {
+    mvfp |= OV7670_MVFP_MIRROR; // Horizontal flip
+  } else {
+    mvfp &= ~OV7670_MVFP_MIRROR;
+  }
+  if (flip_y) {
+    mvfp |= OV7670_MVFP_VFLIP; // Vertical flip
+  } else {
+    mvfp &= ~OV7670_MVFP_VFLIP;
+  }
+  // Write modified result back to MVFP register
+  writeRegister(OV7670_REG_MVFP, mvfp);
+}
+
+// Selects one of the camera's test patterns (or disable).
+void Adafruit_iCap_OV7670::test_pattern(OV7670_pattern pattern) {
+  // Read current SCALING_XSC and SCALING_YSC register settings,
+  // so image scaling settings aren't corrupted.
+  uint8_t xsc = readRegister(OV7670_REG_SCALING_XSC);
+  uint8_t ysc = readRegister(OV7670_REG_SCALING_YSC);
+  if (pattern & 1) {
+    xsc |= 0x80;
+  } else {
+    xsc &= ~0x80;
+  }
+  if (pattern & 2) {
+    ysc |= 0x80;
+  } else {
+    ysc &= ~0x80;
+  }
+  // Write modified results back to SCALING_XSC and SCALING_YSC registers
+  writeRegister(OV7670_REG_SCALING_XSC, xsc);
+  writeRegister(OV7670_REG_SCALING_YSC, ysc);
 }

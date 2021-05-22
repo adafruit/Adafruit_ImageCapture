@@ -68,7 +68,7 @@ public:
   /*!
     @brief   Allocate and initialize resources behind an Adafruit_iCap_OV7670
              instance.
-    @param   colorspace  ICAP_COLOR_RGB or ICAP_COLOR_YUV.
+    @param   space       ICAP_COLOR_RGB or ICAP_COLOR_YUV.
     @param   size        Frame size as a power-of-two reduction of VGA
                          resolution. Available sizes are OV7670_SIZE_DIV1
                          (640x480), OV7670_SIZE_DIV2 (320x240),
@@ -96,7 +96,7 @@ public:
                          size exceeding the buffer size, it will fail.
     @return  Status code. ICAP_STATUS_OK on successful init.
   */
-  iCap_status begin(iCap_colorspace colorspace = ICAP_COLOR_RGB565,
+  iCap_status begin(iCap_colorspace space = ICAP_COLOR_RGB565,
                     OV7670_size size = OV7670_SIZE_DIV4, float fps = 30.0,
                     uint32_t bufsiz = 0);
 
@@ -165,6 +165,53 @@ public:
   */
   void frameControl(OV7670_size size, uint8_t vstart, uint16_t hstart,
                     uint8_t edge_offset, uint8_t pclk_delay);
+
+  /*!
+    @brief  Select one of the camera's night modes. Images are less
+            grainy in low light, tradeoff being a reduced frame rate.
+    @param  night  One of the OV7670_night_mode types:
+                   OV7670_NIGHT_MODE_OFF  Disable night mode, full frame rate
+                   OV7670_NIGHT_MODE_2    1/2 frame rate
+                   OV7670_NIGHT_MODE_4    1/4 frame rate
+                   OV7670_NIGHT_MODE_8    1/8 frame rate
+  */
+  void night(OV7670_night_mode night);
+
+  /*!
+    @brief  Flip camera output on horizontal and/or vertical axes.
+            Flipping both axes is equivalent to 180 degree rotation.
+    @param  flip_x  If true, flip camera output on horizontal axis.
+    @param  flip_y  If true, flip camera output on vertical axis.
+    @note   Datasheet refers to horizontal flip as "mirroring," but
+            avoiding that terminology here that it might be mistaken for a
+            split-down-middle-and-reflect funhouse effect, which it isn't.
+  */
+  void flip(bool flip_x, bool flip_y);
+
+  /*!
+    @brief  Enable/disable camera test pattern output.
+    @param  pattern  One of the OV7670_pattern values:
+                     OV7670_TEST_PATTERN_NONE
+                       Disable test pattern, display normal camera video.
+                     OV7670_TEST_PATTERN_SHIFTING_1
+                       "Shifting 1" test pattern (seems to be single-column
+                       vertical RGB lines).
+                     OV7670_TEST_PATTERN_COLOR_BAR
+                       Eight color bars.
+                     OV7670_TEST_PATTERN_COLOR_BAR_FADE
+                       Eight color bars with fade to white.
+    @note   This basically works but has some artifacts...color bars are
+            wrapped around such that a few pixels of the leftmost (white)
+            bar appear at to the right of the rightmost (black) bar. It
+            seems that the frame control settings need to be slightly
+            different for image sensor vs test patterns (frame control
+            that displays the bars correctly has green artifacts along
+            right edge when using image sensor). Eventually will want to
+            make this handle the different cases and sizes correctly.
+            In the meantime, there's minor uglies in test mode.
+            Similar issue occurs with image flips.
+  */
+  void test_pattern(OV7670_pattern pattern);
 
 private:
 };

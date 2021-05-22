@@ -13,8 +13,8 @@ Adafruit_iCap_parallel::Adafruit_iCap_parallel(iCap_parallel_pins *pins_ptr,
 
 Adafruit_iCap_parallel::~Adafruit_iCap_parallel() {}
 
-iCap_status Adafruit_iCap_parallel::begin() {
-  iCap_status status = Adafruit_ImageCapture::begin();
+iCap_status Adafruit_iCap_parallel::begin(iCap_colorspace space) {
+  iCap_status status = Adafruit_ImageCapture::begin(space);
   if (status != ICAP_STATUS_OK) {
     return status;
   }

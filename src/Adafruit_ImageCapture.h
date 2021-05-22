@@ -45,13 +45,6 @@ typedef enum {
   ICAP_REALLOC_LARGER,   ///< Realloc only if new size is larger
 } iCap_realloc;
 
-#include "Adafruit_iCap_ImageOps.h"
-
-// #ifdef check here is because Adafruit_iCap_ImageOps.c includes THIS file
-// (to pick up the iCap enumerations above) and NOT Adafruit_iCap_ImageOps.h
-// (indirectly included above).
-#ifdef __cplusplus
-
 /*!
     @brief  Class encapsulating common image sensor functionality.
 */
@@ -74,8 +67,10 @@ public:
     @brief   Allocate and initialize resources behind an
              Adafruit_ImageCapture instance.
     @return  Status code. ICAP_STATUS_OK on successful init.
+    @param   space  One of the iCap_colorspace enumeration values; currently
+                    has settings for RGB or YUV, 16 bits per pixel.
   */
-  iCap_status begin(void);
+  iCap_status begin(iCap_colorspace space);
 
   /*!
     @brief   Get image width of camera's current resolution setting.
@@ -95,15 +90,87 @@ public:
   */
   uint16_t *getBuffer(void) { return buffer[0]; }
 
+  /*!
+    @brief  Produces a negative image. This is a postprocessing effect,
+            not in-camera, and must be applied to frame(s) manually.
+            Image in memory will be overwritten.
+  */
+  void image_negative(void);
+
+  /*!
+    @brief  Decimate an image to only it's min/max values (ostensibly
+            "black and white," but works on color channels separately
+            so that's not strictly the case). This is a postprocessing
+            effect, not in-camera, and must be applied to frame(s) manually.
+            Image in memory will be overwritten.
+    @param  threshold  Threshold level, 0-255; pixel brightnesses at or
+                       above this level are set to the maximum, below this
+                       level are set to the minimum. Input value is scaled
+                       to accommodate the lower color fidelity of the RGB
+                       colorspace -- use 0 to 255, not 0 to 31 or 63.
+  */
+  void image_threshold(uint8_t threshold = 128);
+
+  /*!
+    @brief  Decimate an image to a limited number of brightness levels or
+            steps. This is a postprocessing effect, not in-camera, and must
+            be applied to frame(s) manually. Image in memory will be
+            overwritten.
+    @param  levels  Number of brightness levels -- 2 to 32 for RGB
+                    colorspace, 2 to 255 for YUV.
+  */
+  void image_posterize(uint8_t levels = 4);
+
+  /*!
+    @brief  Mosaic or "shower door effect," downsamples an image into
+            rectangular tiles, each tile's color being the average of all
+            source image pixels within that tile's area. This is a
+            postprocessing effect, not in-camera, and must be applied to
+            frame(s) manually. Image in memory will be overwritten. If
+            image size does not divide equally by tile size, fractional
+            tiles will always be along the right and/or bottom edge(s);
+            top left corner is always a full tile.
+            YUV colorspace is not currently supported.
+    @param  tile_width   Tile width in pixels (1 to 255)
+    @param  tile_height  Tile height in pixels (1 to 255)
+  */
+  void image_mosaic(uint8_t tile_width = 8, uint8_t tile_height = 8);
+
+  /*!
+    @brief  3x3 pixel median filter, reduces visual noise in image.
+            This is a postprocessing effect, not in-camera, and must be
+            applied to frame(s) manually. Image in memory will be
+            overwritten. YUV colorspace is not currently supported.
+  */
+  void image_median(void);
+
+  /*!
+    @brief  Edge detection filter.
+            This is a postprocessing effect, not in-camera, and must be
+            applied to frame(s) manually. Image in memory will be
+            overwritten. YUV colorspace is not currently supported.
+    @param  sensitivity  Smaller value = more sensitive to edge changes.
+  */
+  void image_edges(uint8_t sensitivity = 7);
+
+  /*!
+    @brief  Convert Y (brightness) component YUV image in RAM to RGB565
+            big-endian format for preview on TFT display. Camera buffer is
+            overwritten in-place, Y is truncated and UV elements are lost.
+            No practical use outside TFT preview. If you need actual
+            grayscale 0-255 data, just access the low byte of each 16-bit
+            YUV pixel.
+  */
+  void Y2RGB565(void);
+
 protected:
   uint16_t *buffer[2] = {NULL, NULL}; ///< Camera buffer(s) allocated by lib
   uint32_t buffer_size = 0;           ///< Size of camera buffer, in bytes
   uint16_t _width = 0;                ///< Current settings width in pixels
   uint16_t _height = 0;               ///< Current settings height in pixels
+  iCap_colorspace colorspace;         ///< Colorspace passed to begin()
   iCap_arch *arch = NULL;             ///< Device-specific data, if needed
 #if 0
   uint8_t active_buffer;     ///< If double buffering, which index is capturing
 #endif
 };
-
-#endif // __cplusplus

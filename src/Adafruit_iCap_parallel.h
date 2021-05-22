@@ -60,8 +60,10 @@ public:
     @brief   Allocate and initialize resources behind an Adafruit_OV7670
              instance.
     @return  Status code. ICAP_STATUS_OK on successful init.
+    @param   space  One of the iCap_colorspace enumeration values,
+                    passed through to Adafruit_ImageCapture::begin().
   */
-  iCap_status begin();
+  iCap_status begin(iCap_colorspace space);
 
   /*!
     @brief   Reads value of one register from the camera over I2C.

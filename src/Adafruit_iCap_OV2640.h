@@ -36,7 +36,7 @@ public:
   /*!
     @brief   Allocate and initialize resources behind an Adafruit_OV2640
              instance.
-    @param   colorspace  ICAP_COLOR_RGB or ICAP_COLOR_YUV.
+    @param   space       ICAP_COLOR_RGB or ICAP_COLOR_YUV.
     @param   size        Frame size as a OV2640_size enum value.
     @param   fps         Desired capture framerate, in frames per second,
                          as a float up to 30.0. Actual device frame rate may
@@ -53,7 +53,7 @@ public:
 
     @return  Status code. ICAP_STATUS_OK on successful init.
   */
-  iCap_status begin(iCap_colorspace colorspace = ICAP_COLOR_RGB565,
+  iCap_status begin(iCap_colorspace space = ICAP_COLOR_RGB565,
                     OV2640_size size = OV2640_SIZE_QQVGA, float fps = 30.0,
                     uint32_t bufsiz = 0);
 

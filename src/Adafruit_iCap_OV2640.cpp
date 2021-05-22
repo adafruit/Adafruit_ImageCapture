@@ -461,9 +461,8 @@ static const iCap_parallel_config OV2640_init[] = {
         {0xE1, 0x67},               // seen in other examples
         {OV2640_REG0_RESET, 0x00}}; // Go
 
-iCap_status Adafruit_iCap_OV2640::begin(iCap_colorspace colorspace,
-                                        OV2640_size size, float fps,
-                                        uint32_t bufsiz) {
+iCap_status Adafruit_iCap_OV2640::begin(iCap_colorspace space, OV2640_size size,
+                                        float fps, uint32_t bufsiz) {
   iCap_status status;
 
   // Sets up width & height vars, doesn't yet issue commands
@@ -473,7 +472,7 @@ iCap_status Adafruit_iCap_OV2640::begin(iCap_colorspace colorspace,
   }
 
   // Initialize memory, peripherals for parallel+I2C camera:
-  status = Adafruit_iCap_parallel::begin();
+  status = Adafruit_iCap_parallel::begin(space);
   if (status != ICAP_STATUS_OK) {
     return status;
   }
