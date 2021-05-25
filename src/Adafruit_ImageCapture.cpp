@@ -51,7 +51,7 @@ void Adafruit_ImageCapture::image_negative() {
   // on a 32-bit-safe boundary. This is one of those operations that
   // can probably be implemented through the camera's gamma curve
   // settings, and if so this function will go away.
-  uint32_t *p32 = (uint32_t *)buffer;
+  uint32_t *p32 = (uint32_t *)buffer[0];
   uint32_t i, num_pairs = _width * _height / 2;
   for (i = 0; i < num_pairs; i++) {
     p32[i] ^= 0xFFFFFFFF;
