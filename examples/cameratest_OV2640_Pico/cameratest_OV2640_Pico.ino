@@ -16,8 +16,6 @@ HARDWARE REQUIRED:
 
 // CAMERA CONFIG -----------------------------------------------------------
 
-// Might put a DMA endian thing in the arch struct
-
 // Set up arch and pins structures for Pico RP2040.
 iCap_arch arch = {
   .pio = pio0, // Which PIO peripheral to use (pio0 or pio1)

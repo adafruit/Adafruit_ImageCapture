@@ -1,7 +1,7 @@
 #if defined(ARDUINO_ARCH_RP2040)
 /*
-Adafruit_ImageCapture example for Pico RP2040 + ST7789 240x240 display.
-Simple camera test - input is shown on display.
+Adafruit_iCap_OV7670 example for Pico RP2040 + ST7789 240x240 display.
+Same as cameratest, except also acts as an I2C peripheral.
 
 HARDWARE REQUIRED:
 - Raspberry Pi Pico RP2040
@@ -40,6 +40,13 @@ OV7670_pins pins = {
 #define CAM_MODE ICAP_COLOR_RGB565 // RGB plz
 
 Adafruit_iCap_OV7670 cam(pins, CAM_I2C, &arch);
+
+// I2C PERIPH CONFIG -------------------------------------------------------
+
+#define PERIPH_SDA 26
+#define PERIPH_SCL 27
+#define PERIPH_I2C Wire1
+#define PERIPH_ADDR 0x55
 
 // DISPLAY CONFIG ----------------------------------------------------------
 
@@ -81,6 +88,14 @@ void setup() {
   uint8_t ver = cam.readRegister(OV7670_REG_VER); // Should be 0x73
   Serial.println(pid, HEX);
   Serial.println(ver, HEX);
+
+  // Pico acts as an I2C peripheral on a second bus
+  // (since first is tied up with camera)
+  PERIPH_I2C.setSDA(PERIPH_SDA);
+  PERIPH_I2C.setSCL(PERIPH_SCL);
+  PERIPH_I2C.begin(PERIPH_ADDR);
+  PERIPH_I2C.onRequest(requestEvent);
+  PERIPH_I2C.onReceive(receiveEvent);
 }
 
 // MAIN LOOP - RUNS REPEATEDLY UNTIL RESET OR POWER OFF --------------------
@@ -133,6 +148,23 @@ void loop() {
   tft.writePixels(cam.getBuffer(), cam.width() * cam.height(), false, true);
 
   //cam.resume(); // Resume DMA into camera buffer
+}
+
+// I2C CALLBACKS -----------------------------------------------------------
+
+uint8_t buf[] = {17, 42, 88, 128};
+
+void requestEvent() {
+  Serial.println("Request");
+  Wire1.write(buf, sizeof buf);
+}
+
+void receiveEvent(int howMany) {
+  Serial.print("Receive ");
+  Serial.println(howMany);
+  while(howMany--) {
+    Serial.println(Wire1.read(), HEX);
+  }
 }
 #else
 // Empty code to make this pass CI for now
