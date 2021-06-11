@@ -24,6 +24,7 @@ typedef enum {
   ICAP_STATUS_ERR_MALLOC,     ///< malloc() or realloc() call failed
   ICAP_STATUS_ERR_PERIPHERAL, ///< Peripheral (e.g. timer) not found
   ICAP_STATUS_ERR_PINS,       ///< Pin config doesn't align with peripheral(s)
+  ICAP_STATUS_ERR_TIMEOUT,    ///< Function didn't complete in expected time
 } iCap_status;
 
 // Must include ALL arch headers here (each has #ifdef checks for specific

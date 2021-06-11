@@ -15,6 +15,8 @@
 
 #pragma once
 
+#include "Adafruit_ImageCapture.h"
+
 #define ICAP_DEFAULT_ADDRESS 0x55 //< I2C peripheral address
 
 /** I2C command bytes passed from host to peripheral, MUST remain in sync */

@@ -46,7 +46,7 @@ uint32_t status; // Return value of last camera func call
 
 #define PERIPH_SDA 26
 #define PERIPH_SCL 27
-#define PERIPH_ADDR 0x55
+#define PERIPH_ADDR ICAP_DEFAULT_ADDRESS
 TwoWire *periphI2C = &Wire1;
 
 // I2C CALLBACKS -----------------------------------------------------------
@@ -86,7 +86,7 @@ void receiveCallback(int howMany) {
 
   switch (cmd) {
 
-    case 0x10: // Start camera
+    case ICAP_CMD_START: // Start camera
       Serial.printf("Start camera %02X %02X %02X\n", camBuf[0], camBuf[1], camBuf[2]);
       if (!camState) {
         // For now we'll treat mode, size and framerate as byte values.
@@ -105,7 +105,7 @@ void receiveCallback(int howMany) {
       }
       break;
 
-    case 0x11: // Poll camera ready state
+    case ICAP_CMD_READY: // Poll camera ready state
       // Host-side code SHOULD NOT DO ANY OTHER CAM COMMANDS
       // until the return state is >1! This code should maybe
       // check for that.
@@ -114,13 +114,13 @@ void receiveCallback(int howMany) {
       reqLen = 1;          // subsequent requestCallback()
       break;
 
-    case 0x20: // Return last status (will be followed by a requestCallback())
+    case ICAP_CMD_STATUS: // Return last status (will be followed by a requestCallback())
       Serial.println("Return last status");
       reqAddr = (uint8_t *)&status;            // Set up pointer & len for
       reqLen = 4;                              // subsequent requestCallback()
       break;
 
-    case 0x30: // Read register (will be followed by a requestCallback())
+    case ICAP_CMD_READ_REG: // Read register (will be followed by a requestCallback())
       Serial.println("Read camera register");
       if ((readInto((uint8_t *)camBuf, 1) == 1) && camState > 1) {  // Register to read
         Serial.printf("Register = %02x\n", camBuf[0]);
@@ -131,20 +131,20 @@ void receiveCallback(int howMany) {
       }
       break;
 
-    case 0x40: // Capture frame
+    case ICAP_CMD_WRITE_REG: // Write register(s)
+      break;
+
+    case ICAP_CMD_CAPTURE: // Capture frame
       // Pause the camera DMA - hold buffer steady to avoid tearing
       //cam.suspend();
       break;
 
-    case 0x50: // Request frame data
+    case ICAP_CMD_GET_DATA: // Request frame data
       // Probably will have start & len here, with xfer broken into small pieces
       break;
 
-    case 0x60: // Resume camera
+    case ICAP_CMD_RESUME: // Resume camera
       //cam.resume(); // Resume DMA into camera buffer
-      break;
-
-    case 0x70: // Pass I2C sequence to camera
       break;
   }
 

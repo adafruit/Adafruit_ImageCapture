@@ -16,14 +16,27 @@
 #pragma once
 
 #include <stdint.h>
+#include <Wire.h>
 #include "Adafruit_iCap_I2C.h"
+#if !defined(BUFFER_LENGTH)
+#define BUFFER_LENGTH 256
+#endif
 
 class Adafruit_iCap_peripheral {
 public:
-  Adafruit_iCap_peripheral();
+  Adafruit_iCap_peripheral(uint8_t addr = ICAP_DEFAULT_ADDRESS,
+                           TwoWire *w = &Wire, uint32_t s = 100000);
   ~Adafruit_iCap_peripheral(); // Destructor
-  void begin(uint8_t address = ICAP_DEFAULT_ADDRESS);
+  void begin();
+  int cameraStart(uint8_t mode, uint8_t size, float fps,
+                  uint32_t timeout_ms = 3000);
+  int status();
+  int readRegister(uint8_t reg);
+
 protected:
-  uint8_t i2c_address;
+  TwoWire *wire;                     //< Pointer to I2C periph (e.g. &Wire)
+  uint32_t i2c_speed;                //< I2C data rate, bps (e.g. 100000)
+  uint8_t i2c_buffer[BUFFER_LENGTH]; //< TX/RX buffer, size from Wire lib
+  uint8_t i2c_address;               //< I2C peripheral address
 };
 
