@@ -79,7 +79,12 @@ int readInto(uint8_t *addr, int len) {
 
 void receiveEvent(int howMany) {
   Serial.printf("receiveEvent() callback, %d bytes\n", howMany);
+  Serial.flush(); delay(100); Serial.flush();
+  // Why does this hang here? Makes no sense.
+  Serial.printf("periphI2C address is %08X\n", (uint32_t)periphI2C);
+  Serial.flush(); delay(100); Serial.flush();
   Serial.printf("howMany: %d, available(): %d\n", howMany, periphI2C->available());
+  Serial.flush(); delay(100); Serial.flush();
   if (!howMany) return;
 
   int cmd = periphI2C->read();
@@ -155,6 +160,7 @@ void setup() {
   periphI2C->setSDA(PERIPH_SDA);
   periphI2C->setSCL(PERIPH_SCL);
   periphI2C->begin(PERIPH_ADDR);
+  periphI2C->setClock(100000);
   periphI2C->onRequest(requestEvent);
   periphI2C->onReceive(receiveEvent);
 }
@@ -183,6 +189,9 @@ void setup() {
 
 void loop() {
   // Nothing to do here, everything's I2C callback-based
+
+  Serial.println("."); // Heartbeat
+  delay(500);
 }
 
 

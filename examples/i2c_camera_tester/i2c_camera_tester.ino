@@ -14,6 +14,7 @@ void setup() {
   Serial.println("HOST BOARD STARTED");
 
   Wire.begin();
+  Wire.setClock(100000);
 
   // Start camera, check response
 
