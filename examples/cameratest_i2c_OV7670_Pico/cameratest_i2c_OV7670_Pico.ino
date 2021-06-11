@@ -6,6 +6,12 @@
 // UPDATE: declaring the camera structs & objects is OK.
 // Problem occurs when camera is started. Have verified that the
 // arguments (mode, size & framerate) are OK.
+// UPDATE 2: problem appears to be with starting the camera inside the
+// I2C callback. A kludgey fix that seems to work is to have a volatile
+// state variable that instead starts the camera in loop() when requested
+// by the I2C callback. Alternative would require finding out why cam lib
+// doesn't allow start from callback...probably something needs to be
+// volatile or who-knows-what.
 
 #if defined(ARDUINO_ARCH_RP2040)
 /*
@@ -23,6 +29,8 @@ HARDWARE REQUIRED:
 
 #include <Wire.h>
 #include <Adafruit_iCap_OV7670.h> // Camera library
+
+static uint8_t camState = 0; // Cam not started
 
 // CAMERA CONFIG -----------------------------------------------------------
 
@@ -96,17 +104,19 @@ void receiveCallback(int howMany) {
 
   switch (cmd) {
 
-#if 0
+#if 1
 // "Real" camera start - DOES NOT WORK
     case 0x10: // Start camera
       if (!camStarted) {
+Serial.println("Hey");
         // For now we'll treat mode, size and framerate as byte values.
         // That's OK for the former, but might want fractional rates later.
         if (readInto((uint8_t *)camBuf, 3) == 3) {
           // Have confirmed expected bytes are arriving (0, 2, 30)
-          status = cam.begin((iCap_colorspace)camBuf[0], (OV7670_size)camBuf[1], (float)camBuf[3]);
-          if (status == ICAP_STATUS_OK)
-            camStarted = true;
+camState = 1; // Plz start camera in loop()
+//         status = cam.begin((iCap_colorspace)camBuf[0], (OV7670_size)camBuf[1], (float)camBuf[3]);
+//         if (status == ICAP_STATUS_OK)
+//           camStarted = true;
         }
       }
       break;
@@ -128,11 +138,21 @@ void receiveCallback(int howMany) {
       break;
 
     case 0x30: // Read register (will be followed by a requestCallback())
+#if 1
+// "Real" register read from camera
+      if ((readInto((uint8_t *)camBuf, 1) == 1) && camStarted) {  // Register to read
+        camBuf[0] = cam.readRegister(camBuf[0]); // Read from cam, put in buf
+        reqAddr = camBuf;                        // Set up pointer & len for
+        reqLen = 1;                              // subsequent requestCallback()
+      }
+#else
+// "Dummy" register read (sends a fake response value)
       if ((readInto((uint8_t *)camBuf, 1) == 1) && camStarted) {  // Register to read
         camBuf[0] = 42; // Fake register value for testing
         reqAddr = camBuf;                        // Set up pointer & len for
         reqLen = 1;                              // subsequent requestCallback()
       }
+#endif
       break;
 
     case 0x40: // Capture frame
@@ -176,12 +196,30 @@ void setup() {
   periphI2C->setClock(100000);
   periphI2C->onRequest(requestCallback);
   periphI2C->onReceive(receiveCallback);
+
+// EXPERIMENT: start camera before I2C commands
+//  status = cam.begin((iCap_colorspace)0, (OV7670_size)2, (float)30);
+//  if (status == ICAP_STATUS_OK)
+//    camStarted = true;
 }
 
 // MAIN LOOP - RUNS REPEATEDLY UNTIL RESET OR POWER OFF --------------------
 
 void loop() {
   // Nothing to do here, everything's I2C callback-based
+
+  if (camState == 1) {
+    Serial.println("STARTING CAMERA");
+    status = cam.begin((iCap_colorspace)camBuf[0], (OV7670_size)camBuf[1], (float)camBuf[3]);
+    if (status == ICAP_STATUS_OK) {
+      Serial.println("CAMERA IS OK");
+      camStarted = true;
+      camState = 2;
+    } else {
+      Serial.println("CAMERA FAIL");
+      camState = 0;
+    }
+  }
 
   Serial.println("."); // Heartbeat
   delay(500);
