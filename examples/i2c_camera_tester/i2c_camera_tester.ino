@@ -35,8 +35,10 @@ void setup() {
   // Wait for camera ready
   // (to do: should add timeout here)
   int status = 0;
+  uint32_t startTime = millis();
   do {
     camBuf[0] = 0x11; // Poll camera ready state
+    delay(100); // Don't hit it too fast, else trouble
     Wire.beginTransmission(CAM_ADDR);
     Wire.write(camBuf, 1);
     Wire.endTransmission();
@@ -44,7 +46,11 @@ void setup() {
     if (Wire.available() >= 1) {
       status = Wire.read();
     }
-  } while(!status);
+  } while((status < 2) && ((millis() - startTime) < 3000));
+  if(status < 2) {
+    Serial.println("Camera failed to start");
+    for(;;);
+  }
 
   camBuf[0] = 0x20; // Request status
   Wire.beginTransmission(CAM_ADDR);
