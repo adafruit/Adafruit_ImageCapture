@@ -32,6 +32,20 @@ void setup() {
   Wire.write(camBuf, 4);
   Wire.endTransmission();
 
+  // Wait for camera ready
+  // (to do: should add timeout here)
+  int status = 0;
+  do {
+    camBuf[0] = 0x11; // Poll camera ready state
+    Wire.beginTransmission(CAM_ADDR);
+    Wire.write(camBuf, 1);
+    Wire.endTransmission();
+    Wire.requestFrom(CAM_ADDR, 1);
+    if (Wire.available() >= 1) {
+      status = Wire.read();
+    }
+  } while(!status);
+
   camBuf[0] = 0x20; // Request status
   Wire.beginTransmission(CAM_ADDR);
   Wire.write(camBuf, 1);

@@ -30,7 +30,7 @@ HARDWARE REQUIRED:
 #include <Wire.h>
 #include <Adafruit_iCap_OV7670.h> // Camera library
 
-static uint8_t camState = 0; // Cam not started
+volatile uint8_t camState = 0; // Cam not started
 
 // CAMERA CONFIG -----------------------------------------------------------
 
