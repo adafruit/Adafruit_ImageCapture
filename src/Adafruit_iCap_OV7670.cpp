@@ -1,6 +1,8 @@
 #include <Adafruit_iCap_OV7670.h>
 #include <Arduino.h>
 
+#if defined(ICAP_FULL_SUPPORT)
+
 Adafruit_iCap_OV7670::Adafruit_iCap_OV7670(OV7670_pins &pins, TwoWire &twi,
                                            iCap_arch *arch, uint8_t addr)
     : Adafruit_iCap_parallel((iCap_parallel_pins *)&pins, (TwoWire *)&twi, arch,
@@ -442,3 +444,5 @@ void Adafruit_iCap_OV7670::test_pattern(OV7670_pattern pattern) {
   writeRegister(OV7670_REG_SCALING_XSC, xsc);
   writeRegister(OV7670_REG_SCALING_YSC, ysc);
 }
+
+#endif // end ICAP_FULL_SUPPORT

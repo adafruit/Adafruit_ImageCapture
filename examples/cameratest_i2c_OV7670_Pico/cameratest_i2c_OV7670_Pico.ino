@@ -196,7 +196,7 @@ void loop() {
     }
   }
 
-  digitalWrite(25, (millis() >> 9) & 1); // LED heartbeat
+  digitalWrite(25, !((millis() >> 7) & 7)); // LED heartbeat
 }
 
 #else

@@ -2,10 +2,6 @@
 
 #include <Adafruit_iCap_parallel.h>
 
-typedef iCap_parallel_pins OV7670_pins;
-
-#define OV7670_ADDR 0x21 //< Default I2C address if unspecified
-
 // OV7670 datasheet claims 10-48 MHz clock input, with 24 MHz typical.
 // 24(ish) MHz is OK if camera connection is super clean. If any trouble,
 // try dialing this down to 16 or 12 MHz. Even 8 MHz is OK if that's what's
@@ -42,6 +38,12 @@ typedef enum {
   OV7670_NIGHT_MODE_4,       ///< Night mode 1/4 frame rate
   OV7670_NIGHT_MODE_8,       ///< Night mode 1/8 frame rate
 } OV7670_night_mode;
+
+#if defined(ICAP_FULL_SUPPORT)
+
+typedef iCap_parallel_pins OV7670_pins;
+
+#define OV7670_ADDR 0x21 //< Default I2C address if unspecified
 
 /*!
     @brief  Class encapsulating OmniVision OV7670 functionality.
@@ -215,6 +217,8 @@ public:
 
 private:
 };
+
+#endif // end ICAP_FULL_SUPPORT
 
 // OV7670 registers
 #define OV7670_REG_GAIN 0x00               //< AGC gain bits 7:0 (9:8 in VREF)

@@ -1,6 +1,9 @@
 #pragma once
 
 #include <Adafruit_ImageCapture.h>
+
+#if defined(ICAP_FULL_SUPPORT)
+
 #include <Wire.h>
 
 /** Pin identifiers for parallel+I2C cameras. */
@@ -129,3 +132,5 @@ protected:
   uint8_t i2c_address;      ///< Camera I2C address
   bool i2c_started = false; ///< Set true after I2C started
 };
+
+#endif // end ICAP_FULL_SUPPORT

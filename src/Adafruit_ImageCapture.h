@@ -32,6 +32,17 @@ typedef enum {
 #include "arch/rp2040.h"
 #include "arch/samd51.h"
 
+// If ICAP_XCLK_HZ got defined in one of the arch headers, that indicates
+// the host device can directly interface with a camera, and the whole
+// Adafruit_ImageCapture class is available. If not (e.g. AVR, SAMD21),
+// then only I2C peripheral camera support is provided (via
+// Adafruit_iCap_I2C_host.*), though some of the enums and defines in
+// these other headers may still be useful (and not likely to induce
+// bloat if they're not referenced).
+#if defined(ICAP_XCLK_HZ)
+#define ICAP_FULL_SUPPORT ///< Local device and remote I2C supported
+#endif
+
 /** Supported color formats */
 typedef enum {
   ICAP_COLOR_RGB565 = 0, ///< RGB565 big-endian
@@ -44,6 +55,8 @@ typedef enum {
   ICAP_REALLOC_CHANGE,   ///< Reallocate image buffer if size changes
   ICAP_REALLOC_LARGER,   ///< Realloc only if new size is larger
 } iCap_realloc;
+
+#if defined(ICAP_FULL_SUPPORT)
 
 /*!
     @brief  Class encapsulating common image sensor functionality.
@@ -174,3 +187,5 @@ protected:
   uint8_t active_buffer;     ///< If double buffering, which index is capturing
 #endif
 };
+
+#endif // end ICAP_FULL_SUPPORT

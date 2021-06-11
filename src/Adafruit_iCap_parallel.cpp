@@ -1,4 +1,7 @@
 #include <Adafruit_iCap_parallel.h>
+
+#if defined(ICAP_FULL_SUPPORT)
+
 #include <Arduino.h>
 
 Adafruit_iCap_parallel::Adafruit_iCap_parallel(iCap_parallel_pins *pins_ptr,
@@ -62,3 +65,5 @@ void Adafruit_iCap_parallel::writeList(const iCap_parallel_config *cfg,
     delayMicroseconds(i2c_delay_us); // Some cams require, else lockup on init
   }
 }
+
+#endif // end ICAP_FULL_SUPPORT

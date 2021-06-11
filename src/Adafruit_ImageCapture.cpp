@@ -29,6 +29,9 @@
  */
 
 #include <Adafruit_ImageCapture.h>
+
+#if defined(ICAP_FULL_SUPPORT)
+
 #include <string.h> // memcpy()
 
 Adafruit_ImageCapture::Adafruit_ImageCapture(iCap_arch *arch) : arch(arch) {}
@@ -591,3 +594,5 @@ void Adafruit_ImageCapture::Y2RGB565() {
     *pixels++ = __builtin_bswap16(rgb); // Big-endianify RGB565 for TFT
   }
 }
+
+#endif // end ICAP_FULL_SUPPORT

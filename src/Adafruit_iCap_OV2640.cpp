@@ -1,6 +1,8 @@
 #include <Adafruit_iCap_OV2640.h>
 #include <Arduino.h>
 
+#if defined(ICAP_FULL_SUPPORT)
+
 Adafruit_iCap_OV2640::Adafruit_iCap_OV2640(OV2640_pins &pins, TwoWire &twi,
                                            iCap_arch *arch, uint8_t addr)
     : Adafruit_iCap_parallel((iCap_parallel_pins *)&pins, (TwoWire *)&twi, arch,
@@ -563,3 +565,5 @@ iCap_status Adafruit_iCap_OV2640::setSize(OV2640_size size, iCap_realloc allo) {
 
   return ICAP_STATUS_OK;
 }
+
+#endif // end ICAP_FULL_SUPPORT

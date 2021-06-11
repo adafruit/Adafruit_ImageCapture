@@ -18,6 +18,7 @@ like auto camera make & model detection later.
 */
 
 #include <Wire.h>
+#include "Adafruit_iCap_I2C_host.h"
 
 #define CAM_ADDR 0x55
 

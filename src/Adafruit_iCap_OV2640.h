@@ -2,13 +2,15 @@
 
 #include <Adafruit_iCap_parallel.h>
 
-#define OV2640_ADDR 0x30 //< Default I2C address if unspecified
-typedef iCap_parallel_pins OV2640_pins;
-
 /** Supported sizes for OV2640_set_size() */
 typedef enum {
   OV2640_SIZE_QQVGA = 0, ///< 160x120
 } OV2640_size;
+
+#if defined(ICAP_FULL_SUPPORT)
+
+#define OV2640_ADDR 0x30 //< Default I2C address if unspecified
+typedef iCap_parallel_pins OV2640_pins;
 
 /*!
     @brief  Class encapsulating OmniVision OV2640 functionality.
@@ -94,6 +96,8 @@ public:
   iCap_status setSize(OV2640_size size,
                       iCap_realloc allo = ICAP_REALLOC_CHANGE);
 };
+
+#endif // end ICAP_FULL_SUPPORT
 
 #define OV2640_REG_RA_DLMT 0xFF    //< Register bank select
 #define OV2640_RA_DLMT_DSP 0x00    //< Bank 0 - DSP address
