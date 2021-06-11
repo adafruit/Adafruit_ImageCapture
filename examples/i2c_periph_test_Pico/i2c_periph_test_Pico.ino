@@ -28,17 +28,18 @@ TwoWire *periphI2C = &Wire1;
 
 // I2C CALLBACKS -----------------------------------------------------------
 
-uint8_t *reqAddr = NULL; // Pointer to data that requestCallback() will send
-int      reqLen = 0;     // Length of data "
+volatile uint8_t *reqAddr = NULL; // Pointer to data that requestCallback() will send
+volatile int      reqLen = 0;     // Length of data "
+volatile bool     camStarted = false;
+volatile uint8_t  camBuf[10];
 
 void requestCallback() {
   if (reqAddr && reqLen) {
     periphI2C->write(reqAddr, reqLen);
+    reqAddr = NULL; // Clear out vars to indicate it was sent
+    reqLen = 0;
   }
 }
-
-bool camStarted = false;
-uint8_t camBuf[10];
 
 // Read 'len' bytes from I2C into 'addr' buf
 int readInto(uint8_t *addr, int len) {
@@ -131,7 +132,6 @@ void loop() {
   Serial.println("."); // Heartbeat
   delay(500);
 }
-
 
 #else
 // Empty code to make this pass CI for now
