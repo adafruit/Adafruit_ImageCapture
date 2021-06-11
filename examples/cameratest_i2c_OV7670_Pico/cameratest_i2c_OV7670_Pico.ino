@@ -3,6 +3,9 @@
 // Then moving in small pieces of the cam-as-periph code (currently
 // #if 0'd out at the bottom of this file) and seeing where it fails,
 // or if the new periph code (w volatiles, etc.) fixed things.
+// UPDATE: declaring the camera structs & objects is OK.
+// Problem occurs when camera is started. Have verified that the
+// arguments (mode, size & framerate) are OK.
 
 #if defined(ARDUINO_ARCH_RP2040)
 /*
@@ -19,6 +22,34 @@ HARDWARE REQUIRED:
 */
 
 #include <Wire.h>
+#include <Adafruit_iCap_OV7670.h> // Camera library
+
+// CAMERA CONFIG -----------------------------------------------------------
+
+// Set up arch and pins structures for Pico RP2040.
+iCap_arch arch = {
+  .pio = pio0,   // Which PIO peripheral to use (pio0 or pio1)
+  .bswap = true, // Capture in big-endian order, can go straight to TFT
+  // Other elements are set by the library at runtime and should not be
+  // specified by user code (will be overwritten).
+};
+OV7670_pins pins = {
+  .enable = -1, // Also called PWDN, or set to -1 and tie to GND
+  .reset  = 14, // Cam reset, or set to -1 and tie to 3.3V
+  .xclk   = 13, // MCU clock out / cam clock in
+  .pclk   = 10, // Cam clock out / MCU clock in
+  .vsync  = 11, // Also called DEN1
+  .hsync  = 12, // Also called DEN2
+  .data   = {2, 3, 4, 5, 6, 7, 8, 9}, // Camera parallel data out
+  .sda    = 20, // I2C data
+  .scl    = 21, // I2C clock
+};
+
+#define CAM_I2C Wire               // I2C to camera
+#define CAM_SIZE OV7670_SIZE_DIV4  // QQVGA (160x120 pixels)
+#define CAM_MODE ICAP_COLOR_RGB565 // RGB plz
+
+Adafruit_iCap_OV7670 cam(pins, CAM_I2C, &arch);
 
 // If we were using a camera, 'status' would hold the last-returned
 // camera function response. It's just a fake uint32_t here so we
@@ -65,6 +96,22 @@ void receiveCallback(int howMany) {
 
   switch (cmd) {
 
+#if 0
+// "Real" camera start - DOES NOT WORK
+    case 0x10: // Start camera
+      if (!camStarted) {
+        // For now we'll treat mode, size and framerate as byte values.
+        // That's OK for the former, but might want fractional rates later.
+        if (readInto((uint8_t *)camBuf, 3) == 3) {
+          // Have confirmed expected bytes are arriving (0, 2, 30)
+          status = cam.begin((iCap_colorspace)camBuf[0], (OV7670_size)camBuf[1], (float)camBuf[3]);
+          if (status == ICAP_STATUS_OK)
+            camStarted = true;
+        }
+      }
+      break;
+#else
+// "Dummy" camera start (no camera, just sets fake status) - DOES WORK
     case 0x10: // Start camera
       if (!camStarted) {
         if (readInto((uint8_t *)camBuf, 3) == 3) { // Next 3 bytes are mode, size and FPS
@@ -73,6 +120,7 @@ void receiveCallback(int howMany) {
         }
       }
       break;
+#endif
 
     case 0x20: // Return last status (will be followed by a requestCallback())
       reqAddr = (uint8_t *)&status;            // Set up pointer & len for
@@ -162,51 +210,10 @@ HARDWARE REQUIRED:
 - 10K pullups on SDA+SCL pins
 */
 
-#include <Wire.h>                 // I2C comm to camera
-#include <Adafruit_iCap_OV7670.h> // Camera library
-
-// CAMERA CONFIG -----------------------------------------------------------
-
-// Set up arch and pins structures for Pico RP2040.
-iCap_arch arch = {
-  .pio = pio0,   // Which PIO peripheral to use (pio0 or pio1)
-  .bswap = true, // Capture in big-endian order, can go straight to TFT
-  // Other elements are set by the library at runtime and should not be
-  // specified by user code (will be overwritten).
-};
-OV7670_pins pins = {
-  .enable = -1, // Also called PWDN, or set to -1 and tie to GND
-  .reset  = 14, // Cam reset, or set to -1 and tie to 3.3V
-  .xclk   = 13, // MCU clock out / cam clock in
-  .pclk   = 10, // Cam clock out / MCU clock in
-  .vsync  = 11, // Also called DEN1
-  .hsync  = 12, // Also called DEN2
-  .data   = {2, 3, 4, 5, 6, 7, 8, 9}, // Camera parallel data out
-  .sda    = 20, // I2C data
-  .scl    = 21, // I2C clock
-};
-
-#define CAM_I2C Wire               // I2C to camera
-#define CAM_SIZE OV7670_SIZE_DIV4  // QQVGA (160x120 pixels)
-#define CAM_MODE ICAP_COLOR_RGB565 // RGB plz
-
-Adafruit_iCap_OV7670 cam(pins, CAM_I2C, &arch);
-
 //iCap_status status; // Return value of last camera func call
 uint32_t status; // Return value of last camera func call
 
-// I2C PERIPH CONFIG -------------------------------------------------------
-
-#define PERIPH_SDA 26
-#define PERIPH_SCL 27
-#define PERIPH_I2C Wire1
-#define PERIPH_ADDR 0x55
-TwoWire *periphI2C = &Wire1;
-
 // I2C CALLBACKS -----------------------------------------------------------
-
-uint8_t *reqAddr = NULL; // Pointer to data that requestCallback() will send
-int      reqLen = 0;     // Length of data "
 
 void requestCallback() {
   Serial.printf("requestCallback(), reqAddr=%08x, reqLen=%d\n", (uint32_t)reqAddr, reqLen);
@@ -214,9 +221,6 @@ void requestCallback() {
     periphI2C->write(reqAddr, reqLen);
   }
 }
-
-bool camStarted = false;
-uint8_t camBuf[10];
 
 // Read 'len' bytes from I2C into 'addr' buf
 int readInto(uint8_t *addr, int len) {
