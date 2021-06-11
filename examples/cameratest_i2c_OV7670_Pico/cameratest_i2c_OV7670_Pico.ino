@@ -82,8 +82,8 @@ void receiveCallback(int howMany) {
   Serial.printf("receiveCallback(), %d bytes\n", howMany);
   // Why does this hang here? Makes no sense.
   // I’m getting a correct "howMany" value (e.g. 4 bytes)
-  // and then it freezes. Address is not printed. Heartbeat
-  // in loop() function stops.
+  // and then it freezes. Address is not printed.
+  // Heartbeat in loop() function stops. Total lockup?
   Serial.flush(); delay(100); Serial.flush();
   Serial.printf("periphI2C address is %08X\n", (uint32_t)periphI2C);
   Serial.flush(); delay(100); Serial.flush();
