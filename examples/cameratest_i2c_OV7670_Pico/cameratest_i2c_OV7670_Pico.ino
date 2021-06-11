@@ -79,6 +79,7 @@ int readInto(uint8_t *addr, int len) {
 
 void receiveEvent(int howMany) {
   Serial.printf("receiveEvent() callback, %d bytes\n", howMany);
+  Serial.printf("howMany: %d, available(): %d\n", howMany, periphI2C->available());
   if (!howMany) return;
 
   int cmd = periphI2C->read();
