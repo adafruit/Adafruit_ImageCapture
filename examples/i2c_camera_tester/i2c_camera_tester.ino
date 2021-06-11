@@ -2,6 +2,21 @@
 // running the cameratest_i2c_OV7670_Pico sketch.
 // (Both boards run concurrently, talking over I2C)
 
+/*
+NOTES TO SELF:
+Start librarifying these I2C transactions, because they're
+gonna get awkward FAST. Prob 2 headers, one for cam I2C host &
+peripheral (enumerates things like the connand bytes), and one
+specifically for host (to encapsulate the ugly code below into
+easy functions).
+
+Consider changing the cam lib so PWM can be independently
+initialized before starting up the whole camera capture deal.
+This would allow registers to be read & written (camera needs
+clock input via PWM to run its own I2C) and might allow things
+like auto camera make & model detection later.
+*/
+
 #include <Wire.h>
 
 #define CAM_ADDR 0x55
