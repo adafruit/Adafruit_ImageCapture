@@ -2,6 +2,7 @@
 /*
 OV7670 + Pico RP2040 acting as an I2C peripheral.
 No display; I2C host supplies that.
+Works with companion i2c_camera_tester sketch.
 
 HARDWARE REQUIRED:
 - Raspberry Pi Pico RP2040
@@ -33,7 +34,7 @@ OV7670_pins pins = {
   .scl    = 21, // I2C clock
 };
 
-#define CAM_I2C Wire
+#define CAM_I2C Wire               // I2C to camera
 #define CAM_SIZE OV7670_SIZE_DIV4  // QQVGA (160x120 pixels)
 #define CAM_MODE ICAP_COLOR_RGB565 // RGB plz
 
@@ -52,11 +53,11 @@ TwoWire *periphI2C = &Wire1;
 
 // I2C CALLBACKS -----------------------------------------------------------
 
-uint8_t *reqAddr = NULL; // Pointer to data that requestEvent() will send
+uint8_t *reqAddr = NULL; // Pointer to data that requestCallback() will send
 int      reqLen = 0;     // Length of data "
 
-void requestEvent() {
-  Serial.printf("requestEvent() callback, reqAddr=%08x, reqLen=%d\n", (uint32_t)reqAddr, reqLen);
+void requestCallback() {
+  Serial.printf("requestCallback(), reqAddr=%08x, reqLen=%d\n", (uint32_t)reqAddr, reqLen);
   if (reqAddr && reqLen) {
     periphI2C->write(reqAddr, reqLen);
   }
@@ -77,10 +78,13 @@ int readInto(uint8_t *addr, int len) {
   return i;
 }
 
-void receiveEvent(int howMany) {
-  Serial.printf("receiveEvent() callback, %d bytes\n", howMany);
-  Serial.flush(); delay(100); Serial.flush();
+void receiveCallback(int howMany) {
+  Serial.printf("receiveCallback(), %d bytes\n", howMany);
   // Why does this hang here? Makes no sense.
+  // I’m getting a correct "howMany" value (e.g. 4 bytes)
+  // and then it freezes. Address is not printed. Heartbeat
+  // in loop() function stops.
+  Serial.flush(); delay(100); Serial.flush();
   Serial.printf("periphI2C address is %08X\n", (uint32_t)periphI2C);
   Serial.flush(); delay(100); Serial.flush();
   Serial.printf("howMany: %d, available(): %d\n", howMany, periphI2C->available());
@@ -105,20 +109,20 @@ void receiveEvent(int howMany) {
       }
       break;
 
-    case 0x20: // Return last status (will be followed by a requestEvent())
+    case 0x20: // Return last status (will be followed by a requestCallback())
       Serial.println("Return last status");
       reqAddr = (uint8_t *)&status;            // Set up pointer & len for
-      reqLen = 4;                              // subsequent requestEvent()
+      reqLen = 4;                              // subsequent requestCallback()
       break;
 
-    case 0x30: // Read register (will be followed by a requestEvent())
+    case 0x30: // Read register (will be followed by a requestCallback())
       Serial.println("Read camera register");
       if ((readInto(camBuf, 1) == 1) && camStarted) {  // Register to read
         Serial.printf("Register = %02x\n", camBuf[0]);
         camBuf[0] = cam.readRegister(camBuf[0]); // Read from cam, put in buf
         Serial.printf("Value = %02x\n", camBuf[0]);
         reqAddr = camBuf;                        // Set up pointer & len for
-        reqLen = 1;                              // subsequent requestEvent()
+        reqLen = 1;                              // subsequent requestCallback()
       }
       break;
 
@@ -161,8 +165,8 @@ void setup() {
   periphI2C->setSCL(PERIPH_SCL);
   periphI2C->begin(PERIPH_ADDR);
   periphI2C->setClock(100000);
-  periphI2C->onRequest(requestEvent);
-  periphI2C->onReceive(receiveEvent);
+  periphI2C->onRequest(requestCallback);
+  periphI2C->onReceive(receiveCallback);
 }
 
 #if 0
