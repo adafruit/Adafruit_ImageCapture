@@ -12,6 +12,7 @@ HARDWARE REQUIRED:
 
 #include <Wire.h>
 #include <Adafruit_iCap_OV7670.h> // Camera library
+#include <Adafruit_iCap_I2C.h>
 
 // CAMERA CONFIG -----------------------------------------------------------
 
@@ -77,6 +78,9 @@ int readInto(uint8_t *addr, int len) {
   return i; // bytes read
 }
 
+volatile uint32_t capturedBytesTotal = 0;
+volatile uint32_t capturedBytesSent = 0;
+
 void receiveCallback(int howMany) {
   Serial.printf("receiveCallback() howMany: %d, available(): %d\n", howMany, periphI2C->available());
   if (!howMany) return;
@@ -132,19 +136,51 @@ void receiveCallback(int howMany) {
       break;
 
     case ICAP_CMD_WRITE_REG: // Write register(s)
+      Serial.println("Write camera register(s)");
+      // First reg, length
+      if ((readInto((uint8_t *)camBuf, 2) == 2) && camState > 1) {
+        uint8_t reg = camBuf[0];
+        uint8_t len = camBuf[1];
+        Serial.printf("%d bytes starting at %02x\n", len, reg);
+        if (readInto((uint8_t *)camBuf, len) == len) {
+          for(int i=0; i<len; i++) {
+            cam.writeRegister(reg + i, camBuf[i]);
+          }
+        }
+      }
       break;
 
-    case ICAP_CMD_CAPTURE: // Capture frame
-      // Pause the camera DMA - hold buffer steady to avoid tearing
-      //cam.suspend();
+    case ICAP_CMD_CAPTURE: // Capture frame (will be followed by a requestCallback())
+      if(camState > 1) {
+        Serial.println("Capturing");
+        cam.suspend(); // Pause camera DMA, hold buffer steady to avoid tearing
+        capturedBytesTotal = cam.width() * cam.height() * 2;
+        capturedBytesSent = 0;
+        camBuf[0] = capturedBytesTotal;
+        camBuf[1] = capturedBytesTotal >> 8;
+        camBuf[2] = capturedBytesTotal >> 16;
+        camBuf[3] = capturedBytesTotal >> 24;
+        reqAddr = camBuf;                        // Set up pointer & len for
+        reqLen = 4;                              // subsequent requestCallback()
+      }
+      // Will this require polling cam state on the host end?
       break;
 
     case ICAP_CMD_GET_DATA: // Request frame data
-      // Probably will have start & len here, with xfer broken into small pieces
+      if ((readInto((uint8_t *)camBuf, 1) == 1) && camState > 1) {
+        uint8_t len = camBuf[1];
+        Serial.printf("Requested %d bytes of image\n", len);
+        uint32_t capturedBytesRemaining = capturedBytesTotal - capturedBytesSent;
+        uint8_t bytesThisPass = (capturedBytesRemaining < len) ? capturedBytesRemaining : len;
+        if (readInto((uint8_t *)camBuf, bytesThisPass) == bytesThisPass) {
+          reqAddr = camBuf;
+          reqLen = bytesThisPass;
+        }
+      }
       break;
 
     case ICAP_CMD_RESUME: // Resume camera
-      //cam.resume(); // Resume DMA into camera buffer
+      cam.resume(); // Resume DMA into camera buffer
       break;
   }
 

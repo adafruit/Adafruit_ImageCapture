@@ -32,6 +32,10 @@ public:
                   uint32_t timeout_ms = 3000);
   int status();
   int readRegister(uint8_t reg);
+  void writeRegister(uint8_t reg, uint8_t val);
+  uint32_t capture();
+  uint8_t *getData(uint8_t len = 255);
+  void resume();
 
 protected:
   TwoWire *wire;                     //< Pointer to I2C periph (e.g. &Wire)

@@ -78,3 +78,44 @@ int Adafruit_iCap_peripheral::readRegister(uint8_t reg) {
   wire->requestFrom(i2c_address, (uint8_t)1);
   return (wire->available() >= 1) ? wire->read() : -1;
 }
+
+void Adafruit_iCap_peripheral::writeRegister(uint8_t reg, uint8_t val) {
+  i2c_buffer[0] = ICAP_CMD_WRITE_REG;
+  i2c_buffer[1] = reg;
+  i2c_buffer[2] = val;
+  wire->beginTransmission(i2c_address);
+  wire->write(i2c_buffer, 3);
+  wire->endTransmission();
+}
+
+uint32_t Adafruit_iCap_peripheral::capture() {
+  i2c_buffer[0] = ICAP_CMD_CAPTURE;
+  wire->beginTransmission(i2c_address);
+  wire->write(i2c_buffer, 1);
+  wire->endTransmission();
+  wire->requestFrom(i2c_address, (uint8_t)4);
+  if (wire->available() >= 4) {
+    for(int i=0; i<4; i++) i2c_buffer[i] = wire->read();
+  }
+  return ((uint32_t)i2c_buffer[0] | ((uint32_t)i2c_buffer[1] << 8) |
+          ((uint32_t)i2c_buffer[2] << 16) | ((uint32_t)i2c_buffer[3] << 24));
+}
+
+uint8_t *Adafruit_iCap_peripheral::getData(uint8_t len) {
+  i2c_buffer[0] = ICAP_CMD_GET_DATA;
+  i2c_buffer[1] = len;
+  wire->beginTransmission(i2c_address);
+  wire->write(i2c_buffer, 2);
+  wire->endTransmission();
+  wire->requestFrom(i2c_address, len);
+  len = min(len, wire->available());
+  for(int i=0; i<len; i++) i2c_buffer[i] = wire->read();
+  return i2c_buffer;
+}
+
+void Adafruit_iCap_peripheral::resume() {
+  i2c_buffer[0] = ICAP_CMD_RESUME;
+  wire->beginTransmission(i2c_address);
+  wire->write(i2c_buffer, 1);
+  wire->endTransmission();
+}
