@@ -13,6 +13,9 @@ HARDWARE REQUIRED:
 #include <Wire.h>
 #include <Adafruit_iCap_OV7670.h> // Camera library
 #include <Adafruit_iCap_I2C.h>
+#if !defined(BUFFER_LENGTH)
+#define BUFFER_LENGTH 256
+#endif
 
 // CAMERA CONFIG -----------------------------------------------------------
 
@@ -78,8 +81,8 @@ int readInto(uint8_t *addr, int len) {
   return i; // bytes read
 }
 
-volatile uint32_t capturedBytesTotal = 0;
-volatile uint32_t capturedBytesSent = 0;
+volatile uint32_t capturedBytesRemaining = 0;
+volatile uint8_t *capturedImagePtr = NULL;
 
 void receiveCallback(int howMany) {
   Serial.printf("receiveCallback() howMany: %d, available(): %d\n", howMany, periphI2C->available());
@@ -153,34 +156,36 @@ void receiveCallback(int howMany) {
     case ICAP_CMD_CAPTURE: // Capture frame (will be followed by a requestCallback())
       if(camState > 1) {
         Serial.println("Capturing");
-        cam.suspend(); // Pause camera DMA, hold buffer steady to avoid tearing
-        capturedBytesTotal = cam.width() * cam.height() * 2;
-        capturedBytesSent = 0;
-        camBuf[0] = capturedBytesTotal & 0xFF;
-        camBuf[1] = (capturedBytesTotal >> 8) & 0xFF;
-        camBuf[2] = (capturedBytesTotal >> 16) & 0xFF;
-        camBuf[3] = (capturedBytesTotal >> 24) & 0xFF;
+//        cam.suspend(); // Pause camera DMA, hold buffer steady to avoid tearing
+        capturedImagePtr = (uint8_t *)cam.getBuffer();
+        capturedBytesRemaining = cam.width() * cam.height() * 2;
+        camBuf[0] = capturedBytesRemaining & 0xFF;
+        camBuf[1] = (capturedBytesRemaining >> 8) & 0xFF;
+        camBuf[2] = (capturedBytesRemaining >> 16) & 0xFF;
+        camBuf[3] = (capturedBytesRemaining >> 24) & 0xFF;
         reqAddr = camBuf;                        // Set up pointer & len for
         reqLen = 4;                              // subsequent requestCallback()
       }
       // Will this require polling cam state on the host end?
       break;
 
-    case ICAP_CMD_GET_DATA: // Request frame data
+    case ICAP_CMD_GET_DATA: // Request part of last-captured image data (followed by requestCallback())
       if ((readInto((uint8_t *)camBuf, 1) == 1) && camState > 1) {
-        uint8_t len = camBuf[1];
+        uint8_t len = camBuf[0];
+        len = min(len, BUFFER_LENGTH - 1);
         Serial.printf("Requested %d bytes of image\n", len);
-        uint32_t capturedBytesRemaining = capturedBytesTotal - capturedBytesSent;
-        uint8_t bytesThisPass = (capturedBytesRemaining < len) ? capturedBytesRemaining : len;
-        if (readInto((uint8_t *)camBuf, bytesThisPass) == bytesThisPass) {
-          reqAddr = camBuf;
-          reqLen = bytesThisPass;
-        }
+        uint8_t bytesThisPass = min(capturedBytesRemaining, len);
+        memcpy((void *)&camBuf[1], (void *)capturedImagePtr, bytesThisPass);
+        camBuf[0] = bytesThisPass;
+        reqAddr = camBuf;
+        reqLen = bytesThisPass + 1;
+        capturedBytesRemaining -= bytesThisPass;
+        capturedImagePtr += bytesThisPass;
       }
       break;
 
     case ICAP_CMD_RESUME: // Resume camera
-      cam.resume(); // Resume DMA into camera buffer
+//      cam.resume(); // Resume DMA into camera buffer
       break;
   }
 

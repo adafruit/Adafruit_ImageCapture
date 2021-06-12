@@ -21,6 +21,10 @@ like auto camera make & model detection later.
 #include "Adafruit_iCap_I2C_host.h"
 #include "Adafruit_iCap_OV7670.h"
 
+#if !defined(BUFFER_LENGTH)
+#define BUFFER_LENGTH 256 // Max I2C transfer size
+#endif
+
 Adafruit_iCap_peripheral cam; // Remote camera on I2C
 
 void setup() {
@@ -48,23 +52,22 @@ void setup() {
 }
 
 void loop() {
-  uint32_t bytes = cam.capture();
+  int32_t bytes = cam.capture();
   Serial.print("Expecting ");
   Serial.print(bytes);
-  Serial.println(" from camera");
+  Serial.print(" from camera, BUFFER_LENGTH is ");
+  Serial.println(BUFFER_LENGTH);
 
-#if 0
-// This part isn't working yet
   while(bytes > 0) {
-    uint8_t *data = cam.getData(255);
-    for (int i=0; i<255; i++) {
+    uint8_t *data = cam.getData(BUFFER_LENGTH - 1);
+    uint8_t len = data[0];
+    for (int i=1; i<=len; i++) {
       Serial.print(data[i], HEX);
       Serial.write(' ');
     }
     Serial.println();
-    bytes -= 255;
+    bytes -= len;
   }
-#endif
 
   cam.resume();
 
