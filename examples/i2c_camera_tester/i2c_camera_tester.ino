@@ -48,13 +48,13 @@ void setup() {
 }
 
 void loop() {
-#if 0
-// This part isn't working yet
   uint32_t bytes = cam.capture();
   Serial.print("Expecting ");
   Serial.print(bytes);
   Serial.println(" from camera");
 
+#if 0
+// This part isn't working yet
   while(bytes > 0) {
     uint8_t *data = cam.getData(255);
     for (int i=0; i<255; i++) {
@@ -64,7 +64,9 @@ void loop() {
     Serial.println();
     bytes -= 255;
   }
+#endif
 
   cam.resume();
-#endif
+
+  delay(1000);
 }

@@ -156,10 +156,10 @@ void receiveCallback(int howMany) {
         cam.suspend(); // Pause camera DMA, hold buffer steady to avoid tearing
         capturedBytesTotal = cam.width() * cam.height() * 2;
         capturedBytesSent = 0;
-        camBuf[0] = capturedBytesTotal;
-        camBuf[1] = capturedBytesTotal >> 8;
-        camBuf[2] = capturedBytesTotal >> 16;
-        camBuf[3] = capturedBytesTotal >> 24;
+        camBuf[0] = capturedBytesTotal & 0xFF;
+        camBuf[1] = (capturedBytesTotal >> 8) & 0xFF;
+        camBuf[2] = (capturedBytesTotal >> 16) & 0xFF;
+        camBuf[3] = (capturedBytesTotal >> 24) & 0xFF;
         reqAddr = camBuf;                        // Set up pointer & len for
         reqLen = 4;                              // subsequent requestCallback()
       }
