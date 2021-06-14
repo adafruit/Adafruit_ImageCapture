@@ -39,6 +39,9 @@ int Adafruit_iCap_peripheral::cameraStart(uint8_t mode, uint8_t size,
   wire->write(i2c_buffer, 4);
   wire->endTransmission();
 
+  _width = 640 >> (int)size;
+  _height = 480 >> (int)size;
+
   // Wait for camera ready
   int status = 0;
   uint32_t startTime = millis();

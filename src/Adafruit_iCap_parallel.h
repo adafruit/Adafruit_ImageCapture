@@ -69,6 +69,15 @@ public:
   iCap_status begin(iCap_colorspace space);
 
   /*!
+    @brief   Start XCLK output if required and initialize I2C. Normally this
+             gets called by begin(), but is separately exposed here in case
+             an application first wants to attempt automatic ID of attached
+             camera by probing addresses and/or registers (a subsequent
+             begin() won't repeat this, it's harmless).
+  */
+  void startI2C(void);
+
+  /*!
     @brief   Reads value of one register from the camera over I2C.
     @param   reg  Register to read, from values defined in camera-specific
                   header.
