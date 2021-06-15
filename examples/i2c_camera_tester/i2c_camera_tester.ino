@@ -44,6 +44,7 @@ void setup() {
   tft.init(240, 240);
   tft.fillScreen(0);
   tft.println("Hello");
+  tft.setRotation(3);
 
   cam.begin();
 
@@ -55,8 +56,6 @@ void setup() {
     Serial.println(cam.status(), HEX);
     for(;;);
   }
-
-delay(5000); // Allow autoexposure to do things
 
   // Poll the PID and VER registers to see if camera's working
 
