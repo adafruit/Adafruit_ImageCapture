@@ -99,6 +99,9 @@ void loop() {
 
     bytes -= len;
   }
+  if (bytesinbuf >= 2) {
+    tft.writePixels(pixelbuf, bytesinbuf / 2, false, true);
+  }
   tft.endWrite();   // Close out prior transfer
 
   cam.resume();
