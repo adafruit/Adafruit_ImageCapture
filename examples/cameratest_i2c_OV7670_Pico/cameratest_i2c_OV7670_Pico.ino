@@ -10,12 +10,19 @@ HARDWARE REQUIRED:
 - 10K pullups on SDA+SCL pins
 */
 
+#include <Adafruit_ST7789.h>
 #include <Wire.h>
 #include <Adafruit_iCap_OV7670.h> // Camera library
 #include <Adafruit_iCap_I2C.h>
 #if !defined(BUFFER_LENGTH)
 #define BUFFER_LENGTH 256
 #endif
+
+#define TFT_CS  17 // Near SPI0 at south end of board
+#define TFT_DC  16
+#define TFT_RST -1 // Connect to MCU reset
+
+Adafruit_ST7789 tft(TFT_CS, TFT_DC, TFT_RST);
 
 // CAMERA CONFIG -----------------------------------------------------------
 
@@ -208,6 +215,12 @@ void setup() {
   pinMode(25, OUTPUT); // LED
   digitalWrite(25, LOW);
 
+  tft.init(240, 240);
+  tft.setSPISpeed(48000000);
+  tft.fillScreen(ST77XX_BLACK);
+  tft.println("Howdy");
+  tft.setRotation(3);
+
   // Pico acts as an I2C peripheral on a second bus
   // (since first is tied up with camera)
   periphI2C->setSDA(PERIPH_SDA);
@@ -227,9 +240,10 @@ void loop() {
   // camera readyness before issuing any further requests.
   if (camState == 1) {
     Serial.println("STARTING CAMERA");
-    status = cam.begin((iCap_colorspace)camBuf[0], (OV7670_size)camBuf[1], (float)camBuf[3]);
+    status = cam.begin((iCap_colorspace)camBuf[0], (OV7670_size)camBuf[1], (float)camBuf[2]);
     if (status == ICAP_STATUS_OK) {
       Serial.println("CAMERA IS OK");
+      //cam.test_pattern(OV7670_TEST_PATTERN_COLOR_BAR);
       camState = 2;
     } else {
       Serial.println("CAMERA FAIL");
@@ -238,6 +252,18 @@ void loop() {
   }
 
   digitalWrite(25, !((millis() >> 7) & 7)); // LED heartbeat
+
+  if (camState >= 2) {
+    tft.endWrite();   // Close out prior transfer
+    tft.startWrite(); // and start a fresh one (required)
+    // Address window centers QQVGA image on screen. NO CLIPPING IS
+    // PERFORMED, it is assumed here that the camera image is equal
+    // or smaller than the screen.
+    tft.setAddrWindow((tft.width() - cam.width()) / 2,
+                      (tft.height() - cam.height()) / 2,
+                      cam.width(), cam.height());
+    tft.writePixels(cam.getBuffer(), cam.width() * cam.height(), false, true);
+  }
 }
 
 #else
