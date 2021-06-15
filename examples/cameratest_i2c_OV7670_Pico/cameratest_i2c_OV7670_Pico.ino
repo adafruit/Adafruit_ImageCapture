@@ -231,7 +231,7 @@ void setup() {
   periphI2C->setSDA(PERIPH_SDA);
   periphI2C->setSCL(PERIPH_SCL);
   periphI2C->begin(PERIPH_ADDR);
-  periphI2C->setClock(100000);
+  periphI2C->setClock(100000UL);
   periphI2C->onRequest(requestCallback);
   periphI2C->onReceive(receiveCallback);
 }

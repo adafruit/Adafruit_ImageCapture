@@ -82,8 +82,9 @@ void loop() {
                     cam.width(), cam.height());
 
   while(bytes > 0) {
-    uint8_t *data = cam.getData(BUFFER_LENGTH - 1);
-    uint8_t len = data[0];
+    uint8_t len = min(bytes, BUFFER_LENGTH - 1);
+    uint8_t *data = cam.getData(len);
+    len = data[0];
     // Add new bytes to pixelbuf
     memcpy(&pbuf8[bytesinbuf], &data[1], len);
     bytesinbuf += len;
@@ -97,7 +98,6 @@ void loop() {
     }
     bytes -= len;
   }
-Serial.println("EOD"); // Never reaching this
   if (bytesinbuf >= 2) {
     tft.writePixels(pixelbuf, bytesinbuf / 2, false, true);
   }

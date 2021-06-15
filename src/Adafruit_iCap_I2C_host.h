@@ -25,7 +25,7 @@
 class Adafruit_iCap_peripheral {
 public:
   Adafruit_iCap_peripheral(uint8_t addr = ICAP_DEFAULT_ADDRESS,
-                           TwoWire *w = &Wire, uint32_t s = 100000);
+                           TwoWire *w = &Wire, uint32_t s = 100000UL);
   ~Adafruit_iCap_peripheral(); // Destructor
   void begin();
   int cameraStart(uint8_t mode, uint8_t size, float fps,
