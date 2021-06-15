@@ -71,9 +71,10 @@ void requestCallback() {
   Serial.printf("requestCallback(), reqAddr=%08x, reqLen=%d\n", (uint32_t)reqAddr, reqLen);
   if (reqAddr && reqLen) {
     periphI2C->write((uint8_t *)reqAddr, reqLen);
-    reqAddr = NULL; // Clear out vars to indicate it was sent
-    reqLen = 0;
   }
+  // Reset both vars anyway in case a 0-length request accidentally happened
+  reqAddr = NULL; // Clear out vars to indicate it was sent
+  reqLen = 0;
 }
 
 // Read 'len' bytes from I2C into 'addr' buf
@@ -164,6 +165,7 @@ void receiveCallback(int howMany) {
       if(camState > 1) {
         Serial.println("Capturing");
 //        cam.suspend(); // Pause camera DMA, hold buffer steady to avoid tearing
+// Could this be a thing where I have to do the suspend() in loop()?
         capturedImagePtr = (uint8_t *)cam.getBuffer();
         capturedBytesRemaining = cam.width() * cam.height() * 2;
         camBuf[0] = capturedBytesRemaining & 0xFF;
@@ -172,6 +174,7 @@ void receiveCallback(int howMany) {
         camBuf[3] = (capturedBytesRemaining >> 24) & 0xFF;
         reqAddr = camBuf;                        // Set up pointer & len for
         reqLen = 4;                              // subsequent requestCallback()
+camState = 3; // Plz suspend in loop()
       }
       // Will this require polling cam state on the host end?
       break;
@@ -180,9 +183,10 @@ void receiveCallback(int howMany) {
       if ((readInto((uint8_t *)camBuf, 1) == 1) && camState > 1) {
         uint8_t len = camBuf[0];           // What host requested
         len = min(len, BUFFER_LENGTH - 1); // Limit it to our buffer size
-        Serial.printf("Requested %d bytes of image\n", len);
+        Serial.printf("Requested %d bytes of image, %d remain\n", len, capturedBytesRemaining);
         uint8_t bytesThisPass = min(capturedBytesRemaining, len);
-        memcpy((void *)(&camBuf[1]), (void *)capturedImagePtr, bytesThisPass);
+        if (bytesThisPass)
+          memcpy((void *)(&camBuf[1]), (void *)capturedImagePtr, bytesThisPass);
         camBuf[0] = bytesThisPass;
         reqAddr = camBuf;
         reqLen = bytesThisPass + 1;
@@ -192,6 +196,7 @@ void receiveCallback(int howMany) {
       break;
 
     case ICAP_CMD_RESUME: // Resume camera
+      camState = 5;
 //      cam.resume(); // Resume DMA into camera buffer
       break;
   }
@@ -244,11 +249,18 @@ void loop() {
     if (status == ICAP_STATUS_OK) {
       Serial.println("CAMERA IS OK");
       //cam.test_pattern(OV7670_TEST_PATTERN_COLOR_BAR);
+      delay(1000); // Allow exposure and PIO sync and whatnot
       camState = 2;
     } else {
       Serial.println("CAMERA FAIL");
       camState = 0;
     }
+  } else if (camState == 3) {
+    cam.suspend(); // Pause camera DMA, hold buffer steady to avoid tearing
+    camState = 4; // Is suspended
+  } else if (camState == 5) {
+    cam.resume();
+    camState = 2; // Is running
   }
 
   digitalWrite(25, !((millis() >> 7) & 7)); // LED heartbeat

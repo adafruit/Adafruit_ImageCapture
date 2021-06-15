@@ -113,15 +113,33 @@ uint8_t *Adafruit_iCap_peripheral::getData(uint8_t len) {
   wire->write(i2c_buffer, 2);
   wire->endTransmission();
   delay(100);
+Serial.print("A ");
+Serial.println(len);
+// Was hanging here.
+// Issue is that host can't request more bytes than remain --
+// the I2C transfer can't "clip" the transfer size after the request
+// (i.e. if host requests 30 bytes, can't send 20, it HANGS).
+// One option might be to pad the transfer with extra bytes to
+// fill the requested size. Other would be for an initial negotiation
+// phase where the two devices decide on a maximum I2C transfer size
+// that both can work with.
   wire->requestFrom(i2c_address, len + 1); // Length byte + data
+Serial.println("B1");
   if (wire->available() >= 1) {
+Serial.println("B2");
     len = wire->read();                // Length byte
+Serial.print("B3 ");
+Serial.println(len);
     len = min(len, wire->available()); // Remaining bytes
     i2c_buffer[0] = len;
+Serial.print("C ");
+Serial.println(len);
     for(int i=1; i<=len; i++) {
       i2c_buffer[i] = wire->read();
     }
+Serial.println("D");
   }
+Serial.println("E");
   return i2c_buffer;
 }
 

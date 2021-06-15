@@ -95,9 +95,9 @@ void loop() {
     } else {
       bytesinbuf = 0;
     }
-
     bytes -= len;
   }
+Serial.println("EOD"); // Never reaching this
   if (bytesinbuf >= 2) {
     tft.writePixels(pixelbuf, bytesinbuf / 2, false, true);
   }
