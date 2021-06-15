@@ -96,6 +96,7 @@ uint32_t Adafruit_iCap_peripheral::capture() {
   wire->beginTransmission(i2c_address);
   wire->write(i2c_buffer, 1);
   wire->endTransmission();
+  delay(100);
   wire->requestFrom(i2c_address, (uint8_t)4);
   if (wire->available() >= 4) {
     for(int i=0; i<4; i++) i2c_buffer[i] = wire->read();
@@ -111,12 +112,15 @@ uint8_t *Adafruit_iCap_peripheral::getData(uint8_t len) {
   wire->beginTransmission(i2c_address);
   wire->write(i2c_buffer, 2);
   wire->endTransmission();
+  delay(100);
   wire->requestFrom(i2c_address, len + 1); // Length byte + data
   if (wire->available() >= 1) {
     len = wire->read();                // Length byte
     len = min(len, wire->available()); // Remaining bytes
     i2c_buffer[0] = len;
-    for(int i=1; i<=len; i++) i2c_buffer[i] = wire->read();
+    for(int i=1; i<=len; i++) {
+      i2c_buffer[i] = wire->read();
+    }
   }
   return i2c_buffer;
 }

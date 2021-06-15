@@ -56,6 +56,8 @@ void setup() {
     for(;;);
   }
 
+delay(5000); // Allow autoexposure to do things
+
   // Poll the PID and VER registers to see if camera's working
 
   Serial.print("PID: ");
@@ -66,7 +68,7 @@ void setup() {
 
 uint16_t pixelbuf[256];
 uint8_t *pbuf8 = (uint8_t *)pixelbuf;
-int      pbufoffset = 0;
+int      bytesinbuf = 0;
 
 void loop() {
   int32_t bytes = cam.capture();
@@ -83,19 +85,16 @@ void loop() {
   while(bytes > 0) {
     uint8_t *data = cam.getData(BUFFER_LENGTH - 1);
     uint8_t len = data[0];
-    memcpy(&pbuf8[pbufoffset], &data[1], len);
-//    for (int i=1; i<=len; i++) {
-//      Serial.print(data[i], HEX);
-//      Serial.write(' ');
-//    }
-//    Serial.println();
-    int pixelsThisPass = (pbufoffset + len) / 2;
+    // Add new bytes to pixelbuf
+    memcpy(&pbuf8[bytesinbuf], &data[1], len);
+    bytesinbuf += len;
+    int pixelsThisPass = bytesinbuf / 2; // 16 bit pixels (any trailing byte is ignored)
     tft.writePixels(pixelbuf, pixelsThisPass, false, true);
-    if (len & 1) {
-      pbuf8[0] = pbuf8[len - 1]; // Move last byte to beginning
-      pbufoffset = 1; // Sart at next byte
+    if (bytesinbuf & 1) {               // Trailing byte present?
+      pbuf8[0] = pbuf8[bytesinbuf - 1]; // Move it to beginning
+      bytesinbuf = 1;
     } else {
-      pbufoffset = 0;
+      bytesinbuf = 0;
     }
 
     bytes -= len;

@@ -58,7 +58,7 @@ TwoWire *periphI2C = &Wire1;
 volatile uint8_t *reqAddr = NULL; // Pointer to data that requestCallback() will send
 volatile int      reqLen = 0;     // Length of data "
 volatile uint8_t  camState = 0;   // 0 = not started, 1 = plz start in loop(), 2 = started
-volatile uint8_t  camBuf[10];
+volatile uint8_t  camBuf[500];
 
 void requestCallback() {
   Serial.printf("requestCallback(), reqAddr=%08x, reqLen=%d\n", (uint32_t)reqAddr, reqLen);
@@ -171,11 +171,11 @@ void receiveCallback(int howMany) {
 
     case ICAP_CMD_GET_DATA: // Request part of last-captured image data (followed by requestCallback())
       if ((readInto((uint8_t *)camBuf, 1) == 1) && camState > 1) {
-        uint8_t len = camBuf[0];
-        len = min(len, BUFFER_LENGTH - 1);
+        uint8_t len = camBuf[0];           // What host requested
+        len = min(len, BUFFER_LENGTH - 1); // Limit it to our buffer size
         Serial.printf("Requested %d bytes of image\n", len);
         uint8_t bytesThisPass = min(capturedBytesRemaining, len);
-        memcpy((void *)&camBuf[1], (void *)capturedImagePtr, bytesThisPass);
+        memcpy((void *)(&camBuf[1]), (void *)capturedImagePtr, bytesThisPass);
         camBuf[0] = bytesThisPass;
         reqAddr = camBuf;
         reqLen = bytesThisPass + 1;
