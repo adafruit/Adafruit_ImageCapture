@@ -34,11 +34,11 @@ Adafruit_iCap_peripheral cam; // Remote camera on I2C
 #define TFT_DC   5
 #define TFT_RST -1
 
-Adafruit_ST7789 tft(&SPI, TFHT_CS, TFT_DC, TFT_RST);
+Adafruit_ST7789 tft(&SPI, TFT_CS, TFT_DC, TFT_RST);
 
 void setup() {
   Serial.begin(115200);
-  while(!Serial);
+  //while(!Serial);
   Serial.println("HOST BOARD STARTED");
 
   tft.init(240, 240);

@@ -295,7 +295,7 @@ if (camState == CAM_PAUSED) foo = true;
 
 void setup() {
   Serial.begin(9600);
-  while(!Serial);
+  //while(!Serial);
   delay(1000);
   Serial.println("CAMERA PERIPH BOARD STARTED");
 
