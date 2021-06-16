@@ -34,26 +34,25 @@ Adafruit_iCap_peripheral cam; // Remote camera on I2C
 #define TFT_DC   5
 #define TFT_RST -1
 
-Adafruit_ST7789 tft(&SPI, TFT_CS, TFT_DC, TFT_RST);
+Adafruit_ST7789 tft(&SPI, TFHT_CS, TFT_DC, TFT_RST);
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   while(!Serial);
   Serial.println("HOST BOARD STARTED");
 
   tft.init(240, 240);
   tft.fillScreen(0);
-  tft.println("Hello");
+  tft.println("I2C HOST");
   tft.setRotation(3);
 
+  // Initialize I2C, negotiate max transfer size with camera board
   cam.begin();
 
   // Start camera, check response
   int status = cam.cameraStart(ICAP_COLOR_RGB565, OV7670_SIZE_DIV4, 30.0);
   if(status != ICAP_STATUS_OK) {
     Serial.println("Camera failed to start");
-    Serial.print("Status: ");
-    Serial.println(cam.status(), HEX);
     for(;;);
   }
 
@@ -73,8 +72,12 @@ void loop() {
   int32_t bytes = cam.capture();
   Serial.print("Expecting ");
   Serial.print(bytes);
-  Serial.print(" from camera, BUFFER_LENGTH is ");
-  Serial.println(BUFFER_LENGTH);
+  Serial.print(" bytes from camera, maxTransferSize is ");
+  Serial.println(cam.maxTransferSize());
+
+  tft.fillRect((tft.width() - cam.width()) / 2,
+                    (tft.height() - cam.height()) / 2,
+                    cam.width(), cam.height(), 0);
 
   tft.startWrite();
   tft.setAddrWindow((tft.width() - cam.width()) / 2,
@@ -82,11 +85,10 @@ void loop() {
                     cam.width(), cam.height());
 
   while(bytes > 0) {
-    uint8_t len = min(bytes, BUFFER_LENGTH - 1);
+    int len = min(bytes, cam.maxTransferSize());
     uint8_t *data = cam.getData(len);
-    len = data[0];
     // Add new bytes to pixelbuf
-    memcpy(&pbuf8[bytesinbuf], &data[1], len);
+    memcpy(&pbuf8[bytesinbuf], data, len);
     bytesinbuf += len;
     int pixelsThisPass = bytesinbuf / 2; // 16 bit pixels (any trailing byte is ignored)
     tft.writePixels(pixelbuf, pixelsThisPass, false, true);

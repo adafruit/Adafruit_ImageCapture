@@ -10,19 +10,24 @@ HARDWARE REQUIRED:
 - 10K pullups on SDA+SCL pins
 */
 
-#include <Adafruit_ST7789.h>
 #include <Wire.h>
-#include <Adafruit_iCap_OV7670.h> // Camera library
+#include <Adafruit_iCap_OV7670.h>
 #include <Adafruit_iCap_I2C.h>
 #if !defined(BUFFER_LENGTH)
-#define BUFFER_LENGTH 256
+#define BUFFER_LENGTH 256 // Max I2C transfer size
 #endif
+
+#define TFT_PREVIEW // Enable this line for viewfinder
+
+#if defined(TFT_PREVIEW)
+#include <Adafruit_ST7789.h>
 
 #define TFT_CS  17 // Near SPI0 at south end of board
 #define TFT_DC  16
 #define TFT_RST -1 // Connect to MCU reset
 
 Adafruit_ST7789 tft(TFT_CS, TFT_DC, TFT_RST);
+#endif // TFT_PREVIEW
 
 // CAMERA CONFIG -----------------------------------------------------------
 
@@ -51,6 +56,14 @@ OV7670_pins pins = {
 
 Adafruit_iCap_OV7670 cam(pins, CAM_I2C, &arch);
 
+// Calling camera library functions from I2C callbacks (interrupts) is
+// bad news -- perhaps something in Pico peripherals or DMA, not sure.
+// Workaround is a camera state machine in the loop() function that
+// interacts with the callbacks via the camState variable. This is also
+// used by I2C host code to poll the current camera state to avoid
+// requesting data too soon.
+volatile iCap_state camState = CAM_OFF;
+
 uint32_t status; // Return value of last camera func call
 
 // I2C PERIPH CONFIG -------------------------------------------------------
@@ -62,123 +75,185 @@ TwoWire *periphI2C = &Wire1;
 
 // I2C CALLBACKS -----------------------------------------------------------
 
-volatile uint8_t *reqAddr = NULL; // Pointer to data that requestCallback() will send
-volatile int      reqLen = 0;     // Length of data "
-volatile uint8_t  camState = 0;   // 0 = not started, 1 = plz start in loop(), 2 = started
-volatile uint8_t  camBuf[500];
+volatile uint8_t  i2cBuf[BUFFER_LENGTH];
+volatile int      i2cReqLen = 0;     // # i2cBuf bytes for requestCallback() to send
+volatile uint32_t i2cMaxLen = 32;    // May be upgraded on negotiation
+volatile uint8_t *capturedImagePtr = NULL;
+volatile uint32_t capturedBytesRemaining = 0;
+volatile uint8_t  capturing = false; // When true, sending image data, not i2cBuf
+volatile bool foo = false;
 
-void requestCallback() {
-  Serial.printf("requestCallback(), reqAddr=%08x, reqLen=%d\n", (uint32_t)reqAddr, reqLen);
-  if (reqAddr && reqLen) {
-    periphI2C->write((uint8_t *)reqAddr, reqLen);
-  }
-  // Reset both vars anyway in case a 0-length request accidentally happened
-  reqAddr = NULL; // Clear out vars to indicate it was sent
-  reqLen = 0;
-}
-
-// Read 'len' bytes from I2C into 'addr' buf
-int readInto(uint8_t *addr, int len) {
-  Serial.printf("Expecting %d bytes, %d are available\n", len, periphI2C->available());
-  int i = 0;
-  if (periphI2C->available() >= len) {
-    for (; i<len; i++) {
-      addr[i] = periphI2C->read();
+// I2C request callback; length of data i(i2cReqLen) s anticipated in I2CRecvCallback
+void i2cReqCallback() {
+  Serial.printf("i2cReqCallback(), i2cReqLen=%d\n", i2cReqLen);
+  if (i2cReqLen > 0) {
+    if (capturing) {
+      // Send chunk of image data
+      periphI2C->write((uint8_t *)capturedImagePtr, i2cReqLen);
+      capturedBytesRemaining -= i2cReqLen;
+      if (capturedBytesRemaining > 0) {
+        capturedImagePtr += i2cReqLen;
+        i2cReqLen = min(capturedBytesRemaining, i2cMaxLen);
+      } else {
+        capturing = false;
+        camState = CAM_REQ_RESUME;
+        i2cReqLen = 0;
+      }
+    } else {
+      // Send i2cBuf data
+      periphI2C->write((uint8_t *)i2cBuf, i2cReqLen);
+      i2cReqLen = 0; // Reset length to avoid double invocation problems
     }
   }
-  return i; // bytes read
+// If first request after polling switched to camera pause,
+// set 'capturing' flag.
+if (foo == true) {
+  i2cReqLen = min(capturedBytesRemaining, i2cMaxLen);
+  capturing = true;
+  foo = false;
+}
 }
 
-volatile uint32_t capturedBytesRemaining = 0;
-volatile uint8_t *capturedImagePtr = NULL;
+// Read 'len' bytes from I2C into i2cBuf
+int i2cRead(int len) {
+  Serial.printf("i2cRead(), expecting %d bytes, ", len);
+  if (len > sizeof i2cBuf) len = sizeof i2cBuf; // Don't exceed i2cBuf size
+  int i = periphI2C->available();
+  if (len > i) len = i;                         // Don't exceed pending data
+  Serial.printf("%d are available\n", i);
+  for (i=0; i<len; i++) {
+    i2cBuf[i] = periphI2C->read();
+  }
+  return i; // Number of bytes actually read
+}
 
-void receiveCallback(int howMany) {
-  Serial.printf("receiveCallback() howMany: %d, available(): %d\n", howMany, periphI2C->available());
-  if (!howMany) return;
+void i2cRecvCallback(int len) {
+  Serial.printf("i2cRecvCallback(), expecting %d bytes", len);
+  if (!len) {
+    Serial.println();
+    return;
+  }
+  int avail = periphI2C->available();
+  len = min(len, avail);
+  Serial.printf(", %d are available\n", len);
 
   int cmd = periphI2C->read(); // 1st byte should be command
   Serial.printf("Received command %02X\n", cmd);
-
+if (capturing) return; // Ignore received byte
   switch (cmd) {
 
-    case ICAP_CMD_START: // Start camera
-      Serial.printf("Start camera %02X %02X %02X\n", camBuf[0], camBuf[1], camBuf[2]);
-      if (!camState) {
-        // For now we'll treat mode, size and framerate as byte values.
-        // That's OK for the former, but might want fractional rates later.
-        if (readInto((uint8_t *)camBuf, 3) == 3) {
-          // Have confirmed expected bytes are arriving (0, 2, 30)
-          // The camera is NOT actually started here in this function,
-          // as that causes lockup. Rather than try to track down in
-          // cam lib (maybe something needs to be volatile there),
-          // it's simpler to use a state variable here to trigger
-          // camera startup in loop(). Host-side code should use the
-          // polling command (below) to determine when the camera is
-          // ready to accept further commands.
-          camState = 1; // Plz start camera in loop()
-        }
+    case ICAP_CMD_BUFSIZ: // Negotiate I2C max transfer (subsequent requestCallback())
+      Serial.println("Buffer size negotiation...");
+      if (i2cRead(4) == 4) { // Host's I2C transfer limit
+        uint32_t hostBufferLen = (uint32_t)i2cBuf[0]        |
+                                ((uint32_t)i2cBuf[1] <<  8) |
+                                ((uint32_t)i2cBuf[2] << 16) |
+                                ((uint32_t)i2cBuf[3] << 24);
+        i2cMaxLen = min(sizeof i2cBuf, hostBufferLen);
+        Serial.printf("%d bytes\n", i2cMaxLen);
+        i2cBuf[0] =  i2cMaxLen        & 0xFF;
+        i2cBuf[1] = (i2cMaxLen  >> 8) & 0xFF;
+        i2cBuf[2] = (i2cMaxLen >> 16) & 0xFF;
+        i2cBuf[3] = (i2cMaxLen >> 24) & 0xFF;
+        i2cReqLen = 4;
+      } else {
+        Serial.println("arguments missing; request ignored");
       }
       break;
 
-    case ICAP_CMD_READY: // Poll camera ready state
-      // Host-side code SHOULD NOT DO ANY OTHER CAM COMMANDS
-      // until the return state is >1! This code should maybe
-      // check for that.
-      Serial.println("Return camera ready state");
-      reqAddr = &camState; // Set up pointer & len for
-      reqLen = 1;          // subsequent requestCallback()
+    case ICAP_CMD_ID: // Identify camera model (subsequent requestCallback())
+      Serial.println("Identify camera (0)");
+      i2cBuf[0] = 0; // OV7670
+      i2cReqLen = 1;
       break;
 
-    case ICAP_CMD_STATUS: // Return last status (will be followed by a requestCallback())
-      Serial.println("Return last status");
-      reqAddr = (uint8_t *)&status;            // Set up pointer & len for
-      reqLen = 4;                              // subsequent requestCallback()
+    case ICAP_CMD_STATE: // Poll camera state (subsequent requestCallback())
+      Serial.printf("Poll state (%02x)\n", (int)camState);
+      i2cBuf[0] = camState;
+      i2cReqLen = 1;
+// If camState just changed to CAM_PAUSED,
+// then the next request AFTER this one will be the first data.
+// So -- can't set to 'capturing' just yet.
+if (camState == CAM_PAUSED) foo = true;
       break;
 
-    case ICAP_CMD_READ_REG: // Read register (will be followed by a requestCallback())
-      Serial.println("Read camera register");
-      if ((readInto((uint8_t *)camBuf, 1) == 1) && camState > 1) {  // Register to read
-        Serial.printf("Register = %02x\n", camBuf[0]);
-        camBuf[0] = cam.readRegister(camBuf[0]); // Read from cam, put in buf
-        Serial.printf("Value = %02x\n", camBuf[0]);
-        reqAddr = camBuf;                        // Set up pointer & len for
-        reqLen = 1;                              // subsequent requestCallback()
+    case ICAP_CMD_START: // Start camera
+      Serial.print("Start camera...");
+      // Only start camera if currently in OFF state.
+      // Read I2C bytes regardless to keep in sync.
+      if (i2cRead(3) == 3) {
+        Serial.printf("[%02X %02X %02X]", i2cBuf[0], i2cBuf[1], i2cBuf[2]);
+        if (camState == CAM_OFF) {
+          Serial.println("...requested");
+          camState = CAM_REQ_START; // Plz start camera in loop()
+        } else {
+          Serial.println("...already running; request ignored");
+        }
+      } else {
+        Serial.println("arguments missing; request ignored");
+      }
+      break;
+
+    case ICAP_CMD_READ_REG: // Read register (subsequent requestCallback())
+      Serial.print("Read camera register...");
+      if (i2cRead(1) == 1) {                       // Register to read
+        if (camState >= CAM_ON) {                  // Only possible w/camera running
+          Serial.printf("%02x = ", i2cBuf[0]);     // Register
+          i2cBuf[0] = cam.readRegister(i2cBuf[0]); // Read from cam, put in buf
+          Serial.printf("%02x\n", i2cBuf[0]);      // Value
+          i2cReqLen = 1;
+        } else {
+          Serial.println("camera not started; request ignored");
+        }
+      } else {
+        Serial.println("argument missing; request ignored");
       }
       break;
 
     case ICAP_CMD_WRITE_REG: // Write register(s)
-      Serial.println("Write camera register(s)");
-      // First reg, length
-      if ((readInto((uint8_t *)camBuf, 2) == 2) && camState > 1) {
-        uint8_t reg = camBuf[0];
-        uint8_t len = camBuf[1];
-        Serial.printf("%d bytes starting at %02x\n", len, reg);
-        if (readInto((uint8_t *)camBuf, len) == len) {
-          for(int i=0; i<len; i++) {
-            cam.writeRegister(reg + i, camBuf[i]);
+      Serial.print("Write camera register(s)...");
+      if ((i2cRead(2) == 2)) {   // First, length
+        uint8_t len = i2cBuf[1]; // Max len 255
+        if (camState >= CAM_ON) {
+          uint8_t reg = i2cBuf[0];
+          if (i2cRead(len) == len) {
+            Serial.printf("%d byte(s) starting at %02x\n", len, reg);
+            for(int i=0; i<len; i++) {
+              cam.writeRegister(reg + i, i2cBuf[i]);
+            }
+          } else {
+            Serial.println("arguments missing; request ignored");
           }
+        } else {
+          Serial.println("camera not started; request ignored");
         }
+      } else {
+        Serial.println("arguments missing; request ignored");
       }
       break;
 
-    case ICAP_CMD_CAPTURE: // Capture frame (will be followed by a requestCallback())
-      if(camState > 1) {
-        Serial.println("Capturing");
-//        cam.suspend(); // Pause camera DMA, hold buffer steady to avoid tearing
-// Could this be a thing where I have to do the suspend() in loop()?
+// Host code MUST poll state until camera is paused
+    case ICAP_CMD_CAPTURE: // Capture frame (subsequent requestCallback()s)
+      Serial.print("Capture...");
+      if ((camState == CAM_ON) || (camState == CAM_PAUSED)) {
+        Serial.println("started");
+        camState = CAM_REQ_PAUSE;
         capturedImagePtr = (uint8_t *)cam.getBuffer();
         capturedBytesRemaining = cam.width() * cam.height() * 2;
-        camBuf[0] = capturedBytesRemaining & 0xFF;
-        camBuf[1] = (capturedBytesRemaining >> 8) & 0xFF;
-        camBuf[2] = (capturedBytesRemaining >> 16) & 0xFF;
-        camBuf[3] = (capturedBytesRemaining >> 24) & 0xFF;
-        reqAddr = camBuf;                        // Set up pointer & len for
-        reqLen = 4;                              // subsequent requestCallback()
-camState = 3; // Plz suspend in loop()
+        // Tell host how many bytes to expect
+        i2cBuf[0] =  capturedBytesRemaining        & 0xFF;
+        i2cBuf[1] = (capturedBytesRemaining >>  8) & 0xFF;
+        i2cBuf[2] = (capturedBytesRemaining >> 16) & 0xFF;
+        i2cBuf[3] = (capturedBytesRemaining >> 24) & 0xFF;
+        i2cReqLen = 4;
+        // Once camera is paused, subsequent requests return image data
+      } else {
+        Serial.println("camera not running; request ignored");
       }
-      // Will this require polling cam state on the host end?
       break;
 
+#if 0
+// Is this really necessary or are requestCallbacks adequate with length and stuff?
     case ICAP_CMD_GET_DATA: // Request part of last-captured image data (followed by requestCallback())
       if ((readInto((uint8_t *)camBuf, 1) == 1) && camState > 1) {
         uint8_t len = camBuf[0];           // What host requested
@@ -194,10 +269,17 @@ camState = 3; // Plz suspend in loop()
         capturedImagePtr += bytesThisPass;
       }
       break;
+#endif
 
-    case ICAP_CMD_RESUME: // Resume camera
-      camState = 5;
-//      cam.resume(); // Resume DMA into camera buffer
+    case ICAP_CMD_RESUME: // Un-pause camera, resume normal background capture
+      camState = CAM_REQ_RESUME;
+      break;
+
+    case ICAP_CMD_RETURN: // Poll last function return value (subsequent requestCallback())
+      // This is super rare and probably not needed except for weird debugging.
+      Serial.printf("Return last camera function call status (%d)\n", status);
+      i2cBuf[0] = (uint8_t)status;
+      i2cReqLen = 1;
       break;
   }
 
@@ -220,62 +302,75 @@ void setup() {
   pinMode(25, OUTPUT); // LED
   digitalWrite(25, LOW);
 
+#if defined(TFT_PREVIEW)
   tft.init(240, 240);
   tft.setSPISpeed(48000000);
   tft.fillScreen(ST77XX_BLACK);
-  tft.println("Howdy");
+  tft.println("I2C PERIPH");
   tft.setRotation(3);
+#endif // TFT_PREVIEW
 
   // Pico acts as an I2C peripheral on a second bus
   // (since first is tied up with camera)
   periphI2C->setSDA(PERIPH_SDA);
   periphI2C->setSCL(PERIPH_SCL);
   periphI2C->begin(PERIPH_ADDR);
-  periphI2C->setClock(100000UL);
-  periphI2C->onRequest(requestCallback);
-  periphI2C->onReceive(receiveCallback);
+  periphI2C->setClock(400000UL);
+  periphI2C->onRequest(i2cReqCallback);
+  periphI2C->onReceive(i2cRecvCallback);
 }
 
 // MAIN LOOP - RUNS REPEATEDLY UNTIL RESET OR POWER OFF --------------------
 
 void loop() {
 
-  // Cam can't be started in I2C callback, probably interrupt-related,
-  // so a small state var thing is done. Host-side code should poll
-  // camera readyness before issuing any further requests.
-  if (camState == 1) {
-    Serial.println("STARTING CAMERA");
-    status = cam.begin((iCap_colorspace)camBuf[0], (OV7670_size)camBuf[1], (float)camBuf[2]);
-    if (status == ICAP_STATUS_OK) {
-      Serial.println("CAMERA IS OK");
-      //cam.test_pattern(OV7670_TEST_PATTERN_COLOR_BAR);
-      delay(1000); // Allow exposure and PIO sync and whatnot
-      camState = 2;
-    } else {
-      Serial.println("CAMERA FAIL");
-      camState = 0;
-    }
-  } else if (camState == 3) {
-    cam.suspend(); // Pause camera DMA, hold buffer steady to avoid tearing
-    camState = 4; // Is suspended
-  } else if (camState == 5) {
-    cam.resume();
-    camState = 2; // Is running
+  switch (camState) { // Only the "REQ" states need to be handled here
+    case CAM_REQ_START:
+      Serial.print("STARTING CAMERA...");
+      // For now we'll treat mode, size and framerate as byte values.
+      // That's OK for the former, but might want fractional rates later.
+      status = cam.begin((iCap_colorspace)i2cBuf[0], (OV7670_size)i2cBuf[1],
+                         (float)i2cBuf[2]);
+      if (status == ICAP_STATUS_OK) {
+        Serial.println("OK");
+        //cam.test_pattern(OV7670_TEST_PATTERN_COLOR_BAR);
+        delay(500); // Allow exposure and PIO sync and whatnot
+        camState = CAM_ON;
+      } else {
+        Serial.println("FAIL");
+        camState = CAM_OFF;
+      }
+      break;
+    case CAM_REQ_PAUSE:
+      Serial.print("PAUSING CAMERA...");
+      cam.suspend();
+      Serial.println("OK");
+      camState = CAM_PAUSED;
+      break;
+    case CAM_REQ_RESUME:
+      Serial.print("RESUMING CAMERA...");
+      cam.resume();
+      capturing = false;
+      Serial.println("OK");
+      camState = CAM_ON;
+      break;
   }
 
   digitalWrite(25, !((millis() >> 7) & 7)); // LED heartbeat
 
-  if (camState >= 2) {
-    tft.endWrite();   // Close out prior transfer
-    tft.startWrite(); // and start a fresh one (required)
+#if defined(TFT_PREVIEW)
+  if (camState == CAM_ON) {
+    tft.startWrite();
     // Address window centers QQVGA image on screen. NO CLIPPING IS
     // PERFORMED, it is assumed here that the camera image is equal
     // or smaller than the screen.
     tft.setAddrWindow((tft.width() - cam.width()) / 2,
                       (tft.height() - cam.height()) / 2,
                       cam.width(), cam.height());
-    tft.writePixels(cam.getBuffer(), cam.width() * cam.height(), false, true);
+    tft.writePixels(cam.getBuffer(), cam.width() * cam.height(), true, true);
+    tft.endWrite();
   }
+#endif // TFT_PREVIEW
 }
 
 #else

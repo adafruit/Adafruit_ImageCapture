@@ -25,17 +25,21 @@
 class Adafruit_iCap_peripheral {
 public:
   Adafruit_iCap_peripheral(uint8_t addr = ICAP_DEFAULT_ADDRESS,
-                           TwoWire *w = &Wire, uint32_t s = 100000UL);
+                           TwoWire *w = &Wire, uint32_t s = 400000UL);
   ~Adafruit_iCap_peripheral(); // Destructor
+
   void begin();
+  int getReturnValue();
+  iCap_state getState();
+
   int cameraStart(uint8_t mode, uint8_t size, float fps,
                   uint32_t timeout_ms = 3000);
-  int status();
   int readRegister(uint8_t reg);
   void writeRegister(uint8_t reg, uint8_t val);
   uint32_t capture();
-  uint8_t *getData(uint8_t len = 255);
+  uint8_t *getData(int len);
   void resume();
+
   /*!
     @brief   Get image width of camera's current resolution setting.
     @return  Width in pixels.
@@ -48,13 +52,22 @@ public:
   */
   uint16_t height(void) { return _height; }
 
+  /*!
+    @brief   Get maximum I2C transfer size that was negotiated between
+             host and peripheral during begin().
+    @return  Maximum single transfer size, in bytes.
+  */
+  uint32_t maxTransferSize(void) { return i2cMaxLen; }
+
 protected:
-  TwoWire *wire;                     //< Pointer to I2C periph (e.g. &Wire)
-  uint32_t i2c_speed;                //< I2C data rate, bps (e.g. 100000)
-  uint8_t i2c_buffer[BUFFER_LENGTH]; //< TX/RX buffer, size from Wire lib
-  uint8_t i2c_address;               //< I2C peripheral address
-  uint16_t _width = 0;               ///< Current settings width in pixels
-  uint16_t _height = 0;              ///< Current settings height in pixels
-  iCap_colorspace colorspace;        ///< Colorspace passed to begin()
+  TwoWire *wire;                 //< Pointer to I2C periph (e.g. &Wire)
+  uint32_t i2cSpeed;             //< I2C data rate, bps (e.g. 100000)
+  uint8_t i2cAddress;            //< I2C peripheral address
+  uint8_t i2cBuf[BUFFER_LENGTH]; //< TX/RX buffer, size from Wire lib
+  uint32_t i2cMaxLen = 32;       //< Actual negotiated I2C xfer limit
+  uint16_t _width = 0;           //< Current settings width in pixels
+  uint16_t _height = 0;          //< Current settings height in pixels
+  iCap_colorspace colorspace;    //< Colorspace passed to begin()
+  int i2cRead(int len);
 };
 
