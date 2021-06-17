@@ -111,7 +111,6 @@ int Adafruit_iCap_peripheral::getReturnValue(void) {
       ((uint32_t)i2cBuf[2] << 16) | ((uint32_t)i2cBuf[3] << 24);
   }
   return response;
-
 }
 
 int Adafruit_iCap_peripheral::readRegister(uint8_t reg) {
@@ -148,8 +147,12 @@ uint32_t Adafruit_iCap_peripheral::capture() {
   }
 Serial.print("response = ");
 Serial.println(response);
-Serial.println("Polling...");
 
+// Polling isn't necessary now, tripWire behavior in periph-side
+// code was changed. Requests for data return 0 bytes, and the
+// image-reading loop disregards those.
+#if 0
+Serial.println("Polling...");
   // Start polling state until ready
   uint32_t startTime = millis();
   uint32_t timeout_ms = 3000;
@@ -165,9 +168,7 @@ Serial.println("Polling...");
   } while((status != CAM_PAUSED) && ((millis() - startTime) < timeout_ms));
   // TO DO: make this return 0 on timeout or other issue
 Serial.println("OK");
-// I think there's a race condition where periph is already returning
-// data because 'capturing' var is set too soon (needs to wait until
-// byte count has been transmitted to host).
+#endif
 
   return response;
 }

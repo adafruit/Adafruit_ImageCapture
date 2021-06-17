@@ -81,7 +81,7 @@ volatile uint32_t i2cMaxLen = 32;    // May be upgraded on negotiation
 volatile uint8_t *capturedImagePtr = NULL;
 volatile uint32_t capturedBytesRemaining = 0;
 volatile uint8_t  capturing = false; // When true, sending image data, not i2cBuf
-volatile bool foo = false;
+volatile bool     tripWire = false;  // Race condition weeds, see comments later
 
 // I2C request callback; length of data i(i2cReqLen) s anticipated in I2CRecvCallback
 void i2cReqCallback() {
@@ -105,13 +105,14 @@ void i2cReqCallback() {
       i2cReqLen = 0; // Reset length to avoid double invocation problems
     }
   }
-// If first request after polling switched to camera pause,
-// set 'capturing' flag.
-if (foo == true) {
-  i2cReqLen = min(capturedBytesRemaining, i2cMaxLen);
-  capturing = true;
-  foo = false;
-}
+  // If this is the first request callback after polling switched to
+  // camera pause, set the 'capturing' flag true...next request will
+  // then start issuing image data.
+  if (tripWire == true) {
+    i2cReqLen = min(capturedBytesRemaining, i2cMaxLen);
+    capturing = true;
+    tripWire = false;
+  }
 }
 
 // Read 'len' bytes from I2C into i2cBuf
@@ -139,7 +140,9 @@ void i2cRecvCallback(int len) {
 
   int cmd = periphI2C->read(); // 1st byte should be command
   Serial.printf("Received command %02X\n", cmd);
-if (capturing) return; // Ignore received byte
+
+  //if (capturing) return; // Ignore received byte
+
   switch (cmd) {
 
     case ICAP_CMD_BUFSIZ: // Negotiate I2C max transfer (subsequent requestCallback())
@@ -171,10 +174,12 @@ if (capturing) return; // Ignore received byte
       Serial.printf("Poll state (%02x)\n", (int)camState);
       i2cBuf[0] = camState;
       i2cReqLen = 1;
-// If camState just changed to CAM_PAUSED,
-// then the next request AFTER this one will be the first data.
-// So -- can't set to 'capturing' just yet.
-if (camState == CAM_PAUSED) foo = true;
+      // If camState just changed to CAM_PAUSED, then the next request
+      // AFTER this one will be the first image data. So, can't set the
+      // 'capturing' flag just yet...that happens at the end of the
+      // request callback if the 'tripWire' flag is set (could instead
+      // make 'capturing' a 3-state var...it's states within states).
+//      if (camState == CAM_PAUSED) tripWire = true;
       break;
 
     case ICAP_CMD_START: // Start camera
@@ -247,29 +252,11 @@ if (camState == CAM_PAUSED) foo = true;
         i2cBuf[3] = (capturedBytesRemaining >> 24) & 0xFF;
         i2cReqLen = 4;
         // Once camera is paused, subsequent requests return image data
+tripWire = true;
       } else {
         Serial.println("camera not running; request ignored");
       }
       break;
-
-#if 0
-// Is this really necessary or are requestCallbacks adequate with length and stuff?
-    case ICAP_CMD_GET_DATA: // Request part of last-captured image data (followed by requestCallback())
-      if ((readInto((uint8_t *)camBuf, 1) == 1) && camState > 1) {
-        uint8_t len = camBuf[0];           // What host requested
-        len = min(len, BUFFER_LENGTH - 1); // Limit it to our buffer size
-        Serial.printf("Requested %d bytes of image, %d remain\n", len, capturedBytesRemaining);
-        uint8_t bytesThisPass = min(capturedBytesRemaining, len);
-        if (bytesThisPass)
-          memcpy((void *)(&camBuf[1]), (void *)capturedImagePtr, bytesThisPass);
-        camBuf[0] = bytesThisPass;
-        reqAddr = camBuf;
-        reqLen = bytesThisPass + 1;
-        capturedBytesRemaining -= bytesThisPass;
-        capturedImagePtr += bytesThisPass;
-      }
-      break;
-#endif
 
     case ICAP_CMD_RESUME: // Un-pause camera, resume normal background capture
       camState = CAM_REQ_RESUME;
