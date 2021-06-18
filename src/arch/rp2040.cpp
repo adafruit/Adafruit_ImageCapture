@@ -168,9 +168,10 @@ iCap_status Adafruit_iCap_parallel::pcc_start(uint16_t *dest,
   // (1 pixel), configured in data size above and in PIO setup elsewhere.
   channel_config_set_dreq(&arch->dma_config,
                           pio_get_dreq(arch->pio, arch->sm, false));
+// NO LONGER NEEDS DONE HERE - MAKE SEPARATE FUNCTION TO CONFIG DMA
   // Set up initial DMA xfer, but don't trigger (that's done in interrupt)
-  dma_channel_configure(arch->dma_channel, &arch->dma_config, dest,
-                        &arch->pio->rxf[arch->sm], num_pixels, false);
+//  dma_channel_configure(arch->dma_channel, &arch->dma_config, dest,
+//                        &arch->pio->rxf[arch->sm], num_pixels, false);
 
   // Set up end-of-DMA interrupt
   dma_channel_set_irq0_enabled(arch->dma_channel, true);
@@ -183,6 +184,12 @@ iCap_status Adafruit_iCap_parallel::pcc_start(uint16_t *dest,
                                      &iCap_vsync_irq);
 
   return ICAP_STATUS_OK;
+}
+
+iCap_status Adafruit_iCap_parallel::dma_xfer_setup(uint16_t *dest,
+                                              uint32_t num_pixels) {
+  dma_channel_configure(arch->dma_channel, &arch->dma_config, dest,
+                        &arch->pio->rxf[arch->sm], num_pixels, false);
 }
 
 #endif // end ARDUINO_ARCH_RP2040

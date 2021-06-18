@@ -65,31 +65,24 @@ typedef enum {
 class Adafruit_ImageCapture {
 public:
   /*!
-    @brief  Constructor for Adafruit_ImageCapture class.
+    @brief  Constructor for Adafruit_ImageCapture class. This constructor
+            is never invoked directly by user code. Instead, a subclass is
+            used, which implicitly calls this constructor...hence no
+            defaults here.
     @param  arch      Pointer to structure containing architecture-specific
                       settings. For example, on SAMD51, this structure
                       includes a pointer to a timer peripheral's base
-                      address, used to generate the xclk signal. The
-                      structure is always of type iCap_arch, but the
-                      specific elements within will vary with each
-                      architecture. Can be NULL if not used/needed.
+                      address, used to generate the xclk signal. Structure
+                      is always of type iCap_arch, but the specific elements
+                      within will vary with each architecture. Can be NULL
+                      if not used/needed.
+    @param  pbuf      Preallocated buffer for captured pixel data, or NULL
+                      for library to allocate as needed when a camera
+                      resolution is selected.
+    @param  pbufsize  Size of passed-in buffer (or 0 if NULL).
   */
-  Adafruit_ImageCapture(iCap_arch *arch = NULL);
+  Adafruit_ImageCapture(iCap_arch *arch, uint16_t *pbuf, uint32_t pbufsize);
   ~Adafruit_ImageCapture(); // Destructor
-
-  /*!
-    @brief   Allocate and initialize resources behind an
-             Adafruit_ImageCapture instance.
-    @return  Status code. ICAP_STATUS_OK on successful init.
-    @param   space     One of the iCap_colorspace enumeration values;
-                       currently has settings for RGB or YUV, 16 bits/pixel.
-    @param   pbuf      Preallocated buffer for captured pixel data, or NULL
-                       for library to allocate as needed when a camera
-                       resolution is selected.
-    @param   pbufsize  Size of passed-in buffer (or 0 if NULL).
-  */
-  iCap_status begin(iCap_colorspace space, uint16_t *pbuf=NULL,
-                    uint32_t pbufsize=0);
 
   /*!
     @brief   Get image width of camera's current resolution setting.
@@ -183,18 +176,14 @@ public:
   void Y2RGB565(void);
 
 protected:
-  uint16_t *buffer[2] = {NULL, NULL}; ///< Camera buffer(s) allocated by lib
-  uint32_t buffer_size = 0;           ///< Size of camera buffer, in bytes
-  uint16_t _width = 0;                ///< Current settings width in pixels
-  uint16_t _height = 0;               ///< Current settings height in pixels
-  iCap_colorspace colorspace;         ///< Colorspace passed to begin()
-  iCap_arch *arch = NULL;             ///< Device-specific data, if needed
-
-  uint16_t *pixbuf = NULL;  //< 16-bit pixel buffer passed in or allocated
-  uint32_t pixbuf_size = 0; //< Full size of pixbuf, in bytes
-  uint16_t *pixbufptr[3];   //< Frame pointers (up to 3) into pixbuf
-  uint8_t bufmode;          //< 1-3 = single-, double-, triple-buffered
-  bool pixbuf_allocable;    //< Internal vs external allocated buffer
+  uint16_t *pixbuf[3];        ///< Frame pointers (up to 3) into pixel buffer
+  uint32_t pixbuf_size = 0;   ///< Full size of pixbuf, in bytes
+  uint8_t bufmode;            ///< 1-3 = single-, double-, triple-buffered
+  bool pixbuf_allocable;      ///< Internally allocated vs static buffer
+  uint16_t _width = 0;        ///< Current settings width in pixels
+  uint16_t _height = 0;       ///< Current settings height in pixels
+  iCap_arch *arch = NULL;     ///< Device-specific data, if needed
+  iCap_colorspace colorspace; ///< Colorspace passed to begin()
 
   iCap_status setSize(uint16_t width, uint16_t height, uint8_t nbuf=1,
                       iCap_realloc allo=ICAP_REALLOC_CHANGE);

@@ -52,55 +52,62 @@ class Adafruit_iCap_OV7670 : public Adafruit_iCap_parallel {
 public:
   /*!
     @brief  Constructor for OV7670 camera class.
-    @param  pins  OV7670_pins structure, describing physical connection to
-                  the camera.
-    @param  twi   TwoWire instance (e.g. Wire or Wire1), used for I2C
-                  communication with camera.
-    @param  arch  Pointer to structure containing architecture-specific
-                  settings. For example, on SAMD51, this structure
-                  includes a pointer to a timer peripheral's base address,
-                  used to generate the xclk signal. The structure is
-                  always of type iCap_arch, but the specific elements
-                  within will vary with each supported architecture.
+    @param  pins      OV7670_pins structure, describing physical connection
+                      to the camera.
+    @param  arch      Pointer to structure containing architecture-specific
+                      settings. For example, on SAMD51, this structure
+                      includes a pointer to a timer peripheral's base
+                      address, used to generate the xclk signal. The
+                      structure is always of type iCap_arch, but the
+                      specific elements within will vary with each supported
+                      architecture.
+    @param  pbuf      Preallocated buffer for captured pixel data, or NULL
+                      for library to allocate as needed when a camera
+                      resolution is selected.
+    @param  pbufsize  Size of passed-in buffer (or 0 if NULL).
+    @param  twi       TwoWire instance (e.g. Wire or Wire1), used for I2C
+                      communication with camera.
     @param  addr  I2C address of camera.
   */
-  Adafruit_iCap_OV7670(iCap_parallel_pins &pins, TwoWire &twi = Wire,
-                       iCap_arch *arch = NULL, uint8_t addr = OV7670_ADDR);
+  Adafruit_iCap_OV7670(iCap_parallel_pins &pins, iCap_arch *arch = NULL,
+                       uint16_t *pbuf = NULL, uint32_t pbufsize = 0,
+                       TwoWire &twi = Wire, uint8_t addr = OV7670_ADDR);
   ~Adafruit_iCap_OV7670();
+
   /*!
-    @brief   Allocate and initialize resources behind an Adafruit_iCap_OV7670
-             instance.
-    @param   space       ICAP_COLOR_RGB or ICAP_COLOR_YUV.
-    @param   size        Frame size as a power-of-two reduction of VGA
-                         resolution. Available sizes are OV7670_SIZE_DIV1
-                         (640x480), OV7670_SIZE_DIV2 (320x240),
-                         OV7670_SIZE_DIV4 (160x120), OV7670_SIZE_DIV8 and
-                         OV7670_SIZE_DIV16.
-    @param   fps         Desired capture framerate, in frames per second,
-                         as a float up to 30.0. Actual device frame rate may
-                         differ from this, depending on a host's available
-                         PWM timing. Generally, the actual device fps will
-                         be equal or nearest-available below the requested
-                         rate, only in rare cases of extremely low requested
-                         frame rates will a higher value be used. Since
-                         begin() only returns a status code, if you need to
-                         know the actual framerate you can call
-                         OV7670_set_fps(NULL, fps) at any time before or
-                         after begin() and that will return the actual
-                         resulting frame rate as a float.
-    @param   bufsiz      Image buffer size, in bytes. This is configurable so
-                         code can do things like change image sizes without
-                         reallocating (which risks losing the existing buffer)
-                         or double-buffered transfers. Pass 0 to use default
-                         buffer size equal to 2 bytes per pixel times the
-                         number of pixels corresponding to the 'size'
-                         argument. If you later call setSize() with an image
-                         size exceeding the buffer size, it will fail.
+    @brief   Initialize peripherals behind an Adafruit_iCap_OV7670 instance,
+             but do not actually start capture; must follow with a setSize()
+             call for that.
+    @return  Status code. ICAP_STATUS_OK on successful init.
+  */
+  iCap_status begin(void);
+
+  /*!
+    @brief   Initialize peripherals and allocate resources behind an
+             Adafruit_iCap_OV7670 instance, start capturing data.
+    @param   space  ICAP_COLOR_RGB or ICAP_COLOR_YUV.
+    @param   size   Frame size as a power-of-two reduction of VGA
+                    resolution. Available sizes are OV7670_SIZE_DIV1
+                    (640x480), OV7670_SIZE_DIV2 (320x240), OV7670_SIZE_DIV4
+                    (160x120), OV7670_SIZE_DIV8 and OV7670_SIZE_DIV16.
+    @param   fps    Desired capture framerate, in frames per second, as a
+                    float up to 30.0. Actual device frame rate may differ
+                    from this, depending on a host's available PWM timing.
+                    Generally, the actual device fps will be equal or
+                    nearest-available below the requested rate, only in rare
+                    cases of extremely low requested frame rates will a
+                    higher value be used. Since begin() only returns a
+                    status code, if you need to know the actual framerate
+                    you can call OV7670_set_fps(NULL, fps) at any time
+                    before or after begin() and that will return the actual
+                    resulting frame rate as a float.
+    @param   nbuf   Number of full-image buffers, 1-3. For now, always use
+                    1, multi-buffering isn't handled yet.
     @return  Status code. ICAP_STATUS_OK on successful init.
   */
   iCap_status begin(iCap_colorspace space = ICAP_COLOR_RGB565,
                     OV7670_size size = OV7670_SIZE_DIV4, float fps = 30.0,
-                    uint32_t bufsiz = 0);
+                    nbuf = 1);
 
   // Configure camera frame rate. Actual resulting frame rate (returned) may
   // be different depending on available clock frequencies. Result will only
@@ -122,6 +129,7 @@ public:
     @brief   Change camera resolution post-begin().
     @param   size  One of the OV7670_size values ranging from full VGA
                    (640x480 pixels) to 1/16 VGA (40x30 pixels).
+@param nbuf  Foo.
     @param   allo  Camera buffer reallocation behavior:
                    - ICAP_REALLOC_NONE to not reallocate buffer.
                      Function will return ICAP_STATUS_OK if new size fits

@@ -4,52 +4,49 @@
 
 #include <Arduino.h>
 
-Adafruit_iCap_parallel::Adafruit_iCap_parallel(iCap_parallel_pins *pins_ptr,
+Adafruit_iCap_parallel::Adafruit_iCap_parallel(iCap_arch *arch,
+                                               iCap_parallel_pins *pins_ptr,
+                                               uint16_t *pbuf,
+                                               uint32_t pbufsize,
                                                TwoWire *twi_ptr,
-                                               iCap_arch *arch, uint8_t addr,
-                                               uint32_t speed,
+                                               uint8_t addr, uint32_t speed,
                                                uint32_t delay_us)
     : i2c_address(addr & 0x7F), i2c_speed(speed), i2c_delay_us(delay_us),
-      wire(twi_ptr), Adafruit_ImageCapture(arch) {
+      wire(twi_ptr), Adafruit_ImageCapture(arch, pbuf, pbufsize) {
   memcpy(&pins, pins_ptr, sizeof pins); // Save pins struct in object
 }
 
 Adafruit_iCap_parallel::~Adafruit_iCap_parallel() {}
 
-iCap_status Adafruit_iCap_parallel::begin(iCap_colorspace space,
-                                          uint16_t *pbuf, uint32_t pbufsize) {
-Serial.println("AAA");
-  iCap_status status = Adafruit_ImageCapture::begin(space, pbuf, pbufsize);
-  if (status != ICAP_STATUS_OK) {
-    return status;
+iCap_status Adafruit_iCap_parallel::begin() {
+  // Set up XCLK out unless it's a self-clocking camera. This must be done
+  // BEFORE any I2C commands, as cam may require clock for I2C timing.
+  if (pins.xclk >= 0) {
+    xclk_start(ICAP_XCLK_HZ);
   }
-Serial.println("BBB");
 
-  startI2C();
+#if defined(ARDUINO_ARCH_RP2040)
+  wire->setSDA(pins.sda);
+  wire->setSCL(pins.scl);
+#endif
+  wire->begin();
+  wire->setClock(i2c_speed);
 
-  // Set up parallel capture & DMA. Camera is initially suspended,
-  // calling code resumes cam DMA after I2C init sequence is sent.
-  pcc_start(buffer[0], _width * _height);
+  // Set up parallel capture peripheral & DMA. Camera is initially suspended,
+  // calling code resumes cam DMA only after I2C init sequence is sent.
+  pcc_start();
 
   return ICAP_STATUS_OK;
 }
 
-void Adafruit_iCap_parallel::startI2C(void) {
-  if (!i2c_started) {
-    // Set up XCLK out unless it's a self-clocking camera. This must be done
-    // BEFORE any I2C commands, as cam may require clock for I2C timing.
-    if (pins.xclk >= 0) {
-      xclk_start(ICAP_XCLK_HZ);
-    }
+iCap_status Adafruit_iCap_parallel::begin(iCap_colorspace space,
+                                          uint16_t width, uint16_t height,
+                                          uint8_t nbuf) {
+  begin();
+  setSize(space, width, height, nbuf, ICAP_REALLOC_CHANGE);
+}
 
-#if defined(ARDUINO_ARCH_RP2040)
-    wire->setSDA(pins.sda);
-    wire->setSCL(pins.scl);
-#endif
-    wire->begin();
-    wire->setClock(i2c_speed);
-    i2c_started = true;
-  }
+void Adafruit_iCap_parallel::startI2C(void) {
 }
 
 int Adafruit_iCap_parallel::readRegister(uint8_t reg) {

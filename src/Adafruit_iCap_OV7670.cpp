@@ -135,15 +135,24 @@ iCap_status Adafruit_iCap_OV7670::begin(iCap_colorspace space, OV7670_size size,
 // Problem here, I think...can't setSize until begin() (which makes buffer),
 // but can't begin() until setSize() (because it needs a destination
 // for DMA)
+// OK then - make sure begin() sets up the periphs but does NOT start DMA
+// nor allocate memory. setSize() does the alloc and then sets DMA running.
+// setSize(), not begin(), will accept the space, size and fps (in addition
+// to the realloc flag), and calling code must invoke that separately,
+// after begin.
+// Or, y'know, overload the function so it can go both ways. Start the
+// periphs but not the capture, or do both.
+// Put colorspace into the setSize call (and the begin-with-size call),
+// NOT in begin().
 
-  // Sets up width & height vars, doesn't yet issue commands
-  status = setSize(size, ICAP_REALLOC_CHANGE);
+  // Initialize peripherals for parallel+I2C camera:
+  status = Adafruit_iCap_parallel::begin(space);
   if (status != ICAP_STATUS_OK) {
     return status;
   }
 
-  // Initialize memory, peripherals for parallel+I2C camera:
-  status = Adafruit_iCap_parallel::begin(space);
+  // Sets up width & height vars, doesn't yet issue commands
+  status = setSize(size, ICAP_REALLOC_CHANGE);
   if (status != ICAP_STATUS_OK) {
     return status;
   }

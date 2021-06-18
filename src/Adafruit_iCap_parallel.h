@@ -35,43 +35,63 @@ class Adafruit_iCap_parallel : public Adafruit_ImageCapture {
 public:
   /*!
     @brief  Constructor for Adafruit_iCap_parallel class. This constructor
-            is never called directly by user code. Instead, a subclass is
+            is never invoked directly by user code. Instead, a subclass is
             used, which implicitly calls this constructor...hence no
             defaults here.
     @param  pins_ptr  Pointer iCap_parallel_pins structure, describing
                       physical connection to the camera.
-    @param  twi_ptr   Pointer to TwoWire instance (e.g. &Wire or &Wire1),
-                      used for I2C communication with camera.
     @param  arch      Pointer to structure containing architecture-specific
                       settings. For example, on SAMD51, this structure
                       includes a pointer to a timer peripheral's base address,
                       used to generate the xclk signal. The structure is
                       always of type iCap_arch, but the specific elements
                       within will vary with each supported architecture.
+    @param  pbuf      Preallocated buffer for captured pixel data, or NULL
+                      for library to allocate as needed when a camera
+                      resolution is selected.
+    @param  pbufsize  Size of passed-in buffer (or 0 if NULL).
+
+    @param  twi_ptr   Pointer to TwoWire instance (e.g. &Wire or &Wire1),
+                      used for I2C communication with camera.
     @param  addr      I2C address of camera.
     @param  speed     I2C speed in Hz (100000 typ.)
     @param  delay_us  Delay, in microseconds, between I2C commands (some
                       MCUs and/or cameras may cause lockup without some
                       delay).
   */
-  Adafruit_iCap_parallel(iCap_parallel_pins *pins_ptr, TwoWire *twi_ptr,
-                         iCap_arch *arch, uint8_t addr, uint32_t speed,
+  Adafruit_iCap_parallel(iCap_arch *arch, iCap_parallel_pins *pins_ptr,
+                         uint16_t *pbuf, uint32_t pbufsize,
+                         TwoWire *twi_ptr, uint8_t addr, uint32_t speed,
                          uint32_t delay_us);
   ~Adafruit_iCap_parallel(); // Destructor
 
   /*!
-    @brief   Allocate and initialize resources behind an Adafruit_OV7670
-             instance.
+    @brief   Initialize peripherals behind an Adafruit_iCap_parallel
+             instance. Does not actually start capture. Not invoked directly
+             by user code; only subclasses call this.
     @return  Status code. ICAP_STATUS_OK on successful init.
+  */
+  iCap_status begin(void);
+
+  /*!
+    @brief   Initialize peripherals and allocate resources behind an
+             Adafruit_iCap_parallel instance, begin capture with requested
+             settings. Not invoked directly by user code; only subclasses
+             call this.
     @param   space     One of the iCap_colorspace enumeration values;
                        currently has settings for RGB or YUV, 16 bits/pixel.
-    @param   pbuf      Preallocated buffer for captured pixel data, or NULL
-                       for library to allocate as needed when a camera
-                       resolution is selected.
-    @param   pbufsize  Size of passed-in buffer (or 0 if NULL).
+    @param   width     Image capture width in pixels (must match expected
+                       data from camera).
+    @param   height    Image capture height in pixels (must match expected
+                       data from camera).
+    @param   nbuf      Number of full-image buffers, 1-3.
+    @return  Status code. ICAP_STATUS_OK on successful init.
+    @note    Allocation behavior is implicit, NOT passed to this function.
+             If a static buffer was passed to constructor, no allocation
+             will happen. If no static buffer, this will attempt alloc.
   */
-  iCap_status begin(iCap_colorspace space, uint16_t *pbuf=NULL,
-                    uint32_t pbufsize=0);
+  iCap_status begin(iCap_colorspace space, uint16_t width, uint16_t height,
+                    uint8_t ncap);
 
   /*!
     @brief   Start XCLK output if required and initialize I2C. Normally this
@@ -122,6 +142,7 @@ public:
   void resume(void);
 
 protected:
+
   /*!
     @brief   Starter function for the XCLK output signal.
     @param   freq  Desired XCLK frequency in Hz. Typically the ICAP_XCLK_HZ
@@ -144,7 +165,6 @@ protected:
   uint32_t i2c_speed;       ///< I2C bus speed
   uint32_t i2c_delay_us;    ///< Delay in microseconds between I2C writes
   uint8_t i2c_address;      ///< Camera I2C address
-  bool i2c_started = false; ///< Set true after I2C started
 };
 
 #endif // end ICAP_FULL_SUPPORT
