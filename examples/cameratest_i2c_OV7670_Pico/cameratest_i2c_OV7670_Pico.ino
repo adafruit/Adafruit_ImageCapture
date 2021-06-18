@@ -10,6 +10,14 @@ HARDWARE REQUIRED:
 - 10K pullups on SDA+SCL pins
 */
 
+/*
+Declare image buffer as global var in this code, NOT the capture library.
+Provide a way to pass it in.
+There's a 'bufsiz' arg in begin() but that's about specifying how much
+the lib should allocate, not how much the calling code already offers.
+*/
+
+
 #include <Wire.h>
 #include <Adafruit_iCap_OV7670.h>
 #include <Adafruit_iCap_I2C.h>

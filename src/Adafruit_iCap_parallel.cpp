@@ -16,11 +16,14 @@ Adafruit_iCap_parallel::Adafruit_iCap_parallel(iCap_parallel_pins *pins_ptr,
 
 Adafruit_iCap_parallel::~Adafruit_iCap_parallel() {}
 
-iCap_status Adafruit_iCap_parallel::begin(iCap_colorspace space) {
-  iCap_status status = Adafruit_ImageCapture::begin(space);
+iCap_status Adafruit_iCap_parallel::begin(iCap_colorspace space,
+                                          uint16_t *pbuf, uint32_t pbufsize) {
+Serial.println("AAA");
+  iCap_status status = Adafruit_ImageCapture::begin(space, pbuf, pbufsize);
   if (status != ICAP_STATUS_OK) {
     return status;
   }
+Serial.println("BBB");
 
   startI2C();
 

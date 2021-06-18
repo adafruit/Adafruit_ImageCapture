@@ -63,10 +63,15 @@ public:
     @brief   Allocate and initialize resources behind an Adafruit_OV7670
              instance.
     @return  Status code. ICAP_STATUS_OK on successful init.
-    @param   space  One of the iCap_colorspace enumeration values,
-                    passed through to Adafruit_ImageCapture::begin().
+    @param   space     One of the iCap_colorspace enumeration values;
+                       currently has settings for RGB or YUV, 16 bits/pixel.
+    @param   pbuf      Preallocated buffer for captured pixel data, or NULL
+                       for library to allocate as needed when a camera
+                       resolution is selected.
+    @param   pbufsize  Size of passed-in buffer (or 0 if NULL).
   */
-  iCap_status begin(iCap_colorspace space);
+  iCap_status begin(iCap_colorspace space, uint16_t *pbuf=NULL,
+                    uint32_t pbufsize=0);
 
   /*!
     @brief   Start XCLK output if required and initialize I2C. Normally this

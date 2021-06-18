@@ -132,6 +132,10 @@ iCap_status Adafruit_iCap_OV7670::begin(iCap_colorspace space, OV7670_size size,
 
   iCap_status status;
 
+// Problem here, I think...can't setSize until begin() (which makes buffer),
+// but can't begin() until setSize() (because it needs a destination
+// for DMA)
+
   // Sets up width & height vars, doesn't yet issue commands
   status = setSize(size, ICAP_REALLOC_CHANGE);
   if (status != ICAP_STATUS_OK) {
@@ -262,64 +266,35 @@ float Adafruit_iCap_OV7670::setFPS(float fps) {
 iCap_status Adafruit_iCap_OV7670::setSize(OV7670_size size, iCap_realloc allo) {
   uint16_t new_width = 640 >> (int)size;
   uint16_t new_height = 480 >> (int)size;
-  uint32_t new_buffer_size = new_width * new_height * sizeof(uint16_t);
-  bool ra = false;
-
-  switch (allo) {
-  case ICAP_REALLOC_NONE:
-    if (new_buffer_size > buffer_size) { // New size won't fit
-      // Don't realloc. Keep current camera settings, return error.
-      return ICAP_STATUS_ERR_MALLOC;
+  iCap_status status = Adafruit_ImageCapture::setSize(new_width, new_height,
+                                                      1, allo);
+Serial.printf("SETSIZE STATUS: %d\n", (int)status);
+  if (status == ICAP_STATUS_OK) { // Successful realloc?
+    if (i2c_started) {
+      // Array of five window settings, index of each (0-4) aligns with the five
+      // OV7670_size enumeration values. If enum changes, list must change!
+      static struct {
+        uint8_t vstart;
+        uint8_t hstart;
+        uint8_t edge_offset;
+        uint8_t pclk_delay;
+      } window[] = {
+          // Window settings were tediously determined empirically.
+          // I hope there's a formula for this, if a do-over is needed.
+          {9, 162, 2, 2},  // SIZE_DIV1  640x480 VGA
+          {10, 174, 0, 2}, // SIZE_DIV2  320x240 QVGA
+          {11, 186, 2, 2}, // SIZE_DIV4  160x120 QQVGA
+          {12, 210, 0, 2}, // SIZE_DIV8  80x60   ...
+          {15, 252, 3, 2}, // SIZE_DIV16 40x30
+      };
+      frameControl(size, window[size].vstart, window[size].hstart,
+                   window[size].edge_offset, window[size].pclk_delay);
     }
-    break;
-  case ICAP_REALLOC_CHANGE:
-    ra = (new_buffer_size != buffer_size); // Realloc on size change
-    break;
-  case ICAP_REALLOC_LARGER:
-    ra = (new_buffer_size > buffer_size); // Realloc on size increase
-    break;
+  } else {
+    // Stop capture here
   }
 
-  if (ra) { // Reallocate?
-    uint16_t *new_buffer = (uint16_t *)realloc(buffer[0], new_buffer_size);
-    if (new_buffer == NULL) { // FAIL
-      _width = _height = buffer_size = 0;
-      buffer[0] = NULL;
-      // Calling code had better poll width(), height() or getBuffer() in
-      // this case so it knows the camera buffer is gone, doesn't attempt
-      // to read camera data into unknown RAM.
-      return ICAP_STATUS_ERR_MALLOC;
-    }
-    buffer[0] = new_buffer;
-    buffer_size = new_buffer_size;
-  }
-
-  _width = new_width;
-  _height = new_height;
-
-  if (i2c_started) {
-    // Array of five window settings, index of each (0-4) aligns with the five
-    // OV7670_size enumeration values. If enum changes, list must change!
-    static struct {
-      uint8_t vstart;
-      uint8_t hstart;
-      uint8_t edge_offset;
-      uint8_t pclk_delay;
-    } window[] = {
-        // Window settings were tediously determined empirically.
-        // I hope there's a formula for this, if a do-over is needed.
-        {9, 162, 2, 2},  // SIZE_DIV1  640x480 VGA
-        {10, 174, 0, 2}, // SIZE_DIV2  320x240 QVGA
-        {11, 186, 2, 2}, // SIZE_DIV4  160x120 QQVGA
-        {12, 210, 0, 2}, // SIZE_DIV8  80x60   ...
-        {15, 252, 3, 2}, // SIZE_DIV16 40x30
-    };
-
-    frameControl(size, window[size].vstart, window[size].hstart,
-                 window[size].edge_offset, window[size].pclk_delay);
-  }
-
-  return ICAP_STATUS_OK;
+  return status;
 }
 
 // Sets up PCLK dividers and sets H/V start/stop window. Rather than

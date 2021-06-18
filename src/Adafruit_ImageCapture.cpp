@@ -34,13 +34,90 @@
 
 #include <string.h> // memcpy()
 
-Adafruit_ImageCapture::Adafruit_ImageCapture(iCap_arch *arch) : arch(arch) {}
+Adafruit_ImageCapture::Adafruit_ImageCapture(iCap_arch *arch) {}
 
 Adafruit_ImageCapture::~Adafruit_ImageCapture() {}
 
-iCap_status Adafruit_ImageCapture::begin(iCap_colorspace space) {
+#include <Arduino.h>
+iCap_status Adafruit_ImageCapture::begin(iCap_colorspace space,
+                                         uint16_t *pbuf, uint32_t pbufsize) {
   colorspace = space;
-  // Do alloc here
+Serial.println("HALLO HALLO");
+  pixbuf = pbuf;
+  if(pbuf && pbufsize) {      // Pixel buffer passed in:
+Serial.println("AA");
+    pixbuf_size = pbufsize;   //   Static buffer, lib can divvy as needed
+    pixbuf_allocable = false; //   but it cannot be changed or reallocated.
+  } else {                    // No pixel buffer passed in:
+Serial.println("BB");
+    pixbuf_allocable = true;  //   Library will realloc as needed,
+    pixbuf_size = 0;          //   size computed when alloc'd
+  }
+Serial.println("MOAR HALLO");
+
+  return ICAP_STATUS_OK;
+}
+
+iCap_status Adafruit_ImageCapture::setSize(uint16_t width,
+                                           uint16_t height, uint8_t nbuf,
+                                           iCap_realloc allo) {
+  if (nbuf < 1) nbuf = 1;      // Constrain number of buffers to 1-3
+  else if (nbuf > 3) nbuf = 3;
+  uint32_t new_buffer_size = width * height * nbuf * sizeof(uint16_t);
+  bool ra = false; // Gets set true only if a reallocation is needed
+Serial.printf("%d %d %d %d\n", width, height, nbuf, new_buffer_size);
+
+  // If a static buffer was passed to begin(), reallocation is not possible.
+  if (!pixbuf_allocable) allo = ICAP_REALLOC_NONE;
+
+  switch (allo) {
+  case ICAP_REALLOC_NONE:
+    // Don't reallocate, keep existing buffer...test if it fits though...
+// This is the one that's failing. Why is it getting here?
+    if (new_buffer_size > buffer_size) { // New size won't fit
+      // No realloc. Keep current camera settings, return error.
+      return ICAP_STATUS_ERR_MALLOC;
+    }
+    break;
+  case ICAP_REALLOC_CHANGE:
+    // Realloc on any size change, up or down
+    ra = (new_buffer_size != buffer_size);
+    break;
+  case ICAP_REALLOC_LARGER:
+    // Realloc on size increase, keep existing buffer if size decrease
+    ra = (new_buffer_size > buffer_size);
+    break;
+  }
+
+  if (ra) { // Reallocate?
+// Why is this failing?
+    uint16_t *new_buffer = (uint16_t *)realloc(buffer[0], new_buffer_size);
+    if (new_buffer == NULL) { // ALLOC FAIL
+      _width = _height = buffer_size = 0;
+      buffer[0] = NULL;
+
+      pixbuf = NULL;
+      pixbuf_size = 0;
+      pixbufptr[0] = pixbufptr[1] = pixbufptr[2] = NULL;
+      // Calling code had better poll width(), height() or getBuffer() in
+      // this case so it knows the camera buffer is gone, doesn't attempt
+      // to read camera data into unknown RAM.
+      return ICAP_STATUS_ERR_MALLOC;
+    }
+    buffer[0] = new_buffer;
+    buffer_size = new_buffer_size;
+
+    pixbuf = new_buffer;
+    pixbuf_size = new_buffer_size;
+    uint32_t per_buffer_size = width * height * sizeof(uint16_t);
+    pixbufptr[0] = pixbuf;                         // For single-buffering
+    pixbufptr[1] = &pixbufptr[0][per_buffer_size]; // " double-buffering
+    pixbufptr[2] = &pixbufptr[1][per_buffer_size]; // " triple
+  }
+
+  _width = width;
+  _height = height;
+
   return ICAP_STATUS_OK;
 }
 

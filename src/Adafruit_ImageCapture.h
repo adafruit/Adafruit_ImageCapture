@@ -66,13 +66,13 @@ class Adafruit_ImageCapture {
 public:
   /*!
     @brief  Constructor for Adafruit_ImageCapture class.
-    @param  arch  Pointer to structure containing architecture-specific
-                  settings. For example, on SAMD51, this structure
-                  includes a pointer to a timer peripheral's base address,
-                  used to generate the xclk signal. The structure is
-                  always of type iCap_arch, but the specific elements
-                  within will vary with each supported architecture.
-                  Can be NULL if not used/needed.
+    @param  arch      Pointer to structure containing architecture-specific
+                      settings. For example, on SAMD51, this structure
+                      includes a pointer to a timer peripheral's base
+                      address, used to generate the xclk signal. The
+                      structure is always of type iCap_arch, but the
+                      specific elements within will vary with each
+                      architecture. Can be NULL if not used/needed.
   */
   Adafruit_ImageCapture(iCap_arch *arch = NULL);
   ~Adafruit_ImageCapture(); // Destructor
@@ -81,10 +81,15 @@ public:
     @brief   Allocate and initialize resources behind an
              Adafruit_ImageCapture instance.
     @return  Status code. ICAP_STATUS_OK on successful init.
-    @param   space  One of the iCap_colorspace enumeration values; currently
-                    has settings for RGB or YUV, 16 bits per pixel.
+    @param   space     One of the iCap_colorspace enumeration values;
+                       currently has settings for RGB or YUV, 16 bits/pixel.
+    @param   pbuf      Preallocated buffer for captured pixel data, or NULL
+                       for library to allocate as needed when a camera
+                       resolution is selected.
+    @param   pbufsize  Size of passed-in buffer (or 0 if NULL).
   */
-  iCap_status begin(iCap_colorspace space);
+  iCap_status begin(iCap_colorspace space, uint16_t *pbuf=NULL,
+                    uint32_t pbufsize=0);
 
   /*!
     @brief   Get image width of camera's current resolution setting.
@@ -184,9 +189,15 @@ protected:
   uint16_t _height = 0;               ///< Current settings height in pixels
   iCap_colorspace colorspace;         ///< Colorspace passed to begin()
   iCap_arch *arch = NULL;             ///< Device-specific data, if needed
-#if 0
-  uint8_t active_buffer;     ///< If double buffering, which index is capturing
-#endif
+
+  uint16_t *pixbuf = NULL;  //< 16-bit pixel buffer passed in or allocated
+  uint32_t pixbuf_size = 0; //< Full size of pixbuf, in bytes
+  uint16_t *pixbufptr[3];   //< Frame pointers (up to 3) into pixbuf
+  uint8_t bufmode;          //< 1-3 = single-, double-, triple-buffered
+  bool pixbuf_allocable;    //< Internal vs external allocated buffer
+
+  iCap_status setSize(uint16_t width, uint16_t height, uint8_t nbuf=1,
+                      iCap_realloc allo=ICAP_REALLOC_CHANGE);
 };
 
 #endif // end ICAP_FULL_SUPPORT

@@ -84,6 +84,7 @@ int Adafruit_iCap_peripheral::cameraStart(uint8_t mode, uint8_t size,
       return ICAP_STATUS_OK;
     }
   } while((millis() - startTime) < timeout_ms);
+Serial.println("Camera start timeout");
 
   _width = 0;
   _height = 0;
@@ -138,13 +139,16 @@ uint32_t Adafruit_iCap_peripheral::capture() {
   wire->beginTransmission(i2cAddress);
   wire->write(i2cBuf, 1);
   wire->endTransmission();
+//  delay(100);
+  uint32_t response = 0;
+do {
   delay(100);
   wire->requestFrom(i2cAddress, (uint8_t)4);
-  uint32_t response = 0;
   if (i2cRead(4) == 4) { // 32-bit response
     response = (uint32_t)i2cBuf[0] | ((uint32_t)i2cBuf[1] << 8) |
       ((uint32_t)i2cBuf[2] << 16) | ((uint32_t)i2cBuf[3] << 24);
   }
+} while(response == 0);
 Serial.print("response = ");
 Serial.println(response);
 
@@ -175,7 +179,7 @@ Serial.println("OK");
 
 // This is awful similar to i2cRead()
 uint8_t *Adafruit_iCap_peripheral::getData(int len) {
-  wire->requestFrom(i2cAddress, len);
+  wire->requestFrom((int)i2cAddress, len);
   int avail = wire->available();
   if (avail >= 1) {
     len = min(len, avail);
