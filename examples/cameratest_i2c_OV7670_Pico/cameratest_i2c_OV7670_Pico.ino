@@ -191,23 +191,6 @@ void i2cRecvCallback(int len) {
 //      if (camState == CAM_PAUSED) tripWire = true;
       break;
 
-    case ICAP_CMD_START: // Start camera
-      Serial.print("Start camera...");
-      // Only start camera if currently in OFF state.
-      // Read I2C bytes regardless to keep in sync.
-      if (i2cRead(3) == 3) {
-        Serial.printf("[%02X %02X %02X]", i2cBuf[0], i2cBuf[1], i2cBuf[2]);
-        if (camState == CAM_OFF) {
-          Serial.println("...requested");
-          camState = CAM_REQ_START; // Plz start camera in loop()
-        } else {
-          Serial.println("...already running; request ignored");
-        }
-      } else {
-        Serial.println("arguments missing; request ignored");
-      }
-      break;
-
     case ICAP_CMD_READ_REG: // Read register (subsequent requestCallback())
       Serial.print("Read camera register...");
       if (i2cRead(1) == 1) {                       // Register to read
@@ -245,6 +228,24 @@ void i2cRecvCallback(int len) {
         Serial.println("arguments missing; request ignored");
       }
       break;
+
+    case ICAP_CMD_SETUP: // Specify capture parameters
+      Serial.print("Start camera...");
+      // Only start camera if currently in OFF state.
+      // Read I2C bytes regardless to keep in sync.
+      if (i2cRead(3) == 3) {
+        Serial.printf("[%02X %02X %02X]", i2cBuf[0], i2cBuf[1], i2cBuf[2]);
+        if (camState == CAM_OFF) {
+          Serial.println("...requested");
+          camState = CAM_REQ_CONFIG; // Plz start camera in loop()
+        } else {
+          Serial.println("...already running; request ignored");
+        }
+      } else {
+        Serial.println("arguments missing; request ignored");
+      }
+      break;
+
 
 // Host code MUST poll state until camera is paused
     case ICAP_CMD_CAPTURE: // Capture frame (subsequent requestCallback()s)
@@ -325,12 +326,13 @@ void setup() {
 void loop() {
 
   switch (camState) { // Only the "REQ" states need to be handled here
-// Change this. Camera is already started, just changing settings.
-    case CAM_REQ_START:
-      Serial.print("STARTING CAMERA...");
+
+
+// Change this. Camera is already started, just changing settings now.
+    case CAM_REQ_CONFIG:
       // For now we'll treat mode, size and framerate as byte values.
       // That's OK for the former, but might want fractional rates later.
-      status = cam.begin((iCap_colorspace)i2cBuf[0], (OV7670_size)i2cBuf[1],
+      status = cam.config((OV7670_size)i2cBuf[0], (iCap_colorspace)i2cBuf[1], 
                          (float)i2cBuf[2]);
       if (status == ICAP_STATUS_OK) {
         Serial.println("OK");

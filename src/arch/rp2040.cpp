@@ -108,8 +108,9 @@ iCap_status Adafruit_iCap_parallel::xclk_start(uint32_t freq) {
 
 // Start parallel capture
 // Also, dest might not be known yet.
-iCap_status Adafruit_iCap_parallel::pcc_start(uint16_t *dest,
-                                              uint32_t num_pixels) {
+//iCap_status Adafruit_iCap_parallel::pcc_start(uint16_t *dest,
+//                                              uint32_t num_pixels) {
+iCap_status Adafruit_iCap_parallel::pcc_start(void) {
 
   // TO DO: verify the DATA pins are contiguous.
 
@@ -186,10 +187,12 @@ iCap_status Adafruit_iCap_parallel::pcc_start(uint16_t *dest,
   return ICAP_STATUS_OK;
 }
 
+#if 0
 iCap_status Adafruit_iCap_parallel::dma_xfer_setup(uint16_t *dest,
                                               uint32_t num_pixels) {
   dma_channel_configure(arch->dma_channel, &arch->dma_config, dest,
                         &arch->pio->rxf[arch->sm], num_pixels, false);
 }
+#endif
 
 #endif // end ARDUINO_ARCH_RP2040

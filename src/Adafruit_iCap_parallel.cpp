@@ -45,7 +45,7 @@ iCap_status Adafruit_iCap_parallel::begin(uint16_t width, uint16_t height,
                                           iCap_colorspace space, uint8_t nbuf) {
   iCap_status status = begin(); // Sets up peripherals
   if (status == ICAP_STATUS_OK) {
-    status = bufferConfig(space, width, height, nbuf); // Allocs RAM
+    status = bufferConfig(width, height, space, nbuf); // Allocs RAM
     if (status == ICAP_STATUS_OK) {
       // Start DMA here
 // Need arch function to set up next DMA xfer, trigger, etc.

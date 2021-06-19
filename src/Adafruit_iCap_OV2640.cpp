@@ -1,3 +1,4 @@
+#if 0
 #include <Adafruit_iCap_OV2640.h>
 #include <Arduino.h>
 
@@ -567,3 +568,4 @@ iCap_status Adafruit_iCap_OV2640::setSize(OV2640_size size, iCap_realloc allo) {
 }
 
 #endif // end ICAP_FULL_SUPPORT
+#endif // 0

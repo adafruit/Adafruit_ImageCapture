@@ -174,26 +174,53 @@ iCap_status Adafruit_iCap_OV7670::begin(void) {
 iCap_status Adafruit_iCap_OV7670::begin(OV7670_size size, iCap_colorspace space,
                                         uint8_t nbuf, float fps) {
   iCap_status status = begin();
-
   if (status == ICAP_STATUS_OK) {
-    uint16_t width = 640 >> size;
-    uint16_t height = 480 >> size;
-    status = bufferConfig(space, width, height, nbuf);
-    if (status == ICAP_STATUS_OK) {
-      setColorspace(space) // RGB/YUV
-      (void)setFPS(fps);   // Timing
-//      setSize(size);       // Frame size
-      delayMicroseconds(300000); // 10 frame settling time
-      resume(); // Start DMA cycle
-
-    }
+    status = config(size, space, nbuf, fps);
   }
 
   return status;
 }
 
+// CAMERA CONFIG FUNCTIONS AND MISCELLANY ----------------------------------
 
-// MISCELLANY AND CAMERA CONFIG FUNCTIONS ----------------------------------
+// Need to pass realloc behavior into this
+iCap_status Adafruit_iCap_OV7670::config(OV7670_size size,
+                                         iCap_colorspace space, uint8_t nbuf,
+                                         float fps, iCap_realloc allo) {
+  uint16_t width = 640 >> size;
+  uint16_t height = 480 >> size;
+  iCap_status status = bufferConfig(width, height, space, nbuf, allo);
+  if (status == ICAP_STATUS_OK) {
+    setColorspace(space); // Select RGB/YUV
+    fps = setFPS(fps);    // Frame timing
+    // Array of five window settings, index of each (0-4) aligns with the 5
+    // OV7670_size enumeration values. If enum changes, list must change!
+    static struct {
+      uint8_t vstart;
+      uint8_t hstart;
+      uint8_t edge_offset;
+      uint8_t pclk_delay;
+    } window[] = {
+      // Window settings were tediously determined empirically.
+      // I hope there's a formula for this, if a do-over is needed.
+      {9, 162, 2, 2},  // SIZE_DIV1  640x480 VGA
+      {10, 174, 0, 2}, // SIZE_DIV2  320x240 QVGA
+      {11, 186, 2, 2}, // SIZE_DIV4  160x120 QQVGA
+      {12, 210, 0, 2}, // SIZE_DIV8  80x60   ...
+      {15, 252, 3, 2}, // SIZE_DIV16 40x30
+    };
+    frameControl(size, window[size].vstart, window[size].hstart,
+                 window[size].edge_offset, window[size].pclk_delay);
+    if (fps > 0.0) {
+      delayMicroseconds((int)(10000000.0 / fps)); // 10 frame settling time
+    }
+    resume(); // Start DMA cycle
+  } else {
+    // Stop cam
+  }
+
+  return status;
+}
 
 // Configure camera frame rate. Actual resulting frame rate (returned) may
 // be different depending on available clock frequencies. Result will only
@@ -276,40 +303,6 @@ float Adafruit_iCap_OV7670::setFPS(float fps) {
   }
 
   return fps - best_delta; // Return actual frame rate
-}
-
-iCap_status Adafruit_iCap_OV7670::setSize(OV7670_size size, iCap_realloc allo) {
-  uint16_t new_width = 640 >> (int)size;
-  uint16_t new_height = 480 >> (int)size;
-  iCap_status status = Adafruit_ImageCapture::setSize(new_width, new_height,
-                                                      1, allo);
-Serial.printf("SETSIZE STATUS: %d\n", (int)status);
-  if (status == ICAP_STATUS_OK) { // Successful realloc?
-    if (i2c_started) {
-      // Array of five window settings, index of each (0-4) aligns with the five
-      // OV7670_size enumeration values. If enum changes, list must change!
-      static struct {
-        uint8_t vstart;
-        uint8_t hstart;
-        uint8_t edge_offset;
-        uint8_t pclk_delay;
-      } window[] = {
-          // Window settings were tediously determined empirically.
-          // I hope there's a formula for this, if a do-over is needed.
-          {9, 162, 2, 2},  // SIZE_DIV1  640x480 VGA
-          {10, 174, 0, 2}, // SIZE_DIV2  320x240 QVGA
-          {11, 186, 2, 2}, // SIZE_DIV4  160x120 QQVGA
-          {12, 210, 0, 2}, // SIZE_DIV8  80x60   ...
-          {15, 252, 3, 2}, // SIZE_DIV16 40x30
-      };
-      frameControl(size, window[size].vstart, window[size].hstart,
-                   window[size].edge_offset, window[size].pclk_delay);
-    }
-  } else {
-    // Stop capture here
-  }
-
-  return status;
 }
 
 // Sets up PCLK dividers and sets H/V start/stop window. Rather than

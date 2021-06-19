@@ -23,13 +23,12 @@
 typedef enum {
   ICAP_CMD_BUFSIZ = 0, ///< Negotiate maximum I2C transfer size
   ICAP_CMD_ID,         ///< Identify make/model of camera
-  ICAP_CMD_STATE,      ///< Poll camera state
-  ICAP_CMD_START,      ///< Start camera capture (continuous in background)
+  ICAP_CMD_STATE,      ///< Poll current camera state
   ICAP_CMD_READ_REG,   ///< Read register from camera
   ICAP_CMD_WRITE_REG,  ///< Write register(s) to camera
+  ICAP_CMD_SETUP,      ///< Specify capture parameters
   ICAP_CMD_CAPTURE,    ///< Pause camera, hold one frame for transfer
-//  ICAP_CMD_GET_DATA,   ///< Retrieve next chunk of captured data
-  ICAP_CMD_RESUME,     ///< Resume background capture
+  ICAP_CMD_RESUME,     ///< Resume background capture after transfer
   ICAP_CMD_RETURN,     ///< Get return val of last periph-side camera func call
 } iCap_i2c_command;
 
@@ -37,9 +36,10 @@ typedef enum {
 typedef enum {     // Camera states:
   CAM_UNKNOWN = 0, // Camera State could not be polled
   CAM_OFF,         // Camera not yet initialized
-  CAM_REQ_START,   // Request to start camera from "off" state
-  CAM_ON,          // Camera is now "on" and running
+  CAM_ON,          // Camera is "on" and running
+  CAM_REQ_CONFIG,  // Request to start or change camera configuration
   CAM_REQ_PAUSE,   // Request to pause camera DMA for still
   CAM_PAUSED,      // Camera currently paused
   CAM_REQ_RESUME,  // Request to resume camera DMA (goes to CAM_ON)
 } iCap_state;
+

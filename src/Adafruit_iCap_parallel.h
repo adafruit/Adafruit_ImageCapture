@@ -151,7 +151,8 @@ protected:
     @param   num_pixels  Number of pixels in image.
     @return  ICAP_STATUS_OK on success.
   */
-  iCap_status pcc_start(uint16_t *dest, uint32_t num_pixels);
+  iCap_status pcc_start(void);
+//  iCap_status pcc_start(uint16_t *dest, uint32_t num_pixels);
 
   TwoWire *wire;            ///< Associated I2C instance
   iCap_parallel_pins pins;  ///< Pin structure (copied in constructor)

@@ -66,9 +66,9 @@ void Adafruit_iCap_peripheral::begin(void) {
 int Adafruit_iCap_peripheral::cameraStart(uint8_t mode, uint8_t size,
                                           float fps, uint32_t timeout_ms) {
   // Issue camera start command
-  i2cBuf[0] = ICAP_CMD_START;
-  i2cBuf[1] = mode;
-  i2cBuf[2] = size;
+  i2cBuf[0] = ICAP_CMD_SETUP;
+  i2cBuf[1] = size;
+  i2cBuf[2] = mode;
   i2cBuf[3] = (int)fps;
   wire->beginTransmission(i2cAddress);
   wire->write(i2cBuf, 4);
