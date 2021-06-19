@@ -147,12 +147,16 @@ protected:
 
   /*!
     @brief   Starter function for parallel capture DMA, etc.
-    @param   dest        Destination for data received from camera.
-    @param   num_pixels  Number of pixels in image.
     @return  ICAP_STATUS_OK on success.
   */
   iCap_status pcc_start(void);
-//  iCap_status pcc_start(uint16_t *dest, uint32_t num_pixels);
+
+  /*!
+    @brief   Change PCC DMA destination and count.
+    @param   dest        Destination for data received from camera.
+    @param   num_pixels  Number of pixels in image.
+  */
+  void dma_change(uint16_t *dest, uint32_t num_pixels);
 
   TwoWire *wire;            ///< Associated I2C instance
   iCap_parallel_pins pins;  ///< Pin structure (copied in constructor)

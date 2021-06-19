@@ -31,7 +31,7 @@ static struct pio_program iCap_pio_program = {
 static Adafruit_ImageCapture *capptr = NULL; // Camera buffer, size, etc.
 static iCap_arch *archptr = NULL;            // DMA settings
 static volatile bool frameReady = false;     // true at end-of-frame
-static volatile bool suspended = false;
+static volatile bool suspended = true;       // Initially stopped
 
 // This is NOT a sleep function, it just pauses background DMA.
 
@@ -106,10 +106,8 @@ iCap_status Adafruit_iCap_parallel::xclk_start(uint32_t freq) {
   return ICAP_STATUS_OK;
 }
 
-// Start parallel capture
-// Also, dest might not be known yet.
-//iCap_status Adafruit_iCap_parallel::pcc_start(uint16_t *dest,
-//                                              uint32_t num_pixels) {
+// Start parallel capture peripheral and DMA. Transfers are not started
+// yet, until frame size and buffer are established.
 iCap_status Adafruit_iCap_parallel::pcc_start(void) {
 
   // TO DO: verify the DATA pins are contiguous.
@@ -169,10 +167,11 @@ iCap_status Adafruit_iCap_parallel::pcc_start(void) {
   // (1 pixel), configured in data size above and in PIO setup elsewhere.
   channel_config_set_dreq(&arch->dma_config,
                           pio_get_dreq(arch->pio, arch->sm, false));
-// NO LONGER NEEDS DONE HERE - MAKE SEPARATE FUNCTION TO CONFIG DMA
-  // Set up initial DMA xfer, but don't trigger (that's done in interrupt)
-//  dma_channel_configure(arch->dma_channel, &arch->dma_config, dest,
-//                        &arch->pio->rxf[arch->sm], num_pixels, false);
+  // Set up baseline DMA configuration...it's initially lacking destination
+  // and count, set later (dma_change()) after resolution is known. DMA
+  // isn't started until later, and is triggered in the vsync interrupt.
+  dma_channel_configure(arch->dma_channel, &arch->dma_config, NULL,
+                        &arch->pio->rxf[arch->sm], 0, false);
 
   // Set up end-of-DMA interrupt
   dma_channel_set_irq0_enabled(arch->dma_channel, true);
@@ -187,12 +186,13 @@ iCap_status Adafruit_iCap_parallel::pcc_start(void) {
   return ICAP_STATUS_OK;
 }
 
-#if 0
-iCap_status Adafruit_iCap_parallel::dma_xfer_setup(uint16_t *dest,
-                                              uint32_t num_pixels) {
-  dma_channel_configure(arch->dma_channel, &arch->dma_config, dest,
-                        &arch->pio->rxf[arch->sm], num_pixels, false);
+// Need to do this on startup and when changing resolution.
+// Changing resolution also requires stopping DMA temporarily...
+// wait for frame to finish, do realloc/cam config, then restart.
+// That'll go in Adafruit_iCap_parallel.cpp
+void Adafruit_iCap_parallel::dma_change(uint16_t *dest, uint32_t num_pixels) {
+  dma_channel_set_write_addr(archptr->dma_channel, dest, false);
+  dma_channel_set_trans_count(archptr->dma_channel, num_pixels, false);
 }
-#endif
 
 #endif // end ARDUINO_ARCH_RP2040
