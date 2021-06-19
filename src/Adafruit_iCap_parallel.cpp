@@ -4,8 +4,8 @@
 
 #include <Arduino.h>
 
-Adafruit_iCap_parallel::Adafruit_iCap_parallel(iCap_arch *arch,
-                                               iCap_parallel_pins *pins_ptr,
+Adafruit_iCap_parallel::Adafruit_iCap_parallel(iCap_parallel_pins *pins_ptr,
+                                               iCap_arch *arch,
                                                uint16_t *pbuf,
                                                uint32_t pbufsize,
                                                TwoWire *twi_ptr,
@@ -39,14 +39,20 @@ iCap_status Adafruit_iCap_parallel::begin() {
   return ICAP_STATUS_OK;
 }
 
-iCap_status Adafruit_iCap_parallel::begin(iCap_colorspace space,
-                                          uint16_t width, uint16_t height,
-                                          uint8_t nbuf) {
-  begin();
-  setSize(space, width, height, nbuf, ICAP_REALLOC_CHANGE);
-}
+// Is this one not needed? Does this happen in subclass?
+// See same question in header.
+iCap_status Adafruit_iCap_parallel::begin(uint16_t width, uint16_t height,
+                                          iCap_colorspace space, uint8_t nbuf) {
+  iCap_status status = begin(); // Sets up peripherals
+  if (status == ICAP_STATUS_OK) {
+    status = bufferConfig(space, width, height, nbuf); // Allocs RAM
+    if (status == ICAP_STATUS_OK) {
+      // Start DMA here
+// Need arch function to set up next DMA xfer, trigger, etc.
+    }
+  }
 
-void Adafruit_iCap_parallel::startI2C(void) {
+  return status;
 }
 
 int Adafruit_iCap_parallel::readRegister(uint8_t reg) {

@@ -85,6 +85,41 @@ public:
   ~Adafruit_ImageCapture(); // Destructor
 
   /*!
+    @brief  (Re-)configure RAM buffer for capturing subsequent images.
+            Not invoked by user code, only subclasses.
+    @param  width   Width in pixels. Subclass will limit this to a known
+                    allowable value (e.g. one of several fixed sizes).
+    @param  height  Height in pixels. Subclass will limit this to a known
+                    allowable value (e.g. one of several fixed sizes).
+    @param  space   Colorspace: currently ICAP_COLOR_RGB565 or
+                    ICAP_COLOR_YUV are supported, both 16 bits/pixel.
+                    This value is only used for figuring memory allocation,
+                    subclass needs to actually configure camera to match.
+    @param  nbuf    Number of image buffers, 1-3. Currently only 1 is
+                    supported...you can request more but this just wastes
+                    RAM right now, but eventually will help with latency
+                    with suitably-written application.
+    @param  allo    (Re-)allocation behavior. This value is IGNORED if a
+                    static pixel buffer was passed to the constructor; it
+                    only applies to dynamic allocation. ICAP_REALLOC_NONE
+                    keeps the existing buffer (if new dimensions still fit),
+                    ICAP_REALLOC_CHANGE will reallocate if the new dimensions
+                    are smaller or larger than before. ICAP_REALLOC_LARGER
+                    reallocates only if the new image specs won't fit in the
+                    existing buffer (but ignoring reductions, some RAM will
+                    go unused but avoids fragmentation).
+    @return  ICAP_STATUS_OK on successful reallocation (or fitting within
+             existing buffer if appropriate), ICAP_STATUS_ERR_MALLOC if
+             reallocation failed. Image width and height will be set to 0
+             on error, and pixel buffer to NULL. Calling code should respond
+             appropriately, perhaps reattempting at a smaller size.
+  */
+  iCap_status bufferConfig(uint16_t width, uint16_t height,
+                           iCap_colorspace space = ICAP_COLOR_RGB565,
+                           uint8_t nbuf = 1,
+                           iCap_realloc allo = ICAP_REALLOC_CHANGE);
+
+  /*!
     @brief   Get image width of camera's current resolution setting.
     @return  Width in pixels.
   */
@@ -98,9 +133,9 @@ public:
 
   /*!
     @brief   Get address of image buffer being used by camera.
-    @return  uint16_t pointer to image data in RGB565 format.
+    @return  uint16_t pointer to last-captured image data.
   */
-  uint16_t *getBuffer(void) { return buffer[0]; }
+  uint16_t *getBuffer(void) { return pixbuf[0]; }
 
   /*!
     @brief  Produces a negative image. This is a postprocessing effect,
@@ -182,8 +217,8 @@ protected:
   bool pixbuf_allocable;      ///< Internally allocated vs static buffer
   uint16_t _width = 0;        ///< Current settings width in pixels
   uint16_t _height = 0;       ///< Current settings height in pixels
+  iCap_colorspace colorspace; ///< Current settings colorspace
   iCap_arch *arch = NULL;     ///< Device-specific data, if needed
-  iCap_colorspace colorspace; ///< Colorspace passed to begin()
 
   iCap_status setSize(uint16_t width, uint16_t height, uint8_t nbuf=1,
                       iCap_realloc allo=ICAP_REALLOC_CHANGE);

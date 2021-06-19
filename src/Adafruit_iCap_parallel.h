@@ -59,12 +59,14 @@ public:
                       MCUs and/or cameras may cause lockup without some
                       delay).
   */
-  Adafruit_iCap_parallel(iCap_arch *arch, iCap_parallel_pins *pins_ptr,
+  Adafruit_iCap_parallel(iCap_parallel_pins *pins_ptr, iCap_arch *arch,
                          uint16_t *pbuf, uint32_t pbufsize,
                          TwoWire *twi_ptr, uint8_t addr, uint32_t speed,
                          uint32_t delay_us);
   ~Adafruit_iCap_parallel(); // Destructor
 
+// Might only want the basic begin() here, and do the fancy case
+// in the subclass.
   /*!
     @brief   Initialize peripherals behind an Adafruit_iCap_parallel
              instance. Does not actually start capture. Not invoked directly
@@ -78,29 +80,20 @@ public:
              Adafruit_iCap_parallel instance, begin capture with requested
              settings. Not invoked directly by user code; only subclasses
              call this.
-    @param   space     One of the iCap_colorspace enumeration values;
-                       currently has settings for RGB or YUV, 16 bits/pixel.
     @param   width     Image capture width in pixels (must match expected
                        data from camera).
     @param   height    Image capture height in pixels (must match expected
                        data from camera).
+    @param   space     One of the iCap_colorspace enumeration values;
+                       currently has settings for RGB or YUV, 16 bits/pixel.
     @param   nbuf      Number of full-image buffers, 1-3.
     @return  Status code. ICAP_STATUS_OK on successful init.
     @note    Allocation behavior is implicit, NOT passed to this function.
              If a static buffer was passed to constructor, no allocation
              will happen. If no static buffer, this will attempt alloc.
   */
-  iCap_status begin(iCap_colorspace space, uint16_t width, uint16_t height,
+  iCap_status begin(uint16_t width, uint16_t height, iCap_colorspace space, 
                     uint8_t ncap);
-
-  /*!
-    @brief   Start XCLK output if required and initialize I2C. Normally this
-             gets called by begin(), but is separately exposed here in case
-             an application first wants to attempt automatic ID of attached
-             camera by probing addresses and/or registers (a subsequent
-             begin() won't repeat this, it's harmless).
-  */
-  void startI2C(void);
 
   /*!
     @brief   Reads value of one register from the camera over I2C.

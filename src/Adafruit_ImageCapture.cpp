@@ -54,20 +54,22 @@ Adafruit_ImageCapture::~Adafruit_ImageCapture() {
   }
 }
 
-iCap_status Adafruit_ImageCapture::setSize(iCap_colorspace space,
-                                           uint16_t width, uint16_t height,
-                                           uint8_t nbuf, iCap_realloc allo) {
-
-  if (nbuf < 1) nbuf = 1;      // Constrain number of buffers to 1-3
-  else if (nbuf > 3) nbuf = 3;
+iCap_status Adafruit_ImageCapture::bufferConfig(uint16_t width, uint16_t height,
+                                                iCap_colorspace space,
+                                                uint8_t nbuf,
+                                                iCap_realloc allo) {
   // Currently all (well, both) supported colorspaces are 16bpp...if this
   // changes in the future, the new_buffer_size calc below will need update.
   colorspace = space;
+  if (nbuf < 1) nbuf = 1;      // Constrain number of buffers to 1-3
+  else if (nbuf > 3) nbuf = 3;
   uint32_t new_buffer_size = width * height * nbuf * sizeof(uint16_t);
   bool ra = false; // Gets set true only if a reallocation is needed
 
   // If static buffer was passed to constructor, reallocation not possible.
+  // Otherwise, if current buffer is NULL, allocation is mandatory.
   if (!pixbuf_allocable) allo = ICAP_REALLOC_NONE;
+  else if (pixbuf[0] == NULL) allo = ICAP_REALLOC_CHANGE;
 
   switch (allo) {
   case ICAP_REALLOC_NONE:

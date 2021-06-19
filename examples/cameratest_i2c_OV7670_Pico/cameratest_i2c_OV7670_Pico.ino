@@ -62,7 +62,8 @@ OV7670_pins pins = {
 #define CAM_SIZE OV7670_SIZE_DIV4  // QQVGA (160x120 pixels)
 #define CAM_MODE ICAP_COLOR_RGB565 // RGB plz
 
-Adafruit_iCap_OV7670 cam(pins, CAM_I2C, &arch);
+uint16_t pixelBuf[320 * 240]; // 150KB
+Adafruit_iCap_OV7670 cam(pins, &arch, pixelBuf, sizeof pixelBuf, CAM_I2C);
 
 // Calling camera library functions from I2C callbacks (interrupts) is
 // bad news -- perhaps something in Pico peripherals or DMA, not sure.
@@ -290,7 +291,7 @@ tripWire = true;
 
 void setup() {
   Serial.begin(9600);
-  //while(!Serial);
+  while(!Serial);
   delay(1000);
   Serial.println("CAMERA PERIPH BOARD STARTED");
 
@@ -304,6 +305,10 @@ void setup() {
   tft.println("I2C PERIPH");
   tft.setRotation(3);
 #endif // TFT_PREVIEW
+
+  cam.begin(); // Init camera-related peripherals, but don't capture yet
+// (Alternately, could init this at a default size if using
+// the viewfinder preview)
 
   // Pico acts as an I2C peripheral on a second bus
   // (since first is tied up with camera)
@@ -320,6 +325,7 @@ void setup() {
 void loop() {
 
   switch (camState) { // Only the "REQ" states need to be handled here
+// Change this. Camera is already started, just changing settings.
     case CAM_REQ_START:
       Serial.print("STARTING CAMERA...");
       // For now we'll treat mode, size and framerate as byte values.

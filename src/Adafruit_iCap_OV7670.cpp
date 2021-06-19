@@ -3,10 +3,13 @@
 
 #if defined(ICAP_FULL_SUPPORT)
 
-Adafruit_iCap_OV7670::Adafruit_iCap_OV7670(OV7670_pins &pins, TwoWire &twi,
-                                           iCap_arch *arch, uint8_t addr)
-    : Adafruit_iCap_parallel((iCap_parallel_pins *)&pins, (TwoWire *)&twi, arch,
-                             addr, 100000, 1000) {}
+Adafruit_iCap_OV7670::Adafruit_iCap_OV7670(OV7670_pins &pins, iCap_arch *arch,
+                                           uint16_t *pbuf, uint32_t pbufsize,
+                                           TwoWire &twi, uint8_t addr,
+                                           uint32_t speed, uint32_t delay_us)
+    : Adafruit_iCap_parallel((iCap_parallel_pins *)&pins, arch, pbuf,
+                             pbufsize, (TwoWire *)&twi, addr, speed, delay_us) {
+}
 
 Adafruit_iCap_OV7670::~Adafruit_iCap_OV7670() {}
 
@@ -127,37 +130,18 @@ static const iCap_parallel_config
         {OV7670_REG_COM7, OV7670_COM7_YUV},
         {OV7670_REG_COM15, OV7670_COM15_R00FF}};
 
-iCap_status Adafruit_iCap_OV7670::begin(iCap_colorspace space, OV7670_size size,
-                                        float fps, uint32_t bufsiz) {
-
+iCap_status Adafruit_iCap_OV7670::begin(void) {
   iCap_status status;
 
-// Problem here, I think...can't setSize until begin() (which makes buffer),
-// but can't begin() until setSize() (because it needs a destination
-// for DMA)
-// OK then - make sure begin() sets up the periphs but does NOT start DMA
-// nor allocate memory. setSize() does the alloc and then sets DMA running.
-// setSize(), not begin(), will accept the space, size and fps (in addition
-// to the realloc flag), and calling code must invoke that separately,
-// after begin.
-// Or, y'know, overload the function so it can go both ways. Start the
-// periphs but not the capture, or do both.
-// Put colorspace into the setSize call (and the begin-with-size call),
-// NOT in begin().
-
   // Initialize peripherals for parallel+I2C camera:
-  status = Adafruit_iCap_parallel::begin(space);
-  if (status != ICAP_STATUS_OK) {
-    return status;
-  }
-
-  // Sets up width & height vars, doesn't yet issue commands
-  status = setSize(size, ICAP_REALLOC_CHANGE);
+  status = Adafruit_iCap_parallel::begin();
   if (status != ICAP_STATUS_OK) {
     return status;
   }
 
   // ENABLE AND/OR RESET CAMERA --------------------------------------------
+  // This is done here (rather than Adafruit_iCap_parallel) because pin
+  // polarity, reset times, etc. might vary among cameras.
 
   if (pins.enable >= 0) { // Enable pin defined?
     pinMode(pins.enable, OUTPUT);
@@ -171,29 +155,43 @@ iCap_status Adafruit_iCap_OV7670::begin(iCap_colorspace space, OV7670_size size,
   if (pins.reset >= 0) { // Hard reset pin defined?
     pinMode(pins.reset, OUTPUT);
     digitalWrite(pins.reset, LOW);
-    delay(1);
+    delayMicroseconds(100);
     digitalWrite(pins.reset, HIGH);
   } else { // Soft reset, doesn't seem reliable, might just need more delay?
     writeRegister(OV7670_REG_COM7, OV7670_COM7_RESET);
   }
   delay(1); // Datasheet: tS:RESET = 1 ms
 
-  (void)setFPS(fps); // Timing
-  if (colorspace == ICAP_COLOR_RGB565) {
-    writeList(OV7670_rgb, sizeof OV7670_rgb / sizeof OV7670_rgb[0]);
-  } else {
-    writeList(OV7670_yuv, sizeof OV7670_yuv / sizeof OV7670_yuv[0]);
-  }
   // Init main camera settings
   writeList(OV7670_init, sizeof OV7670_init / sizeof OV7670_init[0]);
-  setSize(size); // Frame size
 
-  delayMicroseconds(300000); // 10 frame settling time
-
-  resume(); // Start DMA cycle
+  // Further initialization for specific colorspaces, frame sizes, timing,
+  // etc. are done in other functions.
 
   return ICAP_STATUS_OK;
 }
+
+iCap_status Adafruit_iCap_OV7670::begin(OV7670_size size, iCap_colorspace space,
+                                        uint8_t nbuf, float fps) {
+  iCap_status status = begin();
+
+  if (status == ICAP_STATUS_OK) {
+    uint16_t width = 640 >> size;
+    uint16_t height = 480 >> size;
+    status = bufferConfig(space, width, height, nbuf);
+    if (status == ICAP_STATUS_OK) {
+      setColorspace(space) // RGB/YUV
+      (void)setFPS(fps);   // Timing
+//      setSize(size);       // Frame size
+      delayMicroseconds(300000); // 10 frame settling time
+      resume(); // Start DMA cycle
+
+    }
+  }
+
+  return status;
+}
+
 
 // MISCELLANY AND CAMERA CONFIG FUNCTIONS ----------------------------------
 
@@ -208,6 +206,14 @@ iCap_status Adafruit_iCap_OV7670::begin(iCap_colorspace space, OV7670_size size,
 // rates because it varies with architecture, depending on OV7670_XCLK_HZ.
 // If platform is NULL, no registers are set, a fps request/return can be
 // evaluated without reconfiguring the camera, or without it even started.
+
+void Adafruit_iCap_OV7670::setColorspace(iCap_colorspace space) {
+  if (space == ICAP_COLOR_RGB565) {
+    writeList(OV7670_rgb, sizeof OV7670_rgb / sizeof OV7670_rgb[0]);
+  } else {
+    writeList(OV7670_yuv, sizeof OV7670_yuv / sizeof OV7670_yuv[0]);
+  }
+}
 
 float Adafruit_iCap_OV7670::setFPS(float fps) {
 
