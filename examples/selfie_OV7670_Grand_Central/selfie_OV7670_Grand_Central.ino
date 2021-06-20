@@ -48,7 +48,14 @@ OV7670_pins pins = {.enable = PIN_PCC_D8, .reset = PIN_PCC_D9,
 #define CAM_SIZE OV7670_SIZE_DIV4  // QQVGA (160x120 pixels)
 #define CAM_MODE ICAP_COLOR_RGB565 // RGB plz
 
-Adafruit_iCap_OV7670 cam(pins, CAM_I2C, &arch);
+// Rather than having the library allocate anything, declare a large
+// enough buffer here for the maximum anticipated image size (even though
+// the preview is smaller), and pass it to the constructor. This avoids
+// problems where reallocating the buffer inside the library could fail
+// due to incremental fragmentation.
+uint16_t camBuffer[320 * 240];
+
+Adafruit_iCap_OV7670 cam(pins, &arch, camBuffer, sizeof camBuffer, CAM_I2C);
 
 // SHIELD AND DISPLAY CONFIG -----------------------------------------------
 
@@ -96,7 +103,7 @@ void setup() {
   // though the preview is only 160x120. This is to ensure that the
   // RAM is available later when we go to take a higher-resolution
   // still to save.
-  iCap_status status = cam.begin(CAM_MODE, CAM_SIZE, 30.0, 320 * 240 * 2);
+  iCap_status status = cam.begin(CAM_SIZE, CAM_MODE, 1, 30.0);
   if (status != ICAP_STATUS_OK) {
     Serial.println("Camera begin() fail");
     for(;;);
@@ -152,11 +159,8 @@ void loop() {
     char filename[50];
     sprintf(filename, "/selfies/img%04d.bmp", bmp_num++);
     tft.dmaWait(); // Wait for prior transfer to complete
-    // Set camera capture to larger size (320x240). The REALLOC_NONE
-    // tells it to keep the original buffer in place, which we allocated
-    // large enough in setup() to handle these stills. Continual
-    // reallocation would just be asking for trouble.
-    cam.setSize(OV7670_SIZE_DIV2, ICAP_REALLOC_NONE);
+    // Set camera capture to larger size (320x240).
+    cam.config(OV7670_SIZE_DIV2, CAM_MODE, 1, 30.0);
     delay(100);         // Stabilize for a few frames
     tft.endWrite();     // Close out prior pixel write
     cam.resume();
@@ -168,9 +172,8 @@ void loop() {
     frame = 999;        // Force keyframe on next update
     cam.suspend();
     write_bmp(filename, cam.getBuffer(), cam.width(), cam.height());
-    // Restore the original preview size from camera. Again, use
-    // REALLOC_NONE to maintain our original camera buffer.
-    cam.setSize(CAM_SIZE, ICAP_REALLOC_NONE);
+    // Restore the original preview size from camera.
+    cam.config(CAM_SIZE, CAM_MODE, 1, 30.0);
   }
 
   cam.resume(); // Resume DMA into camera buffer
