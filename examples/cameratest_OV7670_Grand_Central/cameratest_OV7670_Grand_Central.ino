@@ -27,7 +27,7 @@ OV7670_pins pins = {.enable = PIN_PCC_D8, .reset = PIN_PCC_D9,
 #define CAM_SIZE OV7670_SIZE_DIV2  // QVGA (320x240 pixels)
 #define CAM_MODE ICAP_COLOR_RGB565 // RGB plz
 
-Adafruit_iCap_OV7670 cam(pins, CAM_I2C, &arch);
+Adafruit_iCap_OV7670 cam(pins, &arch, NULL, 0, CAM_I2C);
 
 // SHIELD AND DISPLAY CONFIG -----------------------------------------------
 
@@ -58,7 +58,7 @@ void setup() {
 
   // Once started, the camera continually fills a frame buffer
   // automagically; no need to request a frame.
-  iCap_status status = cam.begin(CAM_MODE, CAM_SIZE, 30.0);
+  iCap_status status = cam.begin(CAM_SIZE, CAM_MODE, 1, 30.0);
   if (status != ICAP_STATUS_OK) {
     Serial.println("Camera begin() fail");
     for(;;);

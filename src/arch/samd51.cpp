@@ -188,8 +188,7 @@ iCap_status Adafruit_iCap_parallel::xclk_start(uint32_t freq) {
 }
 
 // Start parallel capture peripheral
-iCap_status Adafruit_iCap_parallel::pcc_start(uint16_t *dest,
-                                              uint32_t num_pixels) {
+iCap_status Adafruit_iCap_parallel::pcc_start(void) {
 
   PCC->MR.bit.PCEN = 0; // Make sure PCC is disabled before setting MR reg
 
@@ -230,9 +229,9 @@ iCap_status Adafruit_iCap_parallel::pcc_start(uint16_t *dest,
   dma.setPriority(DMA_PRIORITY_3);
 
   // Use 32-bit PCC transfers (4 bytes accumulate in RHR.reg)
-  descriptor = dma.addDescriptor((void *)(&PCC->RHR.reg), // Move from here
-                                 (void *)dest,            // to here
-                                 num_pixels / 2,          // this many
+  descriptor = dma.addDescriptor((void *)(&PCC->RHR.reg), // Source
+                                 NULL,                    // Dest set later
+                                 0,                       // Count set later
                                  DMA_BEAT_SIZE_WORD,      // 32-bit words
                                  false,                   // Don't src++
                                  true);                   // Do dest++
@@ -244,6 +243,11 @@ iCap_status Adafruit_iCap_parallel::pcc_start(uint16_t *dest,
   attachInterrupt(PIN_PCC_DEN1, startFrame, FALLING);
 
   return ICAP_STATUS_OK;
+}
+
+void Adafruit_iCap_parallel::dma_change(uint16_t *dest, uint32_t num_pixels) {
+  dma.changeDescriptor(descriptor, (void *)(&PCC->RHR.reg), (void *)dest,
+                       num_pixels / 2);
 }
 
 #endif // end __SAMD51__
