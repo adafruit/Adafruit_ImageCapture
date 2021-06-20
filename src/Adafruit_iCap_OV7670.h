@@ -54,13 +54,13 @@ public:
     @brief  Constructor for OV7670 camera class.
     @param  pins      OV7670_pins structure, describing physical connection
                       to the camera. Required.
-    @param  arch      Pointer to structure containing architecture-specific
-                      settings. For example, on SAMD51, this structure
-                      includes a pointer to a timer peripheral's base
-                      address, used to generate the xclk signal. The
-                      structure is always of type iCap_arch, but the
-                      specific elements within will vary with each supported
-                      architecture.
+    @param  arch      Pointer to iCap_arch structure containing
+                      architecture-specific settings. For example, on
+                      SAMD51, this structure includes a pointer to a timer
+                      peripheral's base address, used to generate the xclk
+                      signal. The structure is always of type iCap_arch, but
+                      the specific elements within will vary with each
+                      supported architecture.
     @param  pbuf      Preallocated buffer for captured pixel data, or NULL
                       for library to allocate as needed when a camera
                       resolution is selected.
@@ -120,6 +120,8 @@ public:
                     (160x120), OV7670_SIZE_DIV8 and OV7670_SIZE_DIV16.
                     This argument is required.
     @param   space  ICAP_COLOR_RGB565 (default) or ICAP_COLOR_YUV.
+    @param   nbuf   Number of full-image buffers, 1-3. For now, always use
+                    1, multi-buffering isn't handled yet.
     @param   fps    Desired capture framerate, in frames per second, as a
                     float up to 30.0 (default). Actual device frame rate may
                     differ from this, depending on a host's available PWM
@@ -131,8 +133,6 @@ public:
                     you can call OV7670_set_fps(NULL, fps) at any time
                     before or after begin() and that will return the actual
                     resulting frame rate as a float.
-    @param   nbuf   Number of full-image buffers, 1-3. For now, always use
-                    1, multi-buffering isn't handled yet.
     @param   allo   (Re-)allocation behavior. This value is IGNORED if a
                     static pixel buffer was passed to the constructor; it
                     only applies to dynamic allocation. ICAP_REALLOC_NONE
@@ -142,7 +142,9 @@ public:
                     reallocates only if the new image specs won't fit in the
                     existing buffer (but ignoring reductions, some RAM will
                     go unused but avoids fragmentation).
-    @return  Status code. ICAP_STATUS_OK on successful init.
+    @return  Status code. ICAP_STATUS_OK on successful update, may return
+             ICAP_STATUS_ERR_MALLOC if using dynamic allocation and the
+             buffer resize fails.
   */
   iCap_status config(OV7670_size size,
                      iCap_colorspace space = ICAP_COLOR_RGB565,

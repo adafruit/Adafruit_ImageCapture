@@ -7,9 +7,8 @@ Adafruit_iCap_OV7670::Adafruit_iCap_OV7670(OV7670_pins &pins, iCap_arch *arch,
                                            uint16_t *pbuf, uint32_t pbufsize,
                                            TwoWire &twi, uint8_t addr,
                                            uint32_t speed, uint32_t delay_us)
-    : Adafruit_iCap_parallel((iCap_parallel_pins *)&pins, arch, pbuf,
-                             pbufsize, (TwoWire *)&twi, addr, speed, delay_us) {
-}
+    : Adafruit_iCap_parallel((iCap_parallel_pins *)&pins, arch, pbuf, pbufsize,
+                             (TwoWire *)&twi, addr, speed, delay_us) {}
 
 Adafruit_iCap_OV7670::~Adafruit_iCap_OV7670() {}
 
@@ -155,7 +154,7 @@ iCap_status Adafruit_iCap_OV7670::begin(void) {
   if (pins.reset >= 0) { // Hard reset pin defined?
     pinMode(pins.reset, OUTPUT);
     digitalWrite(pins.reset, LOW);
-    delayMicroseconds(100);
+    delayMicroseconds(1000);
     digitalWrite(pins.reset, HIGH);
   } else { // Soft reset, doesn't seem reliable, might just need more delay?
     writeRegister(OV7670_REG_COM7, OV7670_COM7_RESET);
@@ -176,6 +175,9 @@ iCap_status Adafruit_iCap_OV7670::begin(OV7670_size size, iCap_colorspace space,
   iCap_status status = begin();
   if (status == ICAP_STATUS_OK) {
     status = config(size, space, nbuf, fps);
+    if (status == ICAP_STATUS_OK) {
+      resume();
+    }
   }
 
   return status;

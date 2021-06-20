@@ -35,7 +35,7 @@
 #include <string.h> // memcpy()
 
 Adafruit_ImageCapture::Adafruit_ImageCapture(iCap_arch *arch, uint16_t *pbuf,
-                                             uint32_t pbufsize) {
+                                             uint32_t pbufsize) : arch(arch) {
   if(pbuf && pbufsize) {      // Pixel buffer and size passed in:
     pixbuf_size = pbufsize;   //   Static buffer, lib can divvy up as needed
     pixbuf_allocable = false; //   but it cannot be changed or reallocated.
