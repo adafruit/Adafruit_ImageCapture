@@ -216,6 +216,7 @@ iCap_status Adafruit_iCap_OV7670::config(OV7670_size size,
     if (fps > 0.0) {
       delayMicroseconds((int)(10000000.0 / fps)); // 10 frame settling time
     }
+    dma_change(pixbuf[0], _width * _height);
     resume(); // Start DMA cycle
   } else {
     // Stop cam
