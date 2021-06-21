@@ -67,7 +67,9 @@ public:
                       for library to allocate as needed when a camera
                       resolution is selected.
     @param  pbufsize  Size of passed-in buffer (or 0 if NULL).
-    @param  addr  I2C address of camera.
+    @param  addr      I2C address of camera.
+    @param  speed     I2C communication speed to camera.
+    @param  delay_us  Delay in microseconds between register writes.
   */
   Adafruit_iCap_OV7670(iCap_parallel_pins &pins, iCap_arch *arch = NULL,
                        TwoWire &twi = Wire, uint16_t *pbuf = NULL,

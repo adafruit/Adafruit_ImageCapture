@@ -185,7 +185,6 @@ iCap_status Adafruit_iCap_OV7670::begin(OV7670_size size, iCap_colorspace space,
 
 // CAMERA CONFIG FUNCTIONS AND MISCELLANY ----------------------------------
 
-// Need to pass realloc behavior into this
 iCap_status Adafruit_iCap_OV7670::config(OV7670_size size,
                                          iCap_colorspace space, float fps,
                                          uint8_t nbuf, iCap_realloc allo) {
@@ -225,6 +224,14 @@ iCap_status Adafruit_iCap_OV7670::config(OV7670_size size,
   return status;
 }
 
+void Adafruit_iCap_OV7670::setColorspace(iCap_colorspace space) {
+  if (space == ICAP_COLOR_RGB565) {
+    writeList(OV7670_rgb, sizeof OV7670_rgb / sizeof OV7670_rgb[0]);
+  } else {
+    writeList(OV7670_yuv, sizeof OV7670_yuv / sizeof OV7670_yuv[0]);
+  }
+}
+
 // Configure camera frame rate. Actual resulting frame rate (returned) may
 // be different depending on available clock frequencies. Result will only
 // exceed input if necessary for minimum supported rate, but this is very
@@ -236,14 +243,6 @@ iCap_status Adafruit_iCap_OV7670::config(OV7670_size size,
 // rates because it varies with architecture, depending on OV7670_XCLK_HZ.
 // If platform is NULL, no registers are set, a fps request/return can be
 // evaluated without reconfiguring the camera, or without it even started.
-
-void Adafruit_iCap_OV7670::setColorspace(iCap_colorspace space) {
-  if (space == ICAP_COLOR_RGB565) {
-    writeList(OV7670_rgb, sizeof OV7670_rgb / sizeof OV7670_rgb[0]);
-  } else {
-    writeList(OV7670_yuv, sizeof OV7670_yuv / sizeof OV7670_yuv[0]);
-  }
-}
 
 float Adafruit_iCap_OV7670::setFPS(float fps) {
 

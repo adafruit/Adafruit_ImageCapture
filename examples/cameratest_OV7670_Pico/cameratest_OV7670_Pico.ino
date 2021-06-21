@@ -39,7 +39,7 @@ OV7670_pins pins = {
 #define CAM_SIZE OV7670_SIZE_DIV4  // QQVGA (160x120 pixels)
 #define CAM_MODE ICAP_COLOR_RGB565 // RGB plz
 
-Adafruit_iCap_OV7670 cam(pins, CAM_I2C, &arch);
+Adafruit_iCap_OV7670 cam(pins, &arch, CAM_I2C);
 
 // DISPLAY CONFIG ----------------------------------------------------------
 
@@ -71,7 +71,7 @@ void setup() {
   tft.setRotation(3);
   // Once started, the camera continually fills a frame buffer
   // automagically; no need to request a frame.
-  iCap_status status = cam.begin(CAM_MODE, CAM_SIZE, 30.0);
+  iCap_status status = cam.begin(CAM_SIZE, CAM_MODE, 30.0);
   if (status != ICAP_STATUS_OK) {
     Serial.println("Camera begin() fail");
     for(;;);

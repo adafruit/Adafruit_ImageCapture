@@ -1,13 +1,14 @@
-#if 0
 #include <Adafruit_iCap_OV2640.h>
 #include <Arduino.h>
 
 #if defined(ICAP_FULL_SUPPORT)
 
-Adafruit_iCap_OV2640::Adafruit_iCap_OV2640(OV2640_pins &pins, TwoWire &twi,
-                                           iCap_arch *arch, uint8_t addr)
-    : Adafruit_iCap_parallel((iCap_parallel_pins *)&pins, (TwoWire *)&twi, arch,
-                             addr, 100000, 1000) {}
+Adafruit_iCap_OV2640::Adafruit_iCap_OV2640(OV2640_pins &pins, iCap_arch *arch,
+                                           TwoWire &twi, uint16_t *pbuf,
+                                           uint32_t pbufsize, uint8_t addr,
+                                           uint32_t speed, uint32_t delay_us)
+    : Adafruit_iCap_parallel((iCap_parallel_pins *)&pins, arch, pbuf, pbufsize,
+                             (TwoWire *)&twi, addr, speed, delay_us) {}
 
 Adafruit_iCap_OV2640::~Adafruit_iCap_OV2640() {}
 
@@ -464,18 +465,11 @@ static const iCap_parallel_config OV2640_init[] = {
         {0xE1, 0x67},               // seen in other examples
         {OV2640_REG0_RESET, 0x00}}; // Go
 
-iCap_status Adafruit_iCap_OV2640::begin(iCap_colorspace space, OV2640_size size,
-                                        float fps, uint32_t bufsiz) {
+iCap_status Adafruit_iCap_OV2640::begin(void) {
   iCap_status status;
 
-  // Sets up width & height vars, doesn't yet issue commands
-  status = setSize(OV2640_SIZE_QQVGA, ICAP_REALLOC_CHANGE);
-  if (status != ICAP_STATUS_OK) {
-    return status;
-  }
-
-  // Initialize memory, peripherals for parallel+I2C camera:
-  status = Adafruit_iCap_parallel::begin(space);
+  // Initialize peripherals for parallel+I2C camera:
+  status = Adafruit_iCap_parallel::begin();
   if (status != ICAP_STATUS_OK) {
     return status;
   }
@@ -494,7 +488,7 @@ iCap_status Adafruit_iCap_OV2640::begin(iCap_colorspace space, OV2640_size size,
   if (pins.reset >= 0) { // Hard reset pin defined?
     pinMode(pins.reset, OUTPUT);
     digitalWrite(pins.reset, LOW);
-    delay(1);
+    delayMicroseconds(1000);
     digitalWrite(pins.reset, HIGH);
   } else {                                                    // Soft reset
     writeRegister(OV2640_REG_RA_DLMT, OV2640_RA_DLMT_SENSOR); // Bank select 1
@@ -502,70 +496,53 @@ iCap_status Adafruit_iCap_OV2640::begin(iCap_colorspace space, OV2640_size size,
   }
   delay(1); // Datasheet: tS:RESET = 1 ms
 
-  // TO DO: add framerate init here. Initially fixed size.
+  // Init main camera settings
+  writeList(OV2640_init, sizeof OV2640_init / sizeof OV2640_init[0]);
+
+  // Further initialization for specific colorspaces, frame sizes, timing,
+  // etc. are done in other functions.
+
+  return ICAP_STATUS_OK;
+}
+
+iCap_status Adafruit_iCap_OV2640::begin(OV2640_size size, iCap_colorspace space,
+                                        float fps, uint8_t nbuf) {
+  iCap_status status = begin();
+  if (status == ICAP_STATUS_OK) {
+    status = config(size, space, fps, nbuf);
+    if (status == ICAP_STATUS_OK) {
+      resume();
+    }
+  }
+
+  return status;
+}
+
+void Adafruit_iCap_OV2640::setColorspace(iCap_colorspace space) {
   if (colorspace == ICAP_COLOR_RGB565) {
     writeList(OV2640_rgb, sizeof OV2640_rgb / sizeof OV2640_rgb[0]);
   } else {
     writeList(OV2640_yuv, sizeof OV2640_yuv / sizeof OV2640_yuv[0]);
   }
-  // Init main camera settings
-  writeList(OV2640_init, sizeof OV2640_init / sizeof OV2640_init[0]);
-  setSize(OV2640_SIZE_QQVGA); // Frame size
-
-  delayMicroseconds(300000); // 10 frame settling time
-
-  resume(); // Start DMA cycle
-
-  return ICAP_STATUS_OK;
 }
 
-iCap_status Adafruit_iCap_OV2640::setSize(OV2640_size size, iCap_realloc allo) {
-  // RIGGED FOR QQVGA FOR NOW
-  uint16_t new_width = 160;
-  uint16_t new_height = 120;
-  uint32_t new_buffer_size = new_width * new_height * sizeof(uint16_t);
-  bool ra = false;
-
-  switch (allo) {
-  case ICAP_REALLOC_NONE:
-    if (new_buffer_size > buffer_size) { // New size won't fit
-      // Don't realloc. Keep current camera settings, return error.
-      return ICAP_STATUS_ERR_MALLOC;
-    }
-    break;
-  case ICAP_REALLOC_CHANGE:
-    ra = (new_buffer_size != buffer_size); // Realloc on size change
-    break;
-  case ICAP_REALLOC_LARGER:
-    ra = (new_buffer_size > buffer_size); // Realloc on size increase
-    break;
-  }
-
-  if (ra) { // Reallocate?
-    uint16_t *new_buffer = (uint16_t *)realloc(buffer[0], new_buffer_size);
-    if (new_buffer == NULL) { // FAIL
-      _width = _height = buffer_size = 0;
-      buffer[0] = NULL;
-      // Calling code had better poll width(), height() or getBuffer() in
-      // this case so it knows the camera buffer is gone, doesn't attempt
-      // to read camera data into unknown RAM.
-      return ICAP_STATUS_ERR_MALLOC;
-    }
-    buffer[0] = new_buffer;
-    buffer_size = new_buffer_size;
-  }
-
-  _width = new_width;
-  _height = new_height;
-
-  if (i2c_started) {
-    // Do frame control here
-    // For now, just issue the QQVGA settings...
+iCap_status Adafruit_iCap_OV2640::config(OV2640_size size,
+                                         iCap_colorspace space, float fps,
+                                         uint8_t nbuf, iCap_realloc allo) {
+  // RIGGED FOR QQVGA FOR NOW, 30 fps
+  uint16_t width = 160;
+  uint16_t height = 120;
+  iCap_status status = bufferConfig(width, height, space, nbuf, allo);
+  if (status == ICAP_STATUS_OK) {
     writeList(OV2640_qqvga, sizeof OV2640_qqvga / sizeof OV2640_qqvga[0]);
+    if (fps > 0.0) {
+      delayMicroseconds((int)(10000000.0 / fps)); // 10 frame settling time
+    }
+    dma_change(pixbuf[0], _width * _height);
+    resume(); // Start DMA cycle
   }
 
-  return ICAP_STATUS_OK;
+  return status;
 }
 
 #endif // end ICAP_FULL_SUPPORT
-#endif // 0

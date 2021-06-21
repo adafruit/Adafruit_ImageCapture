@@ -36,10 +36,10 @@ OV2640_pins pins = {
 };
 
 #define CAM_I2C Wire
-#define CAM_SIZE 0 // OV7670_SIZE_DIV4  // QQVGA (160x120 pixels)
+#define CAM_SIZE OV2640_SIZE_QQVGA // QQVGA (160x120 pixels)
 #define CAM_MODE ICAP_COLOR_RGB565 // RGB plz
 
-Adafruit_iCap_OV2640 cam(pins, CAM_I2C, &arch);
+Adafruit_iCap_OV2640 cam(pins, &arch, CAM_I2C);
 
 // DISPLAY CONFIG ----------------------------------------------------------
 
@@ -70,7 +70,7 @@ void setup() {
   tft.println("Howdy");
   // Once started, the camera continually fills a frame buffer
   // automagically; no need to request a frame.
-  iCap_status status = cam.begin();
+  iCap_status status = cam.begin(CAM_SIZE, CAM_MODE, 30.0);
   if (status != ICAP_STATUS_OK) {
     Serial.println("Camera begin() fail");
     for(;;);
@@ -119,10 +119,10 @@ void loop() {
 
   if(CAM_MODE == ICAP_COLOR_YUV) {
     // Convert grayscale for TFT preview
-    iCap_Y2RGB565(cam.getBuffer(), cam.width() * cam.height());
+    cam.Y2RGB565();
   }
 
-  tft.writePixels(cam.getBuffer(), cam.width() * cam.height(), false, true);
+  tft.writePixels(cam.getBuffer(), cam.width() * cam.height(), false, false);
 
 //  cam.resume(); // Resume DMA into camera buffer
 }

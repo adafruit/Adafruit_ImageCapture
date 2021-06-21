@@ -9,8 +9,9 @@ typedef enum {
 
 #if defined(ICAP_FULL_SUPPORT)
 
-#define OV2640_ADDR 0x30 //< Default I2C address if unspecified
 typedef iCap_parallel_pins OV2640_pins;
+
+#define OV2640_ADDR 0x30 //< Default I2C address if unspecified
 
 /*!
     @brief  Class encapsulating OmniVision OV2640 functionality.
@@ -19,82 +20,95 @@ class Adafruit_iCap_OV2640 : public Adafruit_iCap_parallel {
 public:
   /*!
     @brief  Constructor for OV2640 camera class.
-    @param  pins  OV2640_pins structure, describing physical connection to
-                  the camera.
-    @param  twi   TwoWire instance (e.g. Wire or Wire1), used for I2C
-                  communication with camera.
-    @param  arch  Pointer to structure containing architecture-specific
-                  settings. For example, on SAMD51, this structure
-                  includes a pointer to a timer peripheral's base address,
-                  used to generate the xclk signal. The structure is
-                  always of type iCap_arch, but the specific elements
-                  within will vary with each supported architecture.
-    @param  addr  I2C address of camera.
+    @param  pins      OV2640_pins structure, describing physical connection
+                      to the camera.
+    @param  arch      Pointer to structure containing architecture-specific
+                      settings. For example, on SAMD51, this structure
+                      includes a pointer to a timer peripheral's base
+                      address, used to generate the xclk signal. The
+                      structure is always of type iCap_arch, but the
+                      specific elements within will vary with each supported
+                       architecture.
+    @param  twi       TwoWire instance (e.g. Wire or Wire1), used for I2C
+                      communication with camera.
+    @param  pbuf      Preallocated buffer for captured pixel data, or NULL
+                      for library to allocate as needed when a camera
+                      resolution is selected.
+    @param  pbufsize  Size of passed-in buffer (or 0 if NULL).
+    @param  addr      I2C address of camera.
+    @param  speed     I2C communication speed to camera.
+    @param  delay_us  Delay in microseconds between register writes.
   */
-  Adafruit_iCap_OV2640(iCap_parallel_pins &pins, TwoWire &twi = Wire,
-                       iCap_arch *arch = NULL, uint8_t addr = OV2640_ADDR);
+  Adafruit_iCap_OV2640(iCap_parallel_pins &pins, iCap_arch *arch = NULL,
+                       TwoWire &twi = Wire, uint16_t *pbuf = NULL,
+                       uint32_t pbufsize = 0, uint8_t addr = OV2640_ADDR,
+                       uint32_t speed = 100000, uint32_t delay_us = 1000);
   ~Adafruit_iCap_OV2640(); // Destructor
 
   /*!
-    @brief   Allocate and initialize resources behind an Adafruit_OV2640
-             instance.
-    @param   space       ICAP_COLOR_RGB or ICAP_COLOR_YUV.
-    @param   size        Frame size as a OV2640_size enum value.
-    @param   fps         Desired capture framerate, in frames per second,
-                         as a float up to 30.0. Actual device frame rate may
-                         differ from this, depending on a host's available
-                         PWM timing.
-    @param   bufsiz      Image buffer size, in bytes. This is configurable so
-                         code can do things like change image sizes without
-                         reallocating (which risks losing the existing buffer)
-                         or double-buffered transfers. Pass 0 to use default
-                         buffer size equal to 2 bytes per pixel times the
-                         number of pixels corresponding to the 'size'
-                         argument. If you later call setSize() with an image
-                         size exceeding the buffer size, it will fail.
-
+    @brief   Initialize peripherals behind an Adafruit_iCap_OV2640 instance,
+             but do not actually start capture; must follow with a config()
+             call for that.
     @return  Status code. ICAP_STATUS_OK on successful init.
   */
-  iCap_status begin(iCap_colorspace space = ICAP_COLOR_RGB565,
-                    OV2640_size size = OV2640_SIZE_QQVGA, float fps = 30.0,
-                    uint32_t bufsiz = 0);
+  iCap_status begin(void);
 
   /*!
-    @brief   Change camera resolution post-begin().
+    @brief   Initialize peripherals and allocate resources behind an
+             Adafruit_iCap_OV2640 instance, start capturing data in
+             background. Really just a one-step wrapper around begin(void)
+             and config(...).
+    @param   size   Frame size as a OV2640_size enum value.
+    @param   space  ICAP_COLOR_RGB or ICAP_COLOR_YUV.
+    @param   fps    Desired capture framerate, in frames per second, as a
+                    float up to 30.0. Actual device frame rate may differ
+                    from this, depending on a host's available PWM timing.
+    @param   nbuf   Number of full-image buffers, 1-3. For now, always use
+                    1, multi-buffering isn't handled yet.
+    @return  Status code. ICAP_STATUS_OK on successful init.
+  */
+  iCap_status begin(OV2640_size size, iCap_colorspace space = ICAP_COLOR_RGB565,
+                    float fps = 30.0, uint8_t nbuf = 1);
+
+  /*!
+    @brief   Change frame configuration on an already-running camera.
     @param   size  One of the OV2640_size values (TBD).
-    @param   allo  Camera buffer reallocation behavior:
-                   - ICAP_REALLOC_NONE to not reallocate buffer.
-                     Function will return ICAP_STATUS_OK if new size fits
-                     in existing buffer, or ICAP_ERR_MALLOC if existing
-                     buffer is too small (buffer is not freed and current
-                     camera size is maintained).
-                   - ICAP_REALLOC_CHANGE to reallocate buffer on ANY
-                     size change, up or down. Function will return
-                     ICAP_STATUS_OK if reallocation was successful and
-                     camera size changed, or ICAP_ERR_MALLOC if
-                     reallocation failed (camera width and height will
-                     subsequently both poll as 0, or buffer to NULL, in
-                     this case).
-                   - ICAP_REALLOC_LARGER to reallocate buffer ONLY if new
-                     size exceeds current buffer size. Function will return
-                     ICAP_STATUS_OK if reallocation was successful and
-                     camera size changed, or ICAP_ERR_MALLOC if
-                     reallocation failed (camera width and height will
-                     subsequently both poll as 0 in this case).
-    @return  Status code. ICAP_STATUS_OK on success (image buffer
-             successfully reallocated as requested, camera reconfigured),
-             ICAP_STATUS_ERR_MALLOC in several situations explained above.
+    @param   space  ICAP_COLOR_RGB or ICAP_COLOR_YUV.
+    @param   fps    Desired capture framerate, in frames per second, as a
+                    float up to 30.0. Actual device frame rate may differ
+                    from this, depending on a host's available PWM timing.
+    @param   nbuf   Number of full-image buffers, 1-3. For now, always use
+                    1, multi-buffering isn't handled yet.
+    @param   allo   (Re-)allocation behavior. This value is IGNORED if a
+                    static pixel buffer was passed to the constructor; it
+                    only applies to dynamic allocation. ICAP_REALLOC_NONE
+                    keeps the existing buffer (if new dimensions still fit),
+                    ICAP_REALLOC_CHANGE will reallocate if the new dimensions
+                    are smaller or larger than before. ICAP_REALLOC_LARGER
+                    reallocates only if the new image specs won't fit in the
+                    existing buffer (but ignoring reductions, some RAM will
+                    go unused but avoids fragmentation).
+    @return  Status code. ICAP_STATUS_OK on successful update, may return
+             ICAP_STATUS_ERR_MALLOC if using dynamic allocation and the
+             buffer resize fails.
     @note    Reallocating the camera buffer is fraught with peril and should
              only be done if you're prepared to handle any resulting error.
-             In most cases, code should pass the size of LARGEST buffer it
-             anticipates needing (including any double buffering, etc.) to
-             begin(), which allocates it once on startup. Some RAM will go
-             untilized at times, but it's favorable to entirely losing the
-             camera mid-run. The default request here is CHANGE in case one
-             passes an improper initial value to begin().
+             In most cases, code should call the constructor with a static
+             buffer suited to the size of LARGEST image it anticipates
+             needing (including any double buffering, etc.). Some RAM will
+             go untilized at times, but it's favorable to entirely losing
+             the camera mid-run.
   */
-  iCap_status setSize(OV2640_size size,
-                      iCap_realloc allo = ICAP_REALLOC_CHANGE);
+  iCap_status config(OV2640_size size,
+                     iCap_colorspace space = ICAP_COLOR_RGB565,
+                     float fps = 30.0, uint8_t nbuf = 1,
+                     iCap_realloc allo = ICAP_REALLOC_CHANGE);
+
+  /*!
+    @brief  Configure camera colorspace.
+    @param  space  ICAP_COLOR_RGB565 or ICAP_COLOR_YUV.
+  */
+  void setColorspace(iCap_colorspace space = ICAP_COLOR_RGB565);
 };
 
 #endif // end ICAP_FULL_SUPPORT
