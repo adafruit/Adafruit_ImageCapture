@@ -63,7 +63,7 @@ OV7670_pins pins = {
 #define CAM_MODE ICAP_COLOR_RGB565 // RGB plz
 
 uint16_t pixelBuf[320 * 240]; // 150KB
-Adafruit_iCap_OV7670 cam(pins, &arch, pixelBuf, sizeof pixelBuf, CAM_I2C);
+Adafruit_iCap_OV7670 cam(pins, &arch, CAM_I2C, pixelBuf, sizeof pixelBuf);
 
 // Calling camera library functions from I2C callbacks (interrupts) is
 // bad news -- perhaps something in Pico peripherals or DMA, not sure.
