@@ -93,7 +93,7 @@ public:
              will happen. If no static buffer, this will attempt alloc.
   */
   iCap_status begin(uint16_t width, uint16_t height, iCap_colorspace space, 
-                    uint8_t ncap);
+                    uint8_t nbuf);
 
   /*!
     @brief   Reads value of one register from the camera over I2C.

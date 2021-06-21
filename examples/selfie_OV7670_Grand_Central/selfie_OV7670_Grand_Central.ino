@@ -55,7 +55,7 @@ OV7670_pins pins = {.enable = PIN_PCC_D8, .reset = PIN_PCC_D9,
 // due to incremental fragmentation.
 uint16_t camBuffer[320 * 240];
 
-Adafruit_iCap_OV7670 cam(pins, &arch, camBuffer, sizeof camBuffer, CAM_I2C);
+Adafruit_iCap_OV7670 cam(pins, &arch, CAM_I2C, camBuffer, sizeof camBuffer);
 
 // SHIELD AND DISPLAY CONFIG -----------------------------------------------
 
@@ -103,7 +103,7 @@ void setup() {
   // though the preview is only 160x120. This is to ensure that the
   // RAM is available later when we go to take a higher-resolution
   // still to save.
-  iCap_status status = cam.begin(CAM_SIZE, CAM_MODE, 1, 30.0);
+  iCap_status status = cam.begin(CAM_SIZE, CAM_MODE, 30.0);
   if (status != ICAP_STATUS_OK) {
     Serial.println("Camera begin() fail");
     for(;;);
@@ -160,7 +160,7 @@ void loop() {
     sprintf(filename, "/selfies/img%04d.bmp", bmp_num++);
     tft.dmaWait(); // Wait for prior transfer to complete
     // Set camera capture to larger size (320x240).
-    cam.config(OV7670_SIZE_DIV2, CAM_MODE, 1, 30.0);
+    cam.config(OV7670_SIZE_DIV2, CAM_MODE, 30.0);
     delay(100);         // Stabilize for a few frames
     tft.endWrite();     // Close out prior pixel write
     cam.resume();
@@ -173,7 +173,7 @@ void loop() {
     cam.suspend();
     write_bmp(filename, cam.getBuffer(), cam.width(), cam.height());
     // Restore the original preview size from camera.
-    cam.config(CAM_SIZE, CAM_MODE, 1, 30.0);
+    cam.config(CAM_SIZE, CAM_MODE, 30.0);
   }
 
   cam.resume(); // Resume DMA into camera buffer

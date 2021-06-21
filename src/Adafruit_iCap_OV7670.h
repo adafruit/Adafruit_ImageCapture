@@ -61,17 +61,17 @@ public:
                       signal. The structure is always of type iCap_arch, but
                       the specific elements within will vary with each
                       supported architecture.
+    @param  twi       TwoWire instance (e.g. Wire or Wire1), used for I2C
+                      communication with camera.
     @param  pbuf      Preallocated buffer for captured pixel data, or NULL
                       for library to allocate as needed when a camera
                       resolution is selected.
     @param  pbufsize  Size of passed-in buffer (or 0 if NULL).
-    @param  twi       TwoWire instance (e.g. Wire or Wire1), used for I2C
-                      communication with camera.
     @param  addr  I2C address of camera.
   */
   Adafruit_iCap_OV7670(iCap_parallel_pins &pins, iCap_arch *arch = NULL,
-                       uint16_t *pbuf = NULL, uint32_t pbufsize = 0,
-                       TwoWire &twi = Wire, uint8_t addr = OV7670_ADDR,
+                       TwoWire &twi = Wire, uint16_t *pbuf = NULL,
+                       uint32_t pbufsize = 0, uint8_t addr = OV7670_ADDR,
                        uint32_t speed = 100000, uint32_t delay_us = 1000);
   ~Adafruit_iCap_OV7670();
 
@@ -110,7 +110,7 @@ public:
     @return  Status code. ICAP_STATUS_OK on successful init.
   */
   iCap_status begin(OV7670_size size, iCap_colorspace space = ICAP_COLOR_RGB565,
-                    uint8_t nbuf = 1, float fps = 30.0);
+                    float fps = 30.0, uint8_t nbuf = 1);
 
   /*!
     @brief   Change frame configuration on an already-running camera.
@@ -120,8 +120,6 @@ public:
                     (160x120), OV7670_SIZE_DIV8 and OV7670_SIZE_DIV16.
                     This argument is required.
     @param   space  ICAP_COLOR_RGB565 (default) or ICAP_COLOR_YUV.
-    @param   nbuf   Number of full-image buffers, 1-3. For now, always use
-                    1, multi-buffering isn't handled yet.
     @param   fps    Desired capture framerate, in frames per second, as a
                     float up to 30.0 (default). Actual device frame rate may
                     differ from this, depending on a host's available PWM
@@ -133,6 +131,8 @@ public:
                     you can call OV7670_set_fps(NULL, fps) at any time
                     before or after begin() and that will return the actual
                     resulting frame rate as a float.
+    @param   nbuf   Number of full-image buffers, 1-3. For now, always use
+                    1, multi-buffering isn't handled yet.
     @param   allo   (Re-)allocation behavior. This value is IGNORED if a
                     static pixel buffer was passed to the constructor; it
                     only applies to dynamic allocation. ICAP_REALLOC_NONE
@@ -148,7 +148,7 @@ public:
   */
   iCap_status config(OV7670_size size,
                      iCap_colorspace space = ICAP_COLOR_RGB565,
-                     uint8_t nbuf = 1, float fps = 30.0,
+                     float fps = 30.0, uint8_t nbuf = 1, 
                      iCap_realloc allo = ICAP_REALLOC_CHANGE);
 
   /*!

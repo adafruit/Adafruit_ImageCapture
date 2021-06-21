@@ -4,8 +4,8 @@
 #if defined(ICAP_FULL_SUPPORT)
 
 Adafruit_iCap_OV7670::Adafruit_iCap_OV7670(OV7670_pins &pins, iCap_arch *arch,
-                                           uint16_t *pbuf, uint32_t pbufsize,
-                                           TwoWire &twi, uint8_t addr,
+                                           TwoWire &twi, uint16_t *pbuf,
+                                           uint32_t pbufsize, uint8_t addr,
                                            uint32_t speed, uint32_t delay_us)
     : Adafruit_iCap_parallel((iCap_parallel_pins *)&pins, arch, pbuf, pbufsize,
                              (TwoWire *)&twi, addr, speed, delay_us) {}
@@ -171,10 +171,10 @@ iCap_status Adafruit_iCap_OV7670::begin(void) {
 }
 
 iCap_status Adafruit_iCap_OV7670::begin(OV7670_size size, iCap_colorspace space,
-                                        uint8_t nbuf, float fps) {
+                                        float fps, uint8_t nbuf) {
   iCap_status status = begin();
   if (status == ICAP_STATUS_OK) {
-    status = config(size, space, nbuf, fps);
+    status = config(size, space, fps, nbuf);
     if (status == ICAP_STATUS_OK) {
       resume();
     }
@@ -187,8 +187,8 @@ iCap_status Adafruit_iCap_OV7670::begin(OV7670_size size, iCap_colorspace space,
 
 // Need to pass realloc behavior into this
 iCap_status Adafruit_iCap_OV7670::config(OV7670_size size,
-                                         iCap_colorspace space, uint8_t nbuf,
-                                         float fps, iCap_realloc allo) {
+                                         iCap_colorspace space, float fps,
+                                         uint8_t nbuf, iCap_realloc allo) {
   uint16_t width = 640 >> size;
   uint16_t height = 480 >> size;
   iCap_status status = bufferConfig(width, height, space, nbuf, allo);

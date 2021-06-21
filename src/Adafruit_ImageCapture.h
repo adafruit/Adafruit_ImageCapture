@@ -221,8 +221,9 @@ protected:
   iCap_colorspace colorspace; ///< Current settings colorspace
   iCap_arch *arch = NULL;     ///< Device-specific data, if needed
 
-  iCap_status setSize(uint16_t width, uint16_t height, uint8_t nbuf=1,
-                      iCap_realloc allo=ICAP_REALLOC_CHANGE);
+// No longer used
+//  iCap_status setSize(uint16_t width, uint16_t height, uint8_t nbuf=1,
+//                      iCap_realloc allo=ICAP_REALLOC_CHANGE);
 };
 
 #endif // end ICAP_FULL_SUPPORT
