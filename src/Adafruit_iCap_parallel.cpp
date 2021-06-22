@@ -41,6 +41,7 @@ iCap_status Adafruit_iCap_parallel::begin() {
 
 // Is this one not needed? Does this happen in subclass?
 // See same question in header.
+#if 0
 iCap_status Adafruit_iCap_parallel::begin(uint16_t width, uint16_t height,
                                           iCap_colorspace space, uint8_t nbuf) {
   iCap_status status = begin(); // Sets up peripherals
@@ -54,6 +55,7 @@ iCap_status Adafruit_iCap_parallel::begin(uint16_t width, uint16_t height,
 
   return status;
 }
+#endif
 
 int Adafruit_iCap_parallel::readRegister(uint8_t reg) {
   wire->beginTransmission(i2c_address);

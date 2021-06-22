@@ -22,11 +22,12 @@
 /** I2C command bytes passed from host to peripheral, MUST remain in sync */
 typedef enum {
   ICAP_CMD_BUFSIZ = 0, ///< Negotiate maximum I2C transfer size
+  ICAP_CMD_BEGIN,      ///< Initialize peripheral-side hardware
   ICAP_CMD_ID,         ///< Identify make/model of camera
   ICAP_CMD_STATE,      ///< Poll current camera state
   ICAP_CMD_READ_REG,   ///< Read register from camera
   ICAP_CMD_WRITE_REG,  ///< Write register(s) to camera
-  ICAP_CMD_SETUP,      ///< Specify capture parameters
+  ICAP_CMD_CONFIG,     ///< Specify capture parameters
   ICAP_CMD_CAPTURE,    ///< Pause camera, hold one frame for transfer
   ICAP_CMD_RESUME,     ///< Resume background capture after transfer
   ICAP_CMD_RETURN,     ///< Get return val of last periph-side camera func call

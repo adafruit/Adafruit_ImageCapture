@@ -10,14 +10,6 @@ HARDWARE REQUIRED:
 - 10K pullups on SDA+SCL pins
 */
 
-/*
-Declare image buffer as global var in this code, NOT the capture library.
-Provide a way to pass it in.
-There's a 'bufsiz' arg in begin() but that's about specifying how much
-the lib should allocate, not how much the calling code already offers.
-*/
-
-
 #include <Wire.h>
 #include <Adafruit_iCap_OV7670.h>
 #include <Adafruit_iCap_I2C.h>
@@ -62,6 +54,7 @@ OV7670_pins pins = {
 #define CAM_SIZE OV7670_SIZE_DIV4  // QQVGA (160x120 pixels)
 #define CAM_MODE ICAP_COLOR_RGB565 // RGB plz
 
+// Use fixed-size image buffer, do NOT dynamically allocate in lib
 uint16_t pixelBuf[320 * 240]; // 150KB
 Adafruit_iCap_OV7670 cam(pins, &arch, CAM_I2C, pixelBuf, sizeof pixelBuf);
 
@@ -173,6 +166,12 @@ void i2cRecvCallback(int len) {
       }
       break;
 
+    case ICAP_CMD_BEGIN: // Initialize camera peripheral
+      // This code does nothing here, since camera is already initialized in
+      // setup(). If we want it to work this way instead, would need the
+      // cooperation of the state machine stuff.
+      break;
+
     case ICAP_CMD_ID: // Identify camera model (subsequent requestCallback())
       Serial.println("Identify camera (0)");
       i2cBuf[0] = 0; // OV7670
@@ -194,14 +193,10 @@ void i2cRecvCallback(int len) {
     case ICAP_CMD_READ_REG: // Read register (subsequent requestCallback())
       Serial.print("Read camera register...");
       if (i2cRead(1) == 1) {                       // Register to read
-        if (camState >= CAM_ON) {                  // Only possible w/camera running
-          Serial.printf("%02x = ", i2cBuf[0]);     // Register
-          i2cBuf[0] = cam.readRegister(i2cBuf[0]); // Read from cam, put in buf
-          Serial.printf("%02x\n", i2cBuf[0]);      // Value
-          i2cReqLen = 1;
-        } else {
-          Serial.println("camera not started; request ignored");
-        }
+        Serial.printf("%02x = ", i2cBuf[0]);     // Register
+        i2cBuf[0] = cam.readRegister(i2cBuf[0]); // Read from cam, put in buf
+        Serial.printf("%02x\n", i2cBuf[0]);      // Value
+        i2cReqLen = 1;
       } else {
         Serial.println("argument missing; request ignored");
       }
@@ -210,42 +205,37 @@ void i2cRecvCallback(int len) {
     case ICAP_CMD_WRITE_REG: // Write register(s)
       Serial.print("Write camera register(s)...");
       if ((i2cRead(2) == 2)) {   // First, length
+        uint8_t reg = i2cBuf[0];
         uint8_t len = i2cBuf[1]; // Max len 255
-        if (camState >= CAM_ON) {
-          uint8_t reg = i2cBuf[0];
-          if (i2cRead(len) == len) {
-            Serial.printf("%d byte(s) starting at %02x\n", len, reg);
-            for(int i=0; i<len; i++) {
-              cam.writeRegister(reg + i, i2cBuf[i]);
-            }
-          } else {
-            Serial.println("arguments missing; request ignored");
+        if (i2cRead(len) == len) {
+          Serial.printf("%d byte(s) starting at %02x\n", len, reg);
+          for(int i=0; i<len; i++) {
+            cam.writeRegister(reg + i, i2cBuf[i]);
           }
         } else {
-          Serial.println("camera not started; request ignored");
+          Serial.println("arguments missing; request ignored");
         }
       } else {
         Serial.println("arguments missing; request ignored");
       }
       break;
 
-    case ICAP_CMD_SETUP: // Specify capture parameters
+    case ICAP_CMD_CONFIG: // Specify capture parameters
       Serial.print("Start camera...");
       // Only start camera if currently in OFF state.
       // Read I2C bytes regardless to keep in sync.
       if (i2cRead(3) == 3) {
         Serial.printf("[%02X %02X %02X]", i2cBuf[0], i2cBuf[1], i2cBuf[2]);
-        if (camState == CAM_OFF) {
-          Serial.println("...requested");
-          camState = CAM_REQ_CONFIG; // Plz start camera in loop()
-        } else {
-          Serial.println("...already running; request ignored");
-        }
+        camState = CAM_REQ_CONFIG; // Plz reconfig camera in loop()
+//        if (camState == CAM_OFF) {
+//          Serial.println("...requested");
+//        } else {
+//          Serial.println("...already running; request ignored");
+//        }
       } else {
         Serial.println("arguments missing; request ignored");
       }
       break;
-
 
 // Host code MUST poll state until camera is paused
     case ICAP_CMD_CAPTURE: // Capture frame (subsequent requestCallback()s)
@@ -308,8 +298,6 @@ void setup() {
 #endif // TFT_PREVIEW
 
   cam.begin(); // Init camera-related peripherals, but don't capture yet
-// (Alternately, could init this at a default size if using
-// the viewfinder preview)
 
   // Pico acts as an I2C peripheral on a second bus
   // (since first is tied up with camera)
@@ -327,11 +315,10 @@ void loop() {
 
   switch (camState) { // Only the "REQ" states need to be handled here
 
-
-// Change this. Camera is already started, just changing settings now.
     case CAM_REQ_CONFIG:
-      // For now we'll treat mode, size and framerate as byte values.
+      // For now we'll treat size, mode and framerate as byte values.
       // That's OK for the former, but might want fractional rates later.
+delay(1000);
       status = cam.config((OV7670_size)i2cBuf[0], (iCap_colorspace)i2cBuf[1], 
                          (float)i2cBuf[2]);
       if (status == ICAP_STATUS_OK) {
@@ -340,7 +327,8 @@ void loop() {
         delay(500); // Allow exposure and PIO sync and whatnot
         camState = CAM_ON;
       } else {
-        Serial.println("FAIL");
+// Getting a malloc fail? Why? How?
+        Serial.printf("FAIL %d", (int)status);
         camState = CAM_OFF;
       }
       break;

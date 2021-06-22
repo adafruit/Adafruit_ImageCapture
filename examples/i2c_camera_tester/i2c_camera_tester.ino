@@ -2,21 +2,6 @@
 // running the cameratest_i2c_OV7670_Pico sketch.
 // (Both boards run concurrently, talking over I2C)
 
-/*
-NOTES TO SELF:
-Start librarifying these I2C transactions, because they're
-gonna get awkward FAST. Prob 2 headers, one for cam I2C host &
-peripheral (enumerates things like the connand bytes), and one
-specifically for host (to encapsulate the ugly code below into
-easy functions).
-
-Consider changing the cam lib so PWM can be independently
-initialized before starting up the whole camera capture deal.
-This would allow registers to be read & written (camera needs
-clock input via PWM to run its own I2C) and might allow things
-like auto camera make & model detection later.
-*/
-
 #include <Wire.h>
 #include "Adafruit_iCap_I2C_host.h"
 #include "Adafruit_iCap_OV7670.h"
@@ -24,8 +9,8 @@ like auto camera make & model detection later.
 #include <Adafruit_ST7789.h> // Hardware-specific library for ST7789
 #include <SPI.h>
 
-#if !defined(BUFFER_LENGTH)
-#define BUFFER_LENGTH 256 // Max I2C transfer size
+#if !defined(BUFFER_LENGTH) // AVR defines this, otherwise...
+#define BUFFER_LENGTH 256   // Max I2C transfer size
 #endif
 
 Adafruit_iCap_peripheral cam; // Remote camera on I2C
@@ -46,15 +31,10 @@ void setup() {
   tft.println("I2C HOST");
   tft.setRotation(3);
 
-  // Initialize I2C, negotiate max transfer size with camera board
+  // Initialize I2C connection to camera, negotiate max transfer size
+  // and initialize hardware.
   cam.begin();
-
-  // Start camera, check response
-  int status = cam.cameraStart(ICAP_COLOR_RGB565, OV7670_SIZE_DIV4, 30.0);
-  if(status != ICAP_STATUS_OK) {
-    Serial.println("Camera failed to start");
-    for(;;);
-  }
+  delay(1000);
 
   // Poll the PID and VER registers to see if camera's working
 
@@ -64,20 +44,30 @@ void setup() {
   Serial.println(cam.readRegister(OV7670_REG_VER), HEX); // Expecting 0x73
 }
 
-uint16_t pixelbuf[256];
+uint16_t pixelbuf[BUFFER_LENGTH / 2 + 1]; // +1 for possible half-pixel mid transfer
 uint8_t *pbuf8 = (uint8_t *)pixelbuf;
 int      bytesinbuf = 0;
+uint8_t *i2cbuf = (uint8_t *)cam.getBuffer();
+
+OV7670_size sizes[] = { OV7670_SIZE_DIV4, OV7670_SIZE_DIV8, OV7670_SIZE_DIV16 };
+uint8_t size_index = 0;
 
 void loop() {
+
+  // Erase rect at prior size before resizing camera
+  tft.fillRect((tft.width() - cam.width()) / 2,
+               (tft.height() - cam.height()) / 2,
+               cam.width(), cam.height(), 0);
+
+// Need reconfig command
+  int status = cam.config(sizes[size_index], ICAP_COLOR_RGB565, 30.0);
+  if (++size_index >= (sizeof sizes / sizeof sizes[0])) size_index = 0;
+
   int32_t bytes = cam.capture();
   Serial.print("Expecting ");
   Serial.print(bytes);
   Serial.print(" bytes from camera, maxTransferSize is ");
   Serial.println(cam.maxTransferSize());
-
-  tft.fillRect((tft.width() - cam.width()) / 2,
-                    (tft.height() - cam.height()) / 2,
-                    cam.width(), cam.height(), 0);
 
   tft.startWrite();
   tft.setAddrWindow((tft.width() - cam.width()) / 2,
@@ -86,9 +76,9 @@ void loop() {
 
   while(bytes > 0) {
     int len = min(bytes, cam.maxTransferSize());
-    uint8_t *data = cam.getData(len);
+    len = cam.i2cRead(len);
     // Add new bytes to pixelbuf
-    memcpy(&pbuf8[bytesinbuf], data, len);
+    memcpy(&pbuf8[bytesinbuf], i2cbuf, len);
     bytesinbuf += len;
     int pixelsThisPass = bytesinbuf / 2; // 16 bit pixels (any trailing byte is ignored)
     tft.writePixels(pixelbuf, pixelsThisPass, false, true);

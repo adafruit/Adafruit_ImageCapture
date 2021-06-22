@@ -75,6 +75,7 @@ public:
   */
   iCap_status begin(void);
 
+#if 0
   /*!
     @brief   Initialize peripherals and allocate resources behind an
              Adafruit_iCap_parallel instance, begin capture with requested
@@ -94,6 +95,7 @@ public:
   */
   iCap_status begin(uint16_t width, uint16_t height, iCap_colorspace space, 
                     uint8_t nbuf);
+#endif
 
   /*!
     @brief   Reads value of one register from the camera over I2C.

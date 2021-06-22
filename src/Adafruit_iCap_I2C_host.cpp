@@ -24,19 +24,6 @@ Adafruit_iCap_peripheral::Adafruit_iCap_peripheral(uint8_t addr, TwoWire *w,
 Adafruit_iCap_peripheral::~Adafruit_iCap_peripheral() {
 }
 
-// Read 'len' bytes into i2cBuf, limited to i2cBuf size and pending I2C
-// bytes available. Returns number of bytes actually read.
-int Adafruit_iCap_peripheral::i2cRead(int len) {
-  // Limit read to buffer size and to available incoming bytes
-  if (len > sizeof i2cBuf) len = sizeof i2cBuf;
-  int i = wire->available();
-  if (len > i) len = i;
-  for (i=0; i<len; i++) {
-    i2cBuf[i] = wire->read();
-  }
-  return len;
-}
-
 void Adafruit_iCap_peripheral::begin(void) {
   wire->begin();
   wire->setClock(i2cSpeed);
@@ -50,29 +37,33 @@ void Adafruit_iCap_peripheral::begin(void) {
   i2cBuf[2] = (sizeof i2cBuf >>  8) & 0xFF;
   i2cBuf[3] = (sizeof i2cBuf >> 16) & 0xFF;
   i2cBuf[4] = (sizeof i2cBuf >> 24) & 0xFF;
-  wire->beginTransmission(i2cAddress);
-  wire->write(i2cBuf, 5);
-  wire->endTransmission();
-  wire->requestFrom(i2cAddress, (uint8_t)4);
-  if (i2cRead(4) == 4) { // 32-bit response
+  i2cWrite(5);
+  if (i2cRead(4) == 4) { // 32-bit request/response
     uint32_t response = (uint32_t)i2cBuf[0]        |
                        ((uint32_t)i2cBuf[1] <<  8) |
                        ((uint32_t)i2cBuf[2] << 16) |
                        ((uint32_t)i2cBuf[3] << 24);
     i2cMaxLen = min(sizeof i2cBuf, response); // Use smaller of both
   }
+
+  // Tell remote camera host to initialize peripherals if needed.
+  i2cBuf[0] = ICAP_CMD_BEGIN;
+  i2cWrite(1);
 }
 
-int Adafruit_iCap_peripheral::cameraStart(uint8_t mode, uint8_t size,
-                                          float fps, uint32_t timeout_ms) {
-  // Issue camera start command
-  i2cBuf[0] = ICAP_CMD_SETUP;
+void Adafruit_iCap_peripheral::begin(uint8_t size, uint8_t space, float fps,
+                                     uint32_t timeout_ms) {
+  begin();
+  config(size, space, fps, timeout_ms);
+}
+
+int Adafruit_iCap_peripheral::config(uint8_t size, uint8_t space, float fps,
+                                     uint32_t timeout_ms) {
+  i2cBuf[0] = ICAP_CMD_CONFIG;
   i2cBuf[1] = size;
-  i2cBuf[2] = mode;
+  i2cBuf[2] = space;
   i2cBuf[3] = (int)fps;
-  wire->beginTransmission(i2cAddress);
-  wire->write(i2cBuf, 4);
-  wire->endTransmission();
+  i2cWrite(4);
 
   // Poll until camera ready or timeout has elapsed
   uint32_t startTime = millis();
@@ -93,19 +84,14 @@ Serial.println("Camera start timeout");
 
 iCap_state Adafruit_iCap_peripheral::getState(void) {
   i2cBuf[0] = ICAP_CMD_STATE;
-  wire->beginTransmission(i2cAddress);
-  wire->write(i2cBuf, 1);
-  wire->endTransmission();
+  i2cWrite(1);
   wire->requestFrom(i2cAddress, (uint8_t)1);
   return (wire->available() >= 1) ? (iCap_state)wire->read() : CAM_UNKNOWN;
 }
 
 int Adafruit_iCap_peripheral::getReturnValue(void) {
   i2cBuf[0] = ICAP_CMD_RETURN; // Request return value
-  wire->beginTransmission(i2cAddress);
-  wire->write(i2cBuf, 1);
-  wire->endTransmission();
-  wire->requestFrom(i2cAddress, (uint8_t)4);
+  i2cWrite(1);
   int response = 0;
   if (i2cRead(4) == 4) { // 32-bit response
     response = (uint32_t)i2cBuf[0] | ((uint32_t)i2cBuf[1] << 8) |
@@ -117,9 +103,7 @@ int Adafruit_iCap_peripheral::getReturnValue(void) {
 int Adafruit_iCap_peripheral::readRegister(uint8_t reg) {
   i2cBuf[0] = ICAP_CMD_READ_REG; // Read register
   i2cBuf[1] = reg;
-  wire->beginTransmission(i2cAddress);
-  wire->write(i2cBuf, 2);
-  wire->endTransmission();
+  i2cWrite(2);
   wire->requestFrom(i2cAddress, (uint8_t)1);
   return (wire->available() >= 1) ? wire->read() : -1;
 }
@@ -129,21 +113,17 @@ void Adafruit_iCap_peripheral::writeRegister(uint8_t reg, uint8_t val) {
   i2cBuf[1] = reg;
   i2cBuf[2] = 1; // Single register for now
   i2cBuf[3] = val;
-  wire->beginTransmission(i2cAddress);
-  wire->write(i2cBuf, 4);
-  wire->endTransmission();
+  i2cWrite(4);
 }
 
 uint32_t Adafruit_iCap_peripheral::capture() {
   i2cBuf[0] = ICAP_CMD_CAPTURE;
-  wire->beginTransmission(i2cAddress);
-  wire->write(i2cBuf, 1);
-  wire->endTransmission();
+  i2cWrite(1);
 //  delay(100);
   uint32_t response = 0;
+// To do: add timeout
 do {
   delay(100);
-  wire->requestFrom(i2cAddress, (uint8_t)4);
   if (i2cRead(4) == 4) { // 32-bit response
     response = (uint32_t)i2cBuf[0] | ((uint32_t)i2cBuf[1] << 8) |
       ((uint32_t)i2cBuf[2] << 16) | ((uint32_t)i2cBuf[3] << 24);
@@ -164,9 +144,7 @@ Serial.println("Polling...");
   do {
     i2cBuf[0] = ICAP_CMD_STATE; // Poll camera state
     delay(100); // Don't hit it too fast, else trouble
-    wire->beginTransmission(i2cAddress);
-    wire->write(i2cBuf, 1);
-    wire->endTransmission();
+    i2cWrite(1);
     wire->requestFrom(i2cAddress, (uint8_t)1);
     status = (wire->available() >= 1) ? wire->read() : 0;
   } while((status != CAM_PAUSED) && ((millis() - startTime) < timeout_ms));
@@ -177,22 +155,29 @@ Serial.println("OK");
   return response;
 }
 
-// This is awful similar to i2cRead()
-uint8_t *Adafruit_iCap_peripheral::getData(int len) {
-  wire->requestFrom((int)i2cAddress, len);
+// Request and read 'len' bytes into i2cBuf, limited to i2cBuf size and
+// pending I2C bytes available. Returns number of bytes actually read.
+int Adafruit_iCap_peripheral::i2cRead(int len) {
+  // Limit read to our buffer size...
+  if (len > sizeof i2cBuf) len = sizeof i2cBuf;
+  wire->requestFrom(i2cAddress, (uint8_t)len);
+  // ...and to available incoming bytes...
   int avail = wire->available();
-  if (avail >= 1) {
-    len = min(len, avail);
-    for(int i=0; i<len; i++) {
-      i2cBuf[i] = wire->read();
-    }
+  if (len > avail) len = avail;
+  for (int i=0; i<len; i++) {
+    i2cBuf[i] = wire->read();
   }
-  return i2cBuf;
+  return len;
+}
+
+// Issue 'len' bytes from i2cBuf to remote camera.
+void Adafruit_iCap_peripheral::i2cWrite(int len) {
+  wire->beginTransmission(i2cAddress);
+  wire->write(i2cBuf, len);
+  wire->endTransmission();
 }
 
 void Adafruit_iCap_peripheral::resume() {
   i2cBuf[0] = ICAP_CMD_RESUME;
-  wire->beginTransmission(i2cAddress);
-  wire->write(i2cBuf, 1);
-  wire->endTransmission();
+  i2cWrite(1);
 }

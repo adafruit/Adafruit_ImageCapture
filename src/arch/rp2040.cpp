@@ -36,9 +36,11 @@ static volatile bool suspended = true;       // Initially stopped
 // This is NOT a sleep function, it just pauses background DMA.
 
 void Adafruit_iCap_parallel::suspend(void) {
-  while (!frameReady)
-    ;               // Wait for current frame to finish loading
-  suspended = true; // Don't load next frame (camera runs, DMA stops)
+  if (!suspended) {
+    while (!frameReady)
+      ;               // Wait for current frame to finish loading
+    suspended = true; // Don't load next frame (camera runs, DMA stops)
+  }
 }
 
 // NOT a wake function, just resumes background DMA.

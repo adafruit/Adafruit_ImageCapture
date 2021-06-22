@@ -28,16 +28,17 @@ public:
                            TwoWire *w = &Wire, uint32_t s = 400000UL);
   ~Adafruit_iCap_peripheral(); // Destructor
 
-  void begin();
+  void begin(void);
+  void begin(uint8_t size, uint8_t space, float fps = 30.0,
+             uint32_t timeout_ms = 3000);
   int getReturnValue();
   iCap_state getState();
-
-  int cameraStart(uint8_t mode, uint8_t size, float fps,
-                  uint32_t timeout_ms = 3000);
+  uint8_t *getData(int len);
+  int config(uint8_t size, uint8_t space, float fps = 30.0,
+             uint32_t timeout_ms = 3000);
   int readRegister(uint8_t reg);
   void writeRegister(uint8_t reg, uint8_t val);
   uint32_t capture();
-  uint8_t *getData(int len);
   void resume();
 
   /*!
@@ -59,6 +60,29 @@ public:
   */
   uint32_t maxTransferSize(void) { return i2cMaxLen; }
 
+  /*!
+    @brief   Get address of I2C receive buffer. When capturing image,
+             calls to i2cRead() store data here, which can then be passed
+             to display or other code.
+    @return  Pointer to receive buffer (BUFFER_LENGTH bytes).
+  */
+  uint8_t *getBuffer(void) { return i2cBuf; };
+
+  /*!
+    @brief   Read data from I2C peripheral camera, up to a maximum length
+             (actual read may be less, if it exceeds the device's I2C buffer
+             or the available amount of data waiting). Host code can use
+             this when reading image from the camera (internally it's used
+             for general I2C receive operations).
+    @param   len  Number of bytes to read (should not exceed host or remote
+                  I2C buffer size).
+    @return  Number of bytes actually read.
+  */
+  int i2cRead(int len);
+
+  // Write data to I2C peripheral camera from library's transfer buffer.
+  void i2cWrite(int len);
+
 protected:
   TwoWire *wire;                 //< Pointer to I2C periph (e.g. &Wire)
   uint32_t i2cSpeed;             //< I2C data rate, bps (e.g. 100000)
@@ -68,6 +92,5 @@ protected:
   uint16_t _width = 0;           //< Current settings width in pixels
   uint16_t _height = 0;          //< Current settings height in pixels
   iCap_colorspace colorspace;    //< Colorspace passed to begin()
-  int i2cRead(int len);
 };
 

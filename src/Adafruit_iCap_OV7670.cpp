@@ -175,9 +175,6 @@ iCap_status Adafruit_iCap_OV7670::begin(OV7670_size size, iCap_colorspace space,
   iCap_status status = begin();
   if (status == ICAP_STATUS_OK) {
     status = config(size, space, fps, nbuf);
-    if (status == ICAP_STATUS_OK) {
-      resume();
-    }
   }
 
   return status;
@@ -190,6 +187,7 @@ iCap_status Adafruit_iCap_OV7670::config(OV7670_size size,
                                          uint8_t nbuf, iCap_realloc allo) {
   uint16_t width = 640 >> size;
   uint16_t height = 480 >> size;
+  suspend();
   iCap_status status = bufferConfig(width, height, space, nbuf, allo);
   if (status == ICAP_STATUS_OK) {
     setColorspace(space); // Select RGB/YUV
