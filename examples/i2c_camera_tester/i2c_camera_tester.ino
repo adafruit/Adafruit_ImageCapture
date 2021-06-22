@@ -50,18 +50,19 @@ int      bytesinbuf = 0;
 uint8_t *i2cbuf = (uint8_t *)cam.getBuffer();
 
 OV7670_size sizes[] = { OV7670_SIZE_DIV4, OV7670_SIZE_DIV8, OV7670_SIZE_DIV16 };
-uint8_t size_index = 0;
+uint8_t size_index = sizeof sizes / sizeof sizes[0]; // Force past end, will roll over below
 
 void loop() {
 
   // Erase rect at prior size before resizing camera
-  tft.fillRect((tft.width() - cam.width()) / 2,
-               (tft.height() - cam.height()) / 2,
-               cam.width(), cam.height(), 0);
+  if (cam.width()) {
+    tft.fillRect((tft.width() - cam.width()) / 2,
+                 (tft.height() - cam.height()) / 2,
+                 cam.width(), cam.height(), 0);
+  }
 
-// Need reconfig command
-  int status = cam.config(sizes[size_index], ICAP_COLOR_RGB565, 30.0);
   if (++size_index >= (sizeof sizes / sizeof sizes[0])) size_index = 0;
+  int status = cam.config(sizes[size_index], ICAP_COLOR_RGB565, 30.0);
 
   int32_t bytes = cam.capture();
   Serial.print("Expecting ");

@@ -57,6 +57,7 @@ OV7670_pins pins = {
 // Use fixed-size image buffer, do NOT dynamically allocate in lib
 uint16_t pixelBuf[320 * 240]; // 150KB
 Adafruit_iCap_OV7670 cam(pins, &arch, CAM_I2C, pixelBuf, sizeof pixelBuf);
+uint8_t camSettings[3];
 
 // Calling camera library functions from I2C callbacks (interrupts) is
 // bad news -- perhaps something in Pico peripherals or DMA, not sure.
@@ -225,7 +226,10 @@ void i2cRecvCallback(int len) {
       // Only start camera if currently in OFF state.
       // Read I2C bytes regardless to keep in sync.
       if (i2cRead(3) == 3) {
-        Serial.printf("[%02X %02X %02X]", i2cBuf[0], i2cBuf[1], i2cBuf[2]);
+// Trying a special buffer just for camera settings
+// because i2cBuf might be getting clobbered by another
+// callback before the config happens?
+memcpy(camSettings, (void *)i2cBuf, 3);
         camState = CAM_REQ_CONFIG; // Plz reconfig camera in loop()
 //        if (camState == CAM_OFF) {
 //          Serial.println("...requested");
@@ -318,9 +322,13 @@ void loop() {
     case CAM_REQ_CONFIG:
       // For now we'll treat size, mode and framerate as byte values.
       // That's OK for the former, but might want fractional rates later.
-delay(1000);
-      status = cam.config((OV7670_size)i2cBuf[0], (iCap_colorspace)i2cBuf[1], 
-                         (float)i2cBuf[2]);
+
+//      Serial.printf("[%02X %02X %02X]", i2cBuf[0], i2cBuf[1], i2cBuf[2]);
+//      status = cam.config((OV7670_size)i2cBuf[0], (iCap_colorspace)i2cBuf[1], 
+//                         (float)i2cBuf[2]);
+      Serial.printf("[%02X %02X %02X]", camSettings[0], camSettings[1], camSettings[2]);
+      status = cam.config((OV7670_size)camSettings[0], (iCap_colorspace)camSettings[1], 
+                         (float)camSettings[2]);
       if (status == ICAP_STATUS_OK) {
         Serial.println("OK");
         //cam.test_pattern(OV7670_TEST_PATTERN_COLOR_BAR);
