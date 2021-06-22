@@ -81,7 +81,7 @@ public:
   int i2cRead(int len);
 
   // Write data to I2C peripheral camera from library's transfer buffer.
-  void i2cWrite(int len);
+  int i2cWrite(int len);
 
 protected:
   TwoWire *wire;                 //< Pointer to I2C periph (e.g. &Wire)

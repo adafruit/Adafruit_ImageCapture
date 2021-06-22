@@ -96,7 +96,10 @@ void i2cReqCallback() {
   if (i2cReqLen > 0) {
     if (capturing) {
       // Send chunk of image data
-      periphI2C->write((uint8_t *)capturedImagePtr, i2cReqLen);
+      int n = periphI2C->write((uint8_t *)capturedImagePtr, i2cReqLen);
+      if (n != i2cReqLen) {
+        Serial.println("I2C write error");
+      }
       capturedBytesRemaining -= i2cReqLen;
       if (capturedBytesRemaining > 0) {
         capturedImagePtr += i2cReqLen;
@@ -108,7 +111,10 @@ void i2cReqCallback() {
       }
     } else {
       // Send i2cBuf data
-      periphI2C->write((uint8_t *)i2cBuf, i2cReqLen);
+      int n = periphI2C->write((uint8_t *)i2cBuf, i2cReqLen);
+      if (n != i2cReqLen) {
+        Serial.println("I2C write error");
+      }
       i2cReqLen = 0; // Reset length to avoid double invocation problems
     }
   }
@@ -350,10 +356,9 @@ void loop() {
       if (status == ICAP_STATUS_OK) {
         Serial.println("OK");
         //cam.test_pattern(OV7670_TEST_PATTERN_COLOR_BAR);
-        delay(500); // Allow exposure and PIO sync and whatnot
+        //delay(500); // Allow exposure and PIO sync and whatnot
         camState = CAM_ON;
       } else {
-// Getting a malloc fail? Why? How?
         Serial.printf("FAIL %d", (int)status);
         camState = CAM_OFF;
       }
@@ -366,8 +371,8 @@ void loop() {
       break;
     case CAM_REQ_RESUME:
       Serial.print("RESUMING CAMERA...");
-      cam.resume();
       capturing = false;
+      cam.resume();
       Serial.println("OK");
       camState = CAM_ON;
       break;

@@ -59,19 +59,30 @@ void Adafruit_iCap_peripheral::begin(uint8_t size, uint8_t space, float fps,
 
 int Adafruit_iCap_peripheral::config(uint8_t size, uint8_t space, float fps,
                                      uint32_t timeout_ms) {
+Serial.println("A");
   i2cBuf[0] = ICAP_CMD_CONFIG;
   i2cBuf[1] = size;
   i2cBuf[2] = space;
   i2cBuf[3] = (int)fps;
-  i2cWrite(4);
+Serial.println("B");
+  int n = i2cWrite(4);
+Serial.println("C");
+  if (n != 4) {
+    Serial.println("I2C write error");
+  }
+Serial.println("D");
 
   // Poll until camera ready or timeout has elapsed
   uint32_t startTime = millis();
+Serial.println("E");
   do {
+Serial.println("F");
     delay(100); // Don't hit it too fast, else trouble
+Serial.println("G");
     if (getState() == CAM_ON) {
       _width = 640 >> (int)size;
       _height = 480 >> (int)size;
+Serial.println("Yay");
       return ICAP_STATUS_OK;
     }
   } while((millis() - startTime) < timeout_ms);
@@ -171,10 +182,14 @@ int Adafruit_iCap_peripheral::i2cRead(int len) {
 }
 
 // Issue 'len' bytes from i2cBuf to remote camera.
-void Adafruit_iCap_peripheral::i2cWrite(int len) {
+int Adafruit_iCap_peripheral::i2cWrite(int len) {
   wire->beginTransmission(i2cAddress);
-  wire->write(i2cBuf, len);
+  int n = wire->write(i2cBuf, len);
+  if (n != len) {
+    Serial.println("I2C write() error");
+  }
   wire->endTransmission();
+  return n;
 }
 
 void Adafruit_iCap_peripheral::resume() {
