@@ -34,7 +34,7 @@ void setup() {
   // Initialize I2C connection to camera, negotiate max transfer size
   // and initialize hardware.
   cam.begin();
-  delay(1000);
+//  delay(1000);
 
   // Poll the PID and VER registers to see if camera's working
 
@@ -61,9 +61,11 @@ void loop() {
                  cam.width(), cam.height(), 0);
   }
 
+  Serial.println("Configuring...");
   if (++size_index >= (sizeof sizes / sizeof sizes[0])) size_index = 0;
   int status = cam.config(sizes[size_index], ICAP_COLOR_RGB565, 30.0);
 
+  Serial.println("Capturing...");
   int32_t bytes = cam.capture();
   Serial.print("Expecting ");
   Serial.print(bytes);

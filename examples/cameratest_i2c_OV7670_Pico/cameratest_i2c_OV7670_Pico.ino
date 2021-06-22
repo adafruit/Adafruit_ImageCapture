@@ -286,8 +286,8 @@ tripWire = true;
 
 void setup() {
   Serial.begin(9600);
-  while(!Serial);
-  delay(1000);
+  //while(!Serial);
+  //delay(1000);
   Serial.println("CAMERA PERIPH BOARD STARTED");
 
   pinMode(25, OUTPUT); // LED
