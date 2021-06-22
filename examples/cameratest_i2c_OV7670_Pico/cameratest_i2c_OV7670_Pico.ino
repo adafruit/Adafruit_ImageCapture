@@ -86,9 +86,13 @@ volatile uint32_t capturedBytesRemaining = 0;
 volatile uint8_t  capturing = false; // When true, sending image data, not i2cBuf
 volatile bool     tripWire = false;  // Race condition weeds, see comments later
 
+volatile uint32_t lastEventTime = 0;
+
 // I2C request callback; length of data i(i2cReqLen) s anticipated in I2CRecvCallback
 void i2cReqCallback() {
   Serial.printf("i2cReqCallback(), i2cReqLen=%d\n", i2cReqLen);
+  lastEventTime = millis();
+
   if (i2cReqLen > 0) {
     if (capturing) {
       // Send chunk of image data
@@ -132,6 +136,9 @@ int i2cRead(int len) {
 }
 
 void i2cRecvCallback(int len) {
+
+  lastEventTime = millis();
+
   Serial.printf("i2cRecvCallback(), expecting %d bytes", len);
   if (!len) {
     Serial.println();
@@ -274,11 +281,13 @@ tripWire = true;
       break;
   }
 
+#if 0
   // Purge any I2C residue
   int cruft = periphI2C->available();
   while (cruft-- > 0) {
     (void)periphI2C->read();
   }
+#endif
 }
 
 
@@ -316,6 +325,15 @@ void setup() {
 // MAIN LOOP - RUNS REPEATEDLY UNTIL RESET OR POWER OFF --------------------
 
 void loop() {
+
+  // Try resetting the 'capturing' flag if nothing received in 5 sec.
+  if (capturing && (millis() - lastEventTime) > 5000) {
+    Serial.println("Resetting 'capturing' state");
+    capturing = false;
+    tripWire = false;
+    lastEventTime = millis();
+  }
+
 
   switch (camState) { // Only the "REQ" states need to be handled here
 

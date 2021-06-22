@@ -33,7 +33,7 @@ void Adafruit_iCap_peripheral::begin(void) {
   // AVR etc., but might get upgraded on successful negotiation. Peripheral
   // performs similar operation, so both have same value at end.
   i2cBuf[0] = ICAP_CMD_BUFSIZ;              // Plz tell your I2C limit,
-  i2cBuf[1] =  sizeof i2cBuf        & 0xFF; // here's mine (32 bits)
+  i2cBuf[1] =  sizeof i2cBuf        & 0xFF; // here's mine (32 bytes)
   i2cBuf[2] = (sizeof i2cBuf >>  8) & 0xFF;
   i2cBuf[3] = (sizeof i2cBuf >> 16) & 0xFF;
   i2cBuf[4] = (sizeof i2cBuf >> 24) & 0xFF;
