@@ -353,6 +353,86 @@ private:
 #define OV5640_REG_AEC_CTRL21 0x3A21 //< AEC control 21
 #define OV5640_REG_AEC_CTRL25 0x3A25 //< AEC control 25
 // Strobe control 0x3B00-0x3B0C
+#define OV5640_REG_STROBE_CTRL 0x3B00 //< Strobe control
+#define OV5640_REG_FREX_EXPOSURE02 0x3B01 //< FREX exposure time 23:16
+#define OV5640_REG_FREX_SHUTTER_DELAY_HI 0x3B02 //< Shutter delay time 12:8
+#define OV5640_REG_FREX_SHUTTER_DELAY_LO 0x3B03 //< Shutter delay time 7:0
+#define OV5640_REG_FREX_EXPOSURE01 0x3B04 //< FREX exposure time 15:8
+#define OV5640_REG_FREX_EXPOSURE00 0x3B05 //< FREX exposure time 7:0
+#define OV5640_REG_FREX_CTRL07 0x3B06 //< FREX control 7
+#define OV5640_REG_FREX_MODE 0x3B07 //< FREX mode select
+#define OV5640_REG_FREX_REQUEST 0x3B08 //< FREX request
+#define OV5640_REG_FREX_HREF_DELAY 0x3B09 //< FREX HREF delay
+#define OV5640_REG_FREX_RST_LENGTH 0x3B0A //< FREX precharge length
+#define OV5640_REG_STROBE_WIDTH_HI 0x3B0B //< Strobe width 19:12
+#define OV5640_REG_STROBE_WIDTH_LO 0x3B0C //< Strobe width 11:4
+// 50/60 Hz detector control 0x3C00-0x3C1E
+#define OV5640_REG_5060HZ_CTRL00 0x3C00 //< 50/60 Hz control 0
+#define OV5640_REG_5060HZ_CTRL01 0x3C01 //< 50/60 Hz control 1
+#define OV5640_REG_5060HZ_CTRL02 0x3C02 //< 50/60 Hz control 2
+#define OV5640_REG_5060HZ_CTRL03 0x3C03 //< 50/60 Hz control 3
+#define OV5640_REG_5060HZ_CTRL04 0x3C04 //< 50/60 Hz control 4
+#define OV5640_REG_5060HZ_CTRL05 0x3C05 //< 50/60 Hz control 5
+#define OV5640_REG_LIGHT_METER1_HI 0x3C06 //< Light meter 1 threshold 15:8
+#define OV5640_REG_LIGHT_METER1_LO 0x3C07 //< Light meter 1 threshold 7:0
+#define OV5640_REG_LIGHT_METER2_HI 0x3C08 //< Light meter 2 threshold 15:8
+#define OV5640_REG_LIGHT_METER2_LO 0x3C09 //< Light meter 2 threshold 7:0
+#define OV5640_REG_SAMPLE_NUMBER_HI 0x3C0A //< Sample number 15:8
+#define OV5640_REG_SAMPLE_NUMBER_LO 0x3C0B //< Sample number 7:0
+#define OV5640_REG_SIGMADELTA_CTRL0C 0x3C0C //< Sigma delta bits
+#define OV5640_REG_SUM50_0 0x3C0D //< Sum50 28:24
+#define OV5640_REG_SUM50_1 0x3C0E //< Sum50 23:16
+#define OV5640_REG_SUM50_2 0x3C0F //< Sum50 15:8
+#define OV5640_REG_SUM50_3 0x3C10 //< Sum50 7:0
+#define OV5640_REG_SUM60_0 0x3C11 //< Sum60 28:24
+#define OV5640_REG_SUM60_1 0x3C12 //< Sum60 23:16
+#define OV5640_REG_SUM60_2 0x3C13 //< Sum60 15:8
+#define OV5640_REG_SUM60_3 0x3C14 //< Sum60 7:0
+#define OV5640_REG_SUM5060_HI 0x3C15 //< SUM50/60 15:8
+#define OV5640_REG_SUM5060_LO 0x3C16 //< SUM50/60 7:0
+#define OV5640_REG_BLOCK_COUNTER_HI 0x3C17 //< Block counter 15:8
+#define OV5640_REG_BLOCK_COUNTER_LO 0x3C18 //< Block counter 7:0
+#define OV5640_REG_B6_HI 0x3C19 //< B6 15:8
+#define OV5640_REG_B6_LO 0x3C1A //< B6 7:0
+#define OV5640_REG_LIGHTMETER_HI 0x3C1B //< Light meter 19:16
+#define OV5640_REG_LIGHTMETER_MID 0x3C1C //< Light meter 15:8
+#define OV5640_REG_LIGHTMETER_LO 0x3C1D //< Light meter 7:0
+#define OV5640_REG_SUM_THRESHOLD 0x3C1E //< Sum threshold
+// OTP control 0x3D00-0x3D21
+#define OV5640_REG_OTP_DATA00 0x3D00 //< OTP dump/load data 00
+#define OV5640_REG_OTP_DATA01 0x3D01 //< OTP dump/load data 01
+#define OV5640_REG_OTP_DATA02 0x3D02 //< OTP dump/load data 02
+#define OV5640_REG_OTP_DATA03 0x3D03 //< OTP dump/load data 03
+#define OV5640_REG_OTP_DATA04 0x3D04 //< OTP dump/load data 04
+#define OV5640_REG_OTP_DATA05 0x3D05 //< OTP dump/load data 05
+#define OV5640_REG_OTP_DATA06 0x3D06 //< OTP dump/load data 06
+#define OV5640_REG_OTP_DATA07 0x3D07 //< OTP dump/load data 07
+#define OV5640_REG_OTP_DATA08 0x3D08 //< OTP dump/load data 08
+#define OV5640_REG_OTP_DATA09 0x3D09 //< OTP dump/load data 09
+#define OV5640_REG_OTP_DATA0A 0x3D0A //< OTP dump/load data 0A
+#define OV5640_REG_OTP_DATA0B 0x3D0B //< OTP dump/load data 0B
+#define OV5640_REG_OTP_DATA0C 0x3D0C //< OTP dump/load data 0C
+#define OV5640_REG_OTP_DATA0D 0x3D0D //< OTP dump/load data 0D
+#define OV5640_REG_OTP_DATA0E 0x3D0E //< OTP dump/load data 0E
+#define OV5640_REG_OTP_DATA0F 0x3D0F //< OTP dump/load data 0F
+#define OV5640_REG_OTP_DATA10 0x3D10 //< OTP dump/load data 10
+#define OV5640_REG_OTP_DATA11 0x3D11 //< OTP dump/load data 11
+#define OV5640_REG_OTP_DATA12 0x3D12 //< OTP dump/load data 12
+#define OV5640_REG_OTP_DATA13 0x3D13 //< OTP dump/load data 13
+#define OV5640_REG_OTP_DATA14 0x3D14 //< OTP dump/load data 14
+#define OV5640_REG_OTP_DATA15 0x3D15 //< OTP dump/load data 15
+#define OV5640_REG_OTP_DATA16 0x3D16 //< OTP dump/load data 16
+#define OV5640_REG_OTP_DATA17 0x3D17 //< OTP dump/load data 17
+#define OV5640_REG_OTP_DATA18 0x3D18 //< OTP dump/load data 18
+#define OV5640_REG_OTP_DATA19 0x3D19 //< OTP dump/load data 19
+#define OV5640_REG_OTP_DATA1A 0x3D1A //< OTP dump/load data 1A
+#define OV5640_REG_OTP_DATA1B 0x3D1B //< OTP dump/load data 1B
+#define OV5640_REG_OTP_DATA1C 0x3D1C //< OTP dump/load data 1C
+#define OV5640_REG_OTP_DATA1D 0x3D1D //< OTP dump/load data 1D
+#define OV5640_REG_OTP_DATA1E 0x3D1E //< OTP dump/load data 1E
+#define OV5640_REG_OTP_DATA1F 0x3D1F //< OTP dump/load data 1F
+#define OV5640_REG_OTP_PROGRAM_CTRL 0x3D20 //< OTP program control
+#define OV5640_REG_OTP_READ_CTRL 0x3D21 //< OTP read control
 
 
 
