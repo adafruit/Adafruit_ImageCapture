@@ -218,6 +218,7 @@ private:
 #endif // end ICAP_FULL_SUPPORT
 
 // OV5640 registers
+// System and IO pad control 0x3000-0x3052
 #define OV5640_REG_SYSTEM_RESET00 0x3000 //< System reset 0
 #define OV5640_REG_SYSTEM_RESET01 0x3001 //< System reset 1
 #define OV5640_REG_SYSTEM_RESET02 0x3002 //< System reset 2
@@ -254,16 +255,19 @@ private:
 #define OV5640_REG_IO_PAD_VALUE0 0x3050 //< Read pad value
 #define OV5640_REG_IO_PAD_VALUE1 0x3051 //< Read pad value
 #define OV5640_REG_IO_PAD_VALUE2 0x3052 //< Pad input status
+// SCCB control 0x3100-0x3108
 #define OV5640_REG_SCCB_ID 0x3100 //< SCCB periph ID
 #define OV5640_REG_SCCB_SYSTEM_CTRL0 0x3102 //< SCCB control registers 0
 #define OV5640_REG_SCCB_SYSTEM_CTRL1 0x3103 //< SCCB control registers 1
 #define OV5640_REG_SYSTEM_ROOT_DIVIDER 0x3108 //< Pad clock div for SCCB
+// SRB control 0x3200-0x3211
 #define OV5640_REG_GROUP_ADDR0 0x3200 //< SRAM group address 0
 #define OV5640_REG_GROUP_ADDR0 0x3201 //< SRAM group address 1
 #define OV5640_REG_GROUP_ADDR0 0x3202 //< SRAM group address 2
 #define OV5640_REG_GROUP_ADDR0 0x3203 //< SRAM group address 3
 #define OV5640_REG_SRM_GROUP_ACCESS 0x3212 //< SRM group access
 #define OV5640_REG_SRM_GROUP_STATUS 0x3213 //< SRM group status
+// AWB gain control 0x3400-0x3406
 #define OV5640_REG_AWB_R_GAIN_HI 0x3400 //< AWB R gain 11:8
 #define OV5640_REG_AWB_R_GAIN_LO 0x3401 //< AWB R gain 7:0
 #define OV5640_REG_AWB_G_GAIN_HI 0x3402 //< AWB G gain 11:8
@@ -271,6 +275,84 @@ private:
 #define OV5640_REG_AWB_B_GAIN_HI 0x3404 //< AWB B gain 11:8
 #define OV5640_REG_AWB_B_GAIN_LO 0x3405 //< AWB B gain 7:0
 #define OV5640_REG_AWB_MANUAL_CONTROL 0x3406 //< AWB manual control
+// AEC/AGC control 0x3500-0x350D
+#define OV5640_REG_AEC_PK_EXPOSURE0 0x3500 //< AEC exposure output 0
+#define OV5640_REG_AEC_PK_EXPOSURE1 0x3501 //< AEC exposure output 1
+#define OV5640_REG_AEC_PK_EXPOSURE2 0x3502 //< AEC exposure output 2
+#define OV5640_REG_AEC_PK_MANUAL 0x3503 //< AEC manual mode control
+#define OV5640_REG_AEC_PK_REAL_GAIN_HI 0x350A //< AEC Real gain 9:8
+#define OV5640_REG_AEC_PK_REAL_GAIN_LO 0x350B //< AEC Real gain 7:0
+#define OV5640_REG_AEC_PK_VTS_HI 0x350C //< AEC VTS output 15:8
+#define OV5640_REG_AEC_PK_VTS_LO 0x350D //< AEC VTS output 7:0
+// VCM control 0x3600-0x3606
+#define OV5640_REG_VCM_CONTROL0 0x3602 //< VCM control 0
+#define OV5640_REG_VCM_CONTROL1 0x3603 //< VCM control 1
+#define OV5640_REG_VCM_CONTROL2 0x3604 //< VCM control 2
+#define OV5640_REG_VCM_CONTROL3 0x3605 //< VCM control 3
+#define OV5640_REG_VCM_CONTROL4 0x3606 //< VCM control 4
+// Timing control 0x3800-0x3821
+#define OV5640_REG_TIMING_HS_HI 0x3800 //< X address start 11:8
+#define OV5640_REG_TIMING_HS_LO 0x3801 //< X address start 7:0
+#define OV5640_REG_TIMING_VS_HI 0x3802 //< Y address start 11:8
+#define OV5640_REG_TIMING_VS_LO 0x3803 //< Y address start 7:0
+#define OV5640_REG_TIMING_HW_HI 0x3804 //< X address end 11:8
+#define OV5640_REG_TIMING_HW_LO 0x3805 //< X address end 7:0
+#define OV5640_REG_TIMING_VH_HI 0x3806 //< Y address end 10:8
+#define OV5640_REG_TIMING_VH_LO 0x3807 //< Y address end 7:0
+#define OV5640_REG_TIMING_DVPHO_HI 0x3808 //< DVP output width 11:8
+#define OV5640_REG_TIMING_DVPHO_LO 0x3809 //< DVP output width 7:0
+#define OV5640_REG_TIMING_DVPVO_HI 0x380A //< DVP output height 10:8
+#define OV5640_REG_TIMING_DVPVO_LO 0x380B //< DVP output height 7:0
+#define OV5640_REG_TIMING_HTS_HI 0x380C //< Total horiz size 12:8
+#define OV5640_REG_TIMING_HTS_LO 0x380D //< Total horiz size 7:0
+#define OV5640_REG_TIMING_VTS_HI 0x380E //< Total vert size 15:8
+#define OV5640_REG_TIMING_VTS_LO 0x380F //< Total vert size 7:0
+#define OV5640_REG_TIMING_HOFFSET_HI 0x3810 //< ISP horiz offset 11:8
+#define OV5640_REG_TIMING_HOFFSET_LO 0x3811 //< ISP horiz offset 7:0
+#define OV5640_REG_TIMING_VOFFSET_HI 0x3812 //< ISP vert offset 10:8
+#define OV5640_REG_TIMING_VOFFSET_LO 0x3813 //< ISP vert offset 7:0
+#define OV5640_REG_TIMING_X_INC 0x3814 //< Horiz subsample increment
+#define OV5640_REG_TIMING_Y_INC 0x3815 //< Vert subsample increment
+#define OV5640_REG_HSYNC_START_HI 0x3816 //< HSYNC start point 11:8
+#define OV5640_REG_HSYNC_START_LO 0x3817 //< HSYNC start point 7:0
+#define OV5640_REG_HSYNC_WIDTH_HI 0x3818 //< HSYNC width 11:8
+#define OV5640_REG_HSYNC_WIDTH_LO 0x3819 //< HSYNC width 7:0
+#define OV5640_REG_TIMING_TC_REG20 0x3820 //< Timing control 20
+#define OV5640_REG_TIMING_TC_REG21 0x3821 //< Timing control 21
+// AEC/AGC power down domain control 0x3A00-0x3A25
+#define OV5640_REG_AEC_CTRL00 0x3A00 //< AEC system control
+#define OV5640_REG_AEC_MIN_EXPOSURE 0x3A01 //< Min exposure output limit
+#define OV5640_REG_AEC_MAX_EXPO_HI 0x3A02 //< Max exposure 15:8
+#define OV5640_REG_AEC_MAX_EXPO_LO 0x3A03 //< Max exposure 7:0
+#define OV5640_REG_AEC_CTRL05 0x3A05 //< AEC system control 2
+#define OV5640_REG_AEC_CTRL06 0x3A06 //< AEC system control 3
+#define OV5640_REG_AEC_CTRL07 0x3A07 //< AEC manual step register
+#define OV5640_REG_B50_STEP_HI 0x3A08 //< 50Hz bandwidth step 9:8
+#define OV5640_REG_B50_STEP_LO 0x3A09 //< 50Hz bandwidth step 7:0
+#define OV5640_REG_B60_STEP_HI 0x3A0A //< 60Hz bandwidth step 13:8
+#define OV5640_REG_B60_STEP_LO 0x3A0B //< 60Hz bandwidth step 7:0
+#define OV5640_REG_AEC_CTRL0C 0x3A0C //< E1 min/max
+#define OV5640_REG_AEC_CTRL0D 0x3A0D //< 60 Hz bands in one frame
+#define OV5640_REG_AEC_CTRL0E 0x3A0E //< 50 Hz bands in one frame
+#define OV5640_REG_AEC_CTRL0F 0x3A0F //< Stable range high limit
+#define OV5640_REG_AEC_CTRL10 0x3A10 //< Stable range low limit
+#define OV5640_REG_AEC_CTRL11 0x3A11 //< Fast zone high limit
+#define OV5640_REG_AEC_CTRL13 0x3A13 //< AEC control 13
+#define OV5640_REG_AEC_MAX_EXPO_HI 0x3A14 //< 50 Hz max exposure 15:8
+#define OV5640_REG_AEC_MAX_EXPO_LO 0x3A15 //< 50 Hz max exposure 7:0
+#define OV5640_REG_AEC_CTRL17 0x3A17 //< Gain base in night mode
+#define OV5640_REG_AEC_GAIN_CEIL_HI 0x3A18 //< Gain ceiling 9:8
+#define OV5640_REG_AEC_GAIN_CEIL_LO 0x3A19 //< Gain ceiling 7:0
+#define OV5640_REG_AEC_DIFF_MIN 0x3A1A //< Difference minimal
+#define OV5640_REG_AEC_CTRL1B 0x3A1B //< Stable range high limit
+#define OV5640_REG_LED_ADD_ROW_HI 0x3A1C //< Exp add when strobe on 15:8
+#define OV5640_REG_LED_ADD_ROW_LO 0x3A1D //< Exp add when strobe on 7:0
+#define OV5640_REG_AEC_CTRL1E 0x3A1E //< Stable range low limit
+#define OV5640_REG_AEC_CTRL1F 0x3A1F //< Fast zone low limit
+#define OV5640_REG_AEC_CTRL20 0x3A20 //< AEC control 20
+#define OV5640_REG_AEC_CTRL21 0x3A21 //< AEC control 21
+#define OV5640_REG_AEC_CTRL25 0x3A25 //< AEC control 25
+// Strobe control 0x3B00-0x3B0C
 
 
 
