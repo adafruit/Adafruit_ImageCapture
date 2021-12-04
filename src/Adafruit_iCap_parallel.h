@@ -21,9 +21,21 @@ typedef struct {
 
 /** Register/value combo for camera configuration over I2C. */
 typedef struct {
-  uint8_t reg;   ///< Register address
+  uint8_t reg;   ///< Register address (8-bit)
   uint8_t value; ///< Value to store
 } iCap_parallel_config;
+
+/** 16-bit register/8-bit value combo for config over I2C. */
+typedef struct {
+  uint16_t reg;  ///< Register address (16-bit)
+  uint8_t value; ///< Value to store
+} iCap_parallel_config16x8;
+
+/** 16-bit register/16-bit value combo for config over I2C. */
+typedef struct {
+  uint16_t reg;   ///< Register address (16-bit)
+  uint16_t value; ///< Value to store
+} iCap_parallel_config16x16;
 
 /*!
     @brief  Class encapsulating functionality common to image sensors using
@@ -120,6 +132,60 @@ public:
     @param  len  Length of array.
   */
   void writeList(const iCap_parallel_config *cfg, uint16_t len);
+
+  /*!
+    @brief   Reads value of one register (16-bit address, 8-bit value) from
+             the camera over I2C.
+    @param   reg  Register to read, from values defined in camera-specific
+                  header.
+    @return  Integer value: 0-255 (register contents) on successful read,
+             -1 on error.
+  */
+  int readRegister16x8(uint16_t reg);
+
+  /*!
+    @brief  Writes value of one register (16-bit address, 8-bit data) to
+            camera over I2C.
+    @param  reg    Register to read, from values defined in camera-specific
+                   header.
+    @param  value  Value to write, 0-255.
+  */
+  void writeRegister16x8(uint16_t reg, uint8_t value);
+
+  /*!
+    @brief  Writes a list of settings to the camera over I2C, with 16-bit
+            peripheral register addresses and 8-bit values.
+    @param  cfg  Array (pointer-to) of settings to write.
+    @param  len  Length of array.
+  */
+  void writeList16x8(const iCap_parallel_config16x8 *cfg, uint16_t len);
+
+  /*!
+    @brief   Reads value of one register (16-bit address, 16-bit value) from
+             the camera over I2C.
+    @param   reg  Register to read, from values defined in camera-specific
+                  header.
+    @return  Integer value: 0-65535 (register contents) on successful read,
+             -1 on error.
+  */
+  int readRegister16x16(uint16_t reg);
+
+  /*!
+    @brief  Writes value of one register (16-bit address, 16-bit data) to
+            camera over I2C.
+    @param  reg    Register to read, from values defined in camera-specific
+                   header.
+    @param  value  Value to write, 0-65535.
+  */
+  void writeRegister16x16(uint16_t reg, uint8_t value);
+
+  /*!
+    @brief  Writes a list of settings to the camera over I2C, with 16-bit
+            peripheral register addresses and 16-bit values.
+    @param  cfg  Array (pointer-to) of settings to write.
+    @param  len  Length of array.
+  */
+  void writeList16x16(const iCap_parallel_config16x16 *cfg, uint16_t len);
 
   /*!
     @brief  Pause DMA background capture (if supported by architecture)

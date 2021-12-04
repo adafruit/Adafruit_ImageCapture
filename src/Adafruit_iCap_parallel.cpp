@@ -80,4 +80,55 @@ void Adafruit_iCap_parallel::writeList(const iCap_parallel_config *cfg,
   }
 }
 
+int Adafruit_iCap_parallel::readRegister16x8(uint16_t reg) {
+  wire->beginTransmission(i2c_address);
+  wire->write(reg >> 8);
+  wire->write(reg & 0xFF);
+  wire->endTransmission();
+  wire->requestFrom(i2c_address, (uint8_t)1);
+  return wire->read();
+}
+
+void Adafruit_iCap_parallel::writeRegister16x8(uint16_t reg, uint8_t value) {
+  wire->beginTransmission(i2c_address);
+  wire->write(reg >> 8);
+  wire->write(reg & 0xFF);
+  wire->write(value);
+  wire->endTransmission();
+}
+
+void Adafruit_iCap_parallel::writeList16x8(const iCap_parallel_config16x8 *cfg,
+                                           uint16_t len) {
+  for (int i = 0; i < len; i++) {
+    writeRegister16x8(cfg[i].reg, cfg[i].value);
+    delayMicroseconds(i2c_delay_us); // Some cams require, else lockup on init
+  }
+}
+
+int Adafruit_iCap_parallel::readRegister16x16(uint16_t reg) {
+  wire->beginTransmission(i2c_address);
+  wire->write(reg >> 8);
+  wire->write(reg & 0xFF);
+  wire->endTransmission();
+  wire->requestFrom(i2c_address, (uint8_t)2);
+  return (wire->read() << 8) | wire->read();
+}
+
+void Adafruit_iCap_parallel::writeRegister16x16(uint16_t reg, uint16_t value) {
+  wire->beginTransmission(i2c_address);
+  wire->write(reg >> 8);
+  wire->write(reg & 0xFF);
+  wire->write(value >> 8);
+  wire->write(value & 0xFF);
+  wire->endTransmission();
+}
+
+void Adafruit_iCap_parallel::writeList16x16(
+  const iCap_parallel_config16x16 *cfg, uint16_t len) {
+  for (int i = 0; i < len; i++) {
+    writeRegister16x16(cfg[i].reg, cfg[i].value);
+    delayMicroseconds(i2c_delay_us); // Some cams require, else lockup on init
+  }
+}
+
 #endif // end ICAP_FULL_SUPPORT
