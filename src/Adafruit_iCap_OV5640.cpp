@@ -149,21 +149,15 @@ iCap_status Adafruit_iCap_OV5640::begin(void) {
     digitalWrite(pins.enable, 0); // PWDN low (enable)
   }
 
-  // Unsure of camera startup time from beginning of input clock.
-  // Let's guess it's similar to tS:REG (300 ms) from datasheet.
-  delayMicroseconds(300000);
-
   if (pins.reset >= 0) { // Hard reset pin defined?
     pinMode(pins.reset, OUTPUT);
     digitalWrite(pins.reset, LOW);
-    delayMicroseconds(1000);
+    delayMicroseconds(1000); // From datasheet power-up sequence 2.7
     digitalWrite(pins.reset, HIGH);
-  } else { // Soft reset, doesn't seem reliable, might just need more delay?
-#if 0
-    writeRegister(OV7670_REG_COM7, OV7670_COM7_RESET);
-#endif
+  } else { // Soft reset
+    writeRegister(OV5640_REG_SYSTEM_CTROL0, 0x80);
   }
-  delay(1); // Datasheet: tS:RESET = 1 ms
+  delay(20); // From datasheet power-up sequence 2.7
 
   // Init main camera settings
 #if 0
