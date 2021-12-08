@@ -20,6 +20,11 @@ typedef iCap_parallel_pins OV5640_pins;
 
 #define OV5640_ADDR 0x78 //< Default I2C address if unspecified
 
+/** Supported sizes THIS IS FAKE JUST TO GET THINGS TO COMPILE */
+typedef enum {
+  OV5640_SIZE_DIV1 = 0,
+} OV5640_size;
+
 /*!
     @brief  Class encapsulating OmniVision OV5640 functionality.
 */
@@ -86,13 +91,9 @@ public:
                     1, multi-buffering isn't handled yet.
     @return  Status code. ICAP_STATUS_OK on successful init.
   */
-/*
-  iCap_status begin(OV7670_size size, iCap_colorspace space = ICAP_COLOR_RGB565,
+  iCap_status begin(OV5640_size size, iCap_colorspace space = ICAP_COLOR_RGB565,
                     float fps = 30.0, uint8_t nbuf = 1);
-*/
-  iCap_status begin(float fps = 30.0, uint8_t nbuf = 1);
 
-#if 0 // This is all very 7640-specific right now
   /*!
     @brief   Change frame configuration on an already-running camera.
     @param   size   Frame size as a power-of-two reduction of VGA
@@ -127,7 +128,7 @@ public:
              ICAP_STATUS_ERR_MALLOC if using dynamic allocation and the
              buffer resize fails.
   */
-  iCap_status config(OV7670_size size,
+  iCap_status config(OV5640_size size,
                      iCap_colorspace space = ICAP_COLOR_RGB565,
                      float fps = 30.0, uint8_t nbuf = 1, 
                      iCap_realloc allo = ICAP_REALLOC_CHANGE);
@@ -163,9 +164,10 @@ public:
     @param  edge_offset  Edge offset.
     @param  pclk_delay   PCLK delay.
   */
-  void frameControl(OV7670_size size, uint8_t vstart, uint16_t hstart,
+  void frameControl(OV5640_size size, uint8_t vstart, uint16_t hstart,
                     uint8_t edge_offset, uint8_t pclk_delay);
 
+#if 0 // This is all very 7640-specific right now
   /*!
     @brief  Select one of the camera's night modes. Images are less
             grainy in low light, tradeoff being a reduced frame rate.

@@ -159,7 +159,9 @@ iCap_status Adafruit_iCap_OV5640::begin(void) {
     delayMicroseconds(1000);
     digitalWrite(pins.reset, HIGH);
   } else { // Soft reset, doesn't seem reliable, might just need more delay?
+#if 0
     writeRegister(OV7670_REG_COM7, OV7670_COM7_RESET);
+#endif
   }
   delay(1); // Datasheet: tS:RESET = 1 ms
 
@@ -174,7 +176,6 @@ iCap_status Adafruit_iCap_OV5640::begin(void) {
   return ICAP_STATUS_OK;
 }
 
-#if 0
 iCap_status Adafruit_iCap_OV5640::begin(OV5640_size size, iCap_colorspace space,
                                         float fps, uint8_t nbuf) {
   iCap_status status = begin();
@@ -184,28 +185,12 @@ iCap_status Adafruit_iCap_OV5640::begin(OV5640_size size, iCap_colorspace space,
 
   return status;
 }
-#else
-iCap_status Adafruit_iCap_OV5640::begin(float fps, uint8_t nbuf) {
-  iCap_status status = begin();
-  if (status == ICAP_STATUS_OK) {
-//    status = config(size, space, fps, nbuf);
-    status = config(fps, nbuf);
-  }
-
-  return status;
-}
-#endif
 
 // CAMERA CONFIG FUNCTIONS AND MISCELLANY ----------------------------------
 
-#if 0
 iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
                                          iCap_colorspace space, float fps,
                                          uint8_t nbuf, iCap_realloc allo) {
-#else
-iCap_status Adafruit_iCap_OV5640::config(float fps,
-                                         uint8_t nbuf, iCap_realloc allo) {
-#endif
   uint16_t width = 640 >> size;
   uint16_t height = 480 >> size;
   suspend();
@@ -229,8 +214,10 @@ iCap_status Adafruit_iCap_OV5640::config(float fps,
       {12, 210, 0, 2}, // SIZE_DIV8  80x60   ...
       {15, 252, 3, 2}, // SIZE_DIV16 40x30
     };
+#if 0
     frameControl(size, window[size].vstart, window[size].hstart,
                  window[size].edge_offset, window[size].pclk_delay);
+#endif
     if (fps > 0.0) {
       delayMicroseconds((int)(10000000.0 / fps)); // 10 frame settling time
     }
@@ -327,15 +314,18 @@ float Adafruit_iCap_OV5640::setFPS(float fps) {
   }
 
   return fps - best_delta; // Return actual frame rate
+#else
+  return 0;
 #endif
 }
 
 // Sets up PCLK dividers and sets H/V start/stop window. Rather than
 // rolling this into OV7670_set_size(), it's kept separate so test code
 // can experiment with different settings to find ideal defaults.
-void Adafruit_iCap_OV5640::frameControl(OV7670_size size, uint8_t vstart,
+void Adafruit_iCap_OV5640::frameControl(OV5640_size size, uint8_t vstart,
                                         uint16_t hstart, uint8_t edge_offset,
                                         uint8_t pclk_delay) {
+#if 0
   uint8_t value;
 
   // Enable downsampling if sub-VGA, and zoom if 1:16 scale
@@ -405,8 +395,10 @@ void Adafruit_iCap_OV7670::night(OV7670_night_mode night) {
   com11 |= night_bits[night]; // Set night bits for desired mode
   // Write modified result back to COM11 register
   writeRegister(OV7670_REG_COM11, com11);
+#endif
 }
 
+#if 0
 // Flips camera output on horizontal and/or vertical axes.
 // Note: datasheet refers to horizontal flip as "mirroring," but
 // avoiding that terminology here that it might be mistaken for a
@@ -452,5 +444,6 @@ void Adafruit_iCap_OV7670::test_pattern(OV7670_pattern pattern) {
   writeRegister(OV7670_REG_SCALING_XSC, xsc);
   writeRegister(OV7670_REG_SCALING_YSC, ysc);
 }
+#endif // 0
 
 #endif // end ICAP_FULL_SUPPORT

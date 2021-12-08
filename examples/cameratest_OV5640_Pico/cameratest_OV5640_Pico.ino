@@ -36,7 +36,7 @@ OV5640_pins pins = {
 };
 
 #define CAM_I2C Wire
-#define CAM_SIZE OV5640_SIZE_DIV4  // QQVGA (160x120 pixels)
+//#define CAM_SIZE OV5640_SIZE_DIV4  // QQVGA (160x120 pixels)
 #define CAM_MODE ICAP_COLOR_RGB565 // RGB plz
 
 Adafruit_iCap_OV5640 cam(pins, &arch, CAM_I2C);
@@ -71,16 +71,16 @@ void setup() {
   tft.setRotation(3);
   // Once started, the camera continually fills a frame buffer
   // automagically; no need to request a frame.
-  iCap_status status = cam.begin(CAM_SIZE, CAM_MODE, 30.0);
+//  iCap_status status = cam.begin(CAM_SIZE, CAM_MODE, 30.0);
+  iCap_status status = cam.begin();
   if (status != ICAP_STATUS_OK) {
     Serial.println("Camera begin() fail");
     for(;;);
   }
 
-  uint8_t pid = cam.readRegister(OV5640_REG_PID); // Should be 0x76
-  uint8_t ver = cam.readRegister(OV5640_REG_VER); // Should be 0x73
-  Serial.println(pid, HEX);
-  Serial.println(ver, HEX);
+  uint16_t chip_id = cam.readRegister16x16(OV5640_REG_CHIP_ID_HIGH);
+  Serial.println(chip_id, HEX);
+  for (;;) delay(10);
 }
 
 // MAIN LOOP - RUNS REPEATEDLY UNTIL RESET OR POWER OFF --------------------
@@ -106,8 +106,8 @@ void loop() {
     uint32_t edge_offset = Serial.parseInt();
     uint32_t pclk_delay = Serial.parseInt();
     while(Serial.read() >= 0); // Delete line ending or other cruft
-    cam.frameControl(CAM_SIZE, vstart, hstart,
-                     edge_offset, pclk_delay);
+//    cam.frameControl(CAM_SIZE, vstart, hstart,
+//                     edge_offset, pclk_delay);
   }
 
   if (++frame >= KEYFRAME) { // Time to sync up a fresh address window?
