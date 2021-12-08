@@ -60,8 +60,6 @@ public:
   */
   iCap_status begin(void);
 
-#if 0 // This is all very 7640-specific right now
-
   /*!
     @brief   Initialize peripherals and allocate resources behind an
              Adafruit_iCap_OV5640 instance, start capturing data in
@@ -88,9 +86,13 @@ public:
                     1, multi-buffering isn't handled yet.
     @return  Status code. ICAP_STATUS_OK on successful init.
   */
+/*
   iCap_status begin(OV7670_size size, iCap_colorspace space = ICAP_COLOR_RGB565,
                     float fps = 30.0, uint8_t nbuf = 1);
+*/
+  iCap_status begin(float fps = 30.0, uint8_t nbuf = 1);
 
+#if 0 // This is all very 7640-specific right now
   /*!
     @brief   Change frame configuration on an already-running camera.
     @param   size   Frame size as a power-of-two reduction of VGA
@@ -262,9 +264,9 @@ private:
 #define OV5640_REG_SYSTEM_ROOT_DIVIDER 0x3108 //< Pad clock div for SCCB
 // SRB control 0x3200-0x3211
 #define OV5640_REG_GROUP_ADDR0 0x3200 //< SRAM group address 0
-#define OV5640_REG_GROUP_ADDR0 0x3201 //< SRAM group address 1
-#define OV5640_REG_GROUP_ADDR0 0x3202 //< SRAM group address 2
-#define OV5640_REG_GROUP_ADDR0 0x3203 //< SRAM group address 3
+#define OV5640_REG_GROUP_ADDR1 0x3201 //< SRAM group address 1
+#define OV5640_REG_GROUP_ADDR2 0x3202 //< SRAM group address 2
+#define OV5640_REG_GROUP_ADDR3 0x3203 //< SRAM group address 3
 #define OV5640_REG_SRM_GROUP_ACCESS 0x3212 //< SRM group access
 #define OV5640_REG_SRM_GROUP_STATUS 0x3213 //< SRM group status
 // AWB gain control 0x3400-0x3406
@@ -322,8 +324,8 @@ private:
 // AEC/AGC power down domain control 0x3A00-0x3A25
 #define OV5640_REG_AEC_CTRL00 0x3A00 //< AEC system control
 #define OV5640_REG_AEC_MIN_EXPOSURE 0x3A01 //< Min exposure output limit
-#define OV5640_REG_AEC_MAX_EXPO_HI 0x3A02 //< Max exposure 15:8
-#define OV5640_REG_AEC_MAX_EXPO_LO 0x3A03 //< Max exposure 7:0
+#define OV5640_REG_AEC_MAX_EXPO_60_HI 0x3A02 //< Max exposure 15:8
+#define OV5640_REG_AEC_MAX_EXPO_60_LO 0x3A03 //< Max exposure 7:0
 #define OV5640_REG_AEC_CTRL05 0x3A05 //< AEC system control 2
 #define OV5640_REG_AEC_CTRL06 0x3A06 //< AEC system control 3
 #define OV5640_REG_AEC_CTRL07 0x3A07 //< AEC manual step register
@@ -338,8 +340,8 @@ private:
 #define OV5640_REG_AEC_CTRL10 0x3A10 //< Stable range low limit
 #define OV5640_REG_AEC_CTRL11 0x3A11 //< Fast zone high limit
 #define OV5640_REG_AEC_CTRL13 0x3A13 //< AEC control 13
-#define OV5640_REG_AEC_MAX_EXPO_HI 0x3A14 //< 50 Hz max exposure 15:8
-#define OV5640_REG_AEC_MAX_EXPO_LO 0x3A15 //< 50 Hz max exposure 7:0
+#define OV5640_REG_AEC_MAX_EXPO_50_HI 0x3A14 //< 50 Hz max exposure 15:8
+#define OV5640_REG_AEC_MAX_EXPO_50_LO 0x3A15 //< 50 Hz max exposure 7:0
 #define OV5640_REG_AEC_CTRL17 0x3A17 //< Gain base in night mode
 #define OV5640_REG_AEC_GAIN_CEIL_HI 0x3A18 //< Gain ceiling 9:8
 #define OV5640_REG_AEC_GAIN_CEIL_LO 0x3A19 //< Gain ceiling 7:0
@@ -433,6 +435,152 @@ private:
 #define OV5640_REG_OTP_DATA1F 0x3D1F //< OTP dump/load data 1F
 #define OV5640_REG_OTP_PROGRAM_CTRL 0x3D20 //< OTP program control
 #define OV5640_REG_OTP_READ_CTRL 0x3D21 //< OTP read control
+// MC control 0x3F00-0x3F0D
+#define OV5640_REG_MC_CTRL00 0x3F00 //< MC control 00
+#define OV5640_REG_MC_INTERRUPT_MASK0 0x3F01 //< Mask0 for interrupt
+#define OV5640_REG_MC_INTERRUPT_MASK1 0x3F02 //< Mask1 for interrupt
+#define OV5640_REG_MC_READ_INTERRUPT_ADDR_HI 0x3F03 //< SCCB addr high byte
+#define OV5640_REG_MC_READ_INTERRUPT_ADDR_LO 0x3F04 //< SCCB addr low byte
+#define OV5640_REG_MC_WRITE_INTERRUPT_ADDR_HI 0x3F05 //< SCCB addr high byte
+#define OV5640_REG_MC_WRITE_INTERRUPT_ADDR_LO 0x3F06 //< SCCB addr low byte
+#define OV5640_REG_MC_INTERRUPT_SOURCE1 0x3F08 //< Int1 source select
+#define OV5640_REG_MC_INTERRUPT_SOURCE2 0x3F09 //< Int1 source select
+#define OV5640_REG_MC_INTERRUPT_SOURCE3 0x3F0A //< Int0 source select
+#define OV5640_REG_MC_INTERRUPT_SOURCE4 0x3F0B //< Int0 source select
+#define OV5640_REG_MC_INTERRUPT0_STATUS 0x3F0C //< Interrupt0 status
+#define OV5640_REG_MC_INTERRUPT1_STATUS 0x3F0D //< Interrupt1 status
+// BLC control 0x4000-0x4033
+#define OV5640_REG_BLC_CTRL00 0x4000 //< BLC Control 00
+#define OV5640_REG_BLC_CTRL01 0x4001 //< BLC Control 01
+#define OV5640_REG_BLC_CTRL02 0x4002 //< BLC Control 02
+#define OV5640_REG_BLC_CTRL03 0x4003 //< BLC Control 03
+#define OV5640_REG_BLC_CTRL04 0x4004 //< BLC Control 04
+#define OV5640_REG_BLC_CTRL05 0x4005 //< BLC Control 05
+#define OV5640_REG_BLC_CTRL07 0x4007 //< BLC Control 07
+#define OV5640_REG_BLACK_LEVEL 0x4009 //< Black level target @ 10-bit range
+#define OV5640_REG_BLACK_LEVEL00_HI 0x402C //< Black level 00 [15:8]
+#define OV5640_REG_BLACK_LEVEL00_LO 0x402D //< Black level 00 [7:0]
+#define OV5640_REG_BLACK_LEVEL01_HI 0x402E //< Black level 01 [15:8]
+#define OV5640_REG_BLACK_LEVEL01_LO 0x402F //< Black level 01 [7:0]
+#define OV5640_REG_BLACK_LEVEL10_HI 0x4030 //< Black level 10 [15:8]
+#define OV5640_REG_BLACK_LEVEL10_LO 0x4031 //< Black level 10 [7:0]
+#define OV5640_REG_BLACK_LEVEL11_HI 0x4032 //< Black level 11 [15:8]
+#define OV5640_REG_BLACK_LEVEL11_LO 0x4033 //< Black level 11 [7:0]
+// Frame control 0x4201-0x4202
+#define OV5640_REG_FRAME_CTRL01 0x4201 //< Control passed frame number
+#define OV5640_REG_FRAME_CTRL02 0x4202 //< Control masked frame number
+// Format control 0x4300-0x430D
+#define OV5640_REG_FORMAT_CONTROL00 0x4300 //< Format control 00
+#define OV5640_REG_FORMAT_CONTROL01 0x4301 //< Format control 01
+#define OV5640_REG_YMAX_VALUE_HI 0x4302 //< Y max clip[9:8]
+#define OV5640_REG_YMAX_VALUE_LO 0x4303 //< Y max clip[7:0]
+#define OV5640_REG_YMIN_VALUE_HI 0x4304 //< Y min clip[9:8]
+#define OV5640_REG_YMIN_VALUE_LO 0x4305 //< Y min clip[7:0]
+#define OV5640_REG_UMAX_VALUE_HI 0x4306 //< U max clip[9:8]
+#define OV5640_REG_UMAX_VALUE_LO 0x4307 //< U max clip[7:0]
+#define OV5640_REG_UMIN_VALUE_HI 0x4308 //< U min clip[9:8]
+#define OV5640_REG_UMIN_VALUE_LO 0x4309 //< U min clip[7:0]
+#define OV5640_REG_VMAX_VALUE_HI 0x430A //< V max clip[9:8]
+#define OV5640_REG_VMAX_VALUE_LO 0x430B //< V max clip[7:0]
+#define OV5640_REG_VMIN_VALUE_HI 0x430C //< V min clip[9:8]
+#define OV5640_REG_VMIN_VALUE_LO 0x430D //< V min clip[7:0]
+// JPEG control 0x4400-0x4431
+#define OV5640_REG_JPEG_CTRL00 0x4400 //< JPEG control 00
+#define OV5640_REG_JPEG_CTRL01 0x4401 //< JPEG control 01
+#define OV5640_REG_JPEG_CTRL02 0x4402 //< JPEG control 02
+#define OV5640_REG_JPEG_CTRL03 0x4403 //< JPEG control 03
+#define OV5640_REG_JPEG_CTRL04 0x4404 //< JPEG control 04
+#define OV5640_REG_JPEG_CTRL05 0x4405 //< JPEG control 05
+#define OV5640_REG_JPEG_CTRL06 0x4406 //< JPEG control 06
+#define OV5640_REG_JPEG_CTRL07 0x4407 //< JPEG control 07
+#define OV5640_REG_JPEG_ISI_CTRL0 0x4408 //< JPEG ISI control 0
+#define OV5640_REG_JPEG_CTRL09 0x4409 //< JPEG control 09
+#define OV5640_REG_JPEG_CTRL0A 0x440A //< JPEG control 0A
+#define OV5640_REG_JPEG_CTRL0B 0x440B //< JPEG control 0B
+#define OV5640_REG_JPEG_CTRL0C 0x440C //< JPEG control 0C
+#define OV5640_REG_JPEG_QT_DATA 0x4410 //< QT data
+#define OV5640_REG_JPEG_QT_ADDR 0x4411 //< QT address
+#define OV5640_REG_JPEG_ISI_DATA 0x4412 //< ISI data
+#define OV5640_REG_JPEG_ISI_CTRL1 0x4413 //< JPEG ISI control 1
+#define OV5640_REG_JPEG_LENGTH_HI 0x4414 //< JPEG length[23:16]
+#define OV5640_REG_JPEG_LENGTH_MID 0x4415 //< JPEG length[15:8]
+#define OV5640_REG_JPEG_LENGTH_LO 0x4416 //< JPEG length[7:0]
+#define OV5640_REG_JFIFO_OVERFLOW 0x4417 //< JFIFO overflow indicator
+#define OV5640_REG_JPEG_COMMENT_START 0x4420 //< JPEG comment data start
+#define OV5640_REG_JPEG_COMMENT_END 0x442F //< JPEG comment data end
+#define OV5640_REG_JPEG_COMMENT_LENGTH 0x4430 //< JPEG comment length
+#define OV5640_REG_JPEG_COMMENT_MARKER 0x4431 //< JPEG comment data marker
+// VFIFO control 0x4600-0x460D
+#define OV5640_REG_VFIFO_CTRL00 0x4600 //< VFIFO control 00
+#define OV5640_REG_VFIFO_HSIZE_HI 0x4602 //< Compression output width MSB
+#define OV5640_REG_VFIFO_HSIZE_LO 0x4603 //< Compression output width LSB
+#define OV5640_REG_VFIFO_VSIZE_HI 0x4604 //< Compression output height MSB
+#define OV5640_REG_VFIFO_VSIZE_LO 0x4605 //< Compression output height LSB
+#define OV5640_REG_VFIFO_CTRL0C 0x460C //< VFIFO control 0C
+#define OV5640_REG_VFIFO_CTRL0D 0x460D //< Dummy data
+// DVP control 0x4709-0x4745
+#define OV5640_REG_DVP_VSYNC_WIDTH0 0x4709 //< VSYNC width line unit
+#define OV5640_REG_DVP_VSYNC_WIDTH1 0x470A //< VSYNC width PCLK[15:8]
+#define OV5640_REG_DVP_VSYNC_WIDTH2 0x470B //< VSYNC width PCLK[7:0]
+#define OV5640_REG_PAD_LEFT_CTRL 0x4711 //< HSYNC left pad pixels
+#define OV5640_REG_PAD_RIGHT_CTRL 0x4712 //< HSYNC right pad pixels
+#define OV5640_REG_JPG_MODE_SELECT 0x4713 //< JPEG mode select
+#define OV5640_REG_656_DUMMY_LINE 0x4715 //< CCIR656 dummy line num
+#define OV5640_REG_CCIR656_CTRL 0x4719 //< CCIR656 EAV/SAV option
+#define OV5640_REG_HSYNC_CTRL00 0x471B //< HSYNC mode enable
+#define OV5640_REG_VSYNC_CTRL 0x471D //< VSYNC mode
+#define OV5640_REG_HREF_CTRL 0x471F //< HREF min blanking in JPEG
+#define OV5640_REG_VERTICAL_START_OFFSET 0x4721 //< Vert start delay
+#define OV5640_REG_VERTICAL_END_OFFSET 0x4722 //< Vert end delay
+#define OV5640_REG_DVP_CTRL23 0x4723 //< DVP JPEG mode 456 skip line num
+#define OV5640_REG_CCIR656_CTRL00 0x4730 //< CCIR656 control 00
+#define OV5640_REG_CCIR656_CTRL01 0x4731 //< CCIR656 control 01
+#define OV5640_REG_CCIR656_FS 0x4732 //< CCIR656 SYNC code frame start
+#define OV5640_REG_CCIR656_FE 0x4733 //< CCIR656 SYNC code frame end
+#define OV5640_REG_CCIR656_LS 0x4734 //< CCIR656 SYNC code line start
+#define OV5640_REG_CCIR656_LE 0x4735 //< CCIR656 SYNC code line end
+#define OV5640_REG_CCIR656_CTRL06 0x4736 //< CCIR656 control 06
+#define OV5640_REG_CCIR656_CTRL07 0x4737 //< CCIR656 control 07
+#define OV5640_REG_CCIR656_CTRL08 0x4738 //< CCIR656 control 08
+#define OV5640_REG_POLARITY_CTRL00 0x4740 //< PCLK polarity
+#define OV5640_REG_TEST_PATTERN 0x4741 //< Test pattern select/enable
+#define OV5640_REG_DATA_ORDER 0x4745 //< DVP & output data order
+// MIPI control 0x4800-0x4837
+#define OV5640_REG_MIPI_CTRL00 0x4800 //< MIPI control 00
+#define OV5640_REG_MIPI_CTRL01 0x4801 //< MIPI control 01
+#define OV5640_REG_MIPI_CTRL05 0x4805 //< MIPI control 05
+#define OV5640_REG_MIPI_DATA_ORDER 0x480A //< MIPI data order
+#define OV5640_REG_MIN_HS_ZERO_HI 0x4818 //< hs_zero min[15:8]
+#define OV5640_REG_MIN_HS_ZERO_LO 0x4819 //< hs_zero min[7:0]
+#define OV5640_REG_MIN_HS_TRAIL_HI 0x481A //< hs_trail min[15:8]
+#define OV5640_REG_MIN_HS_TRAIL_LO 0x481B //< hs_trail min[7:0]
+#define OV5640_REG_MIN_CLK_ZERO_HI 0x481C //< clk_zero min[15:8]
+#define OV5640_REG_MIN_CLK_ZERO_LO 0x481D //< clk_zero min[7:0]
+#define OV5640_REG_MIN_CLK_PREPARE_HI 0x481E //< clk_prepare min[15:8]
+#define OV5640_REG_MIN_CLK_PREPARE_LO 0x481F //< clk_prepare min[7:0]
+#define OV5640_REG_MIN_CLK_POST_HI 0x4820 //< clk_post min[15:8]
+#define OV5640_REG_MIN_CLK_POST_LO 0x4821 //< clk_post min[7:0]
+#define OV5640_REG_MIN_CLK_TRAIL_HI 0x4822 //< clk_trail min[15:8]
+#define OV5640_REG_MIN_CLK_TRAIL_LO 0x4823 //< clk_trail min[7:0]
+#define OV5640_REG_MIN_LPX_PCLK_HI 0x4824 //< lpx_p min[15:8]
+#define OV5640_REG_MIN_LPX_PCLK_LO 0x4825 //< lpx_p min[7:0]
+#define OV5640_REG_MIN_HS_PREPARE_HI 0x4826 //< hs_prepare min[15:8]
+#define OV5640_REG_MIN_HS_PREPARE_LO 0x4827 //< hs_prepare min[7:0]
+#define OV5640_REG_MIN_HS_EXIT_HI 0x4828 //< hs_exit min[15:8]
+#define OV5640_REG_MIN_HS_EXIT_LO 0x4829 //< hs_exit min[7:0]
+#define OV5640_REG_MIN_HS_ZERO_UI 0x482A //< hs_zero UI min
+#define OV5640_REG_MIN_HS_TRAIL_UI 0x482B //< hs_trail UI min
+#define OV5640_REG_MIN_CLK_ZERO_UI 0x482C //< clk_zero UI min
+#define OV5640_REG_MIN_CLK_PREPARE_UI 0x482D //< clk_prepare UI min
+#define OV5640_REG_MIN_CLK_POST_UI 0x482E //< clk_post UI min
+#define OV5640_REG_MIN_CLK_TRAIL_UI 0x482F //< clk_trail UI min
+#define OV5640_REG_MIN_LPX_PCLK_UI 0x4830 //< lpx_p UI min
+#define OV5640_REG_MIN_HS_PREPARE_UI 0x4831 //< hs_prepare UI min
+#define OV5640_REG_MIN_HS_EXIT_UI 0x4832 //< hs_exit UI min
+#define OV5640_REG_PCLK_PERIOD 0x4837 //< Period of pixel clock
+// ISP frame control 0x4901-0x4902
+#define OV5640_REG_ISP_FRAME_CTRL01 0x4901 //< Control passed frame number
+#define OV5640_REG_ISP_FRAME_CTRL02 0x4902 //< Control masked frame number
 
 
 
@@ -658,9 +806,11 @@ typedef enum {
 
 
 
+#if 0
 
 // from CircuitPython code:
 
+/*
 OV5640_COLOR_RGB = 0
 OV5640_COLOR_YUV = 1
 OV5640_COLOR_GRAYSCALE = 2
@@ -709,7 +859,7 @@ _AEC_PK_MANUAL = const(0x3503)
 # AEC Manual Mode Control
 # Bit[7:6]: Reserved
 # Bit[5]: Gain delay option
-#         Valid when 0x3503[4]=1’b0
+#         Valid when 0x3503[4]=1
 #         0: Delay one frame latch
 #         1: One frame latch
 # Bit[4:2]: Reserved
@@ -857,7 +1007,7 @@ _PRE_ISP_TEST_SETTING_1 = const(0x503D)
 #         10: Square data
 #         11: Black image
 
-# exposure = {0x3500[3:0], 0x3501[7:0], 0x3502[7:0]} / 16 × tROW
+# exposure = {0x3500[3:0], 0x3501[7:0], 0x3502[7:0]} / 16 x tROW
 
 _SCALE_CTRL_1 = const(0x5601)
 # Bit[6:4]: HDIV RW
@@ -1882,4 +2032,6 @@ class OV5640(_SCCB16CameraBase):  # pylint: disable=too-many-instance-attributes
     @night_mode.setter
     def night_mode(self, value):
         self._write_reg_bits(0x3A00, 0x04, value)
+*/
+#endif // 0
 #endif

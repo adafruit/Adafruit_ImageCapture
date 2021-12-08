@@ -1,19 +1,20 @@
-#include <Adafruit_iCap_OV7670.h>
+#include <Adafruit_iCap_OV5640.h>
 #include <Arduino.h>
 
 #if defined(ICAP_FULL_SUPPORT)
 
-Adafruit_iCap_OV7670::Adafruit_iCap_OV7670(OV7670_pins &pins, iCap_arch *arch,
+Adafruit_iCap_OV5640::Adafruit_iCap_OV5640(OV5640_pins &pins, iCap_arch *arch,
                                            TwoWire &twi, uint16_t *pbuf,
                                            uint32_t pbufsize, uint8_t addr,
                                            uint32_t speed, uint32_t delay_us)
     : Adafruit_iCap_parallel((iCap_parallel_pins *)&pins, arch, pbuf, pbufsize,
                              (TwoWire *)&twi, addr, speed, delay_us) {}
 
-Adafruit_iCap_OV7670::~Adafruit_iCap_OV7670() {}
+Adafruit_iCap_OV5640::~Adafruit_iCap_OV5640() {}
 
 // CAMERA STARTUP ----------------------------------------------------------
 
+#if 0
 static const iCap_parallel_config
     OV7670_init[] =
         {
@@ -128,8 +129,9 @@ static const iCap_parallel_config
         // Manual output format, YUV, use full output range
         {OV7670_REG_COM7, OV7670_COM7_YUV},
         {OV7670_REG_COM15, OV7670_COM15_R00FF}};
+#endif // 0
 
-iCap_status Adafruit_iCap_OV7670::begin(void) {
+iCap_status Adafruit_iCap_OV5640::begin(void) {
   iCap_status status;
 
   // Initialize peripherals for parallel+I2C camera:
@@ -162,7 +164,9 @@ iCap_status Adafruit_iCap_OV7670::begin(void) {
   delay(1); // Datasheet: tS:RESET = 1 ms
 
   // Init main camera settings
+#if 0
   writeList(OV7670_init, sizeof OV7670_init / sizeof OV7670_init[0]);
+#endif
 
   // Further initialization for specific colorspaces, frame sizes, timing,
   // etc. are done in other functions.
@@ -170,7 +174,8 @@ iCap_status Adafruit_iCap_OV7670::begin(void) {
   return ICAP_STATUS_OK;
 }
 
-iCap_status Adafruit_iCap_OV7670::begin(OV7670_size size, iCap_colorspace space,
+#if 0
+iCap_status Adafruit_iCap_OV5640::begin(OV5640_size size, iCap_colorspace space,
                                         float fps, uint8_t nbuf) {
   iCap_status status = begin();
   if (status == ICAP_STATUS_OK) {
@@ -179,12 +184,28 @@ iCap_status Adafruit_iCap_OV7670::begin(OV7670_size size, iCap_colorspace space,
 
   return status;
 }
+#else
+iCap_status Adafruit_iCap_OV5640::begin(float fps, uint8_t nbuf) {
+  iCap_status status = begin();
+  if (status == ICAP_STATUS_OK) {
+//    status = config(size, space, fps, nbuf);
+    status = config(fps, nbuf);
+  }
+
+  return status;
+}
+#endif
 
 // CAMERA CONFIG FUNCTIONS AND MISCELLANY ----------------------------------
 
-iCap_status Adafruit_iCap_OV7670::config(OV7670_size size,
+#if 0
+iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
                                          iCap_colorspace space, float fps,
                                          uint8_t nbuf, iCap_realloc allo) {
+#else
+iCap_status Adafruit_iCap_OV5640::config(float fps,
+                                         uint8_t nbuf, iCap_realloc allo) {
+#endif
   uint16_t width = 640 >> size;
   uint16_t height = 480 >> size;
   suspend();
@@ -222,12 +243,14 @@ iCap_status Adafruit_iCap_OV7670::config(OV7670_size size,
   return status;
 }
 
-void Adafruit_iCap_OV7670::setColorspace(iCap_colorspace space) {
+void Adafruit_iCap_OV5640::setColorspace(iCap_colorspace space) {
+#if 0
   if (space == ICAP_COLOR_RGB565) {
     writeList(OV7670_rgb, sizeof OV7670_rgb / sizeof OV7670_rgb[0]);
   } else {
     writeList(OV7670_yuv, sizeof OV7670_yuv / sizeof OV7670_yuv[0]);
   }
+#endif
 }
 
 // Configure camera frame rate. Actual resulting frame rate (returned) may
@@ -242,8 +265,9 @@ void Adafruit_iCap_OV7670::setColorspace(iCap_colorspace space) {
 // If platform is NULL, no registers are set, a fps request/return can be
 // evaluated without reconfiguring the camera, or without it even started.
 
-float Adafruit_iCap_OV7670::setFPS(float fps) {
+float Adafruit_iCap_OV5640::setFPS(float fps) {
 
+#if 0
   // Pixel clock (PCLK), which determines overall frame rate, is a
   // function of XCLK input frequency (OV7670_XCLK_HZ), a PLL multiplier
   // and then an integer division factor (1-32). These are the available
@@ -303,12 +327,13 @@ float Adafruit_iCap_OV7670::setFPS(float fps) {
   }
 
   return fps - best_delta; // Return actual frame rate
+#endif
 }
 
 // Sets up PCLK dividers and sets H/V start/stop window. Rather than
 // rolling this into OV7670_set_size(), it's kept separate so test code
 // can experiment with different settings to find ideal defaults.
-void Adafruit_iCap_OV7670::frameControl(OV7670_size size, uint8_t vstart,
+void Adafruit_iCap_OV5640::frameControl(OV7670_size size, uint8_t vstart,
                                         uint16_t hstart, uint8_t edge_offset,
                                         uint8_t pclk_delay) {
   uint8_t value;

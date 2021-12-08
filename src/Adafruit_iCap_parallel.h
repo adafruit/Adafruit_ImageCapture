@@ -177,7 +177,7 @@ public:
                    header.
     @param  value  Value to write, 0-65535.
   */
-  void writeRegister16x16(uint16_t reg, uint8_t value);
+  void writeRegister16x16(uint16_t reg, uint16_t value);
 
   /*!
     @brief  Writes a list of settings to the camera over I2C, with 16-bit
