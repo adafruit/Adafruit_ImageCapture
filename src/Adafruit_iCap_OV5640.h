@@ -18,7 +18,7 @@
 
 typedef iCap_parallel_pins OV5640_pins;
 
-#define OV5640_ADDR 0x78 //< Default I2C address if unspecified
+#define OV5640_ADDR 0x3C //< Default I2C address if unspecified
 
 /** Supported sizes THIS IS FAKE JUST TO GET THINGS TO COMPILE */
 typedef enum {
