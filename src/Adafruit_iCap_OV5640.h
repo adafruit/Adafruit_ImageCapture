@@ -614,6 +614,33 @@ private:
 #define OV5640_REG_ISP_SENSOR_BIAS 0x5061 //< ISP sensor bias I
 #define OV5640_REG_ISP_SENSOR_GAIN_H 0x5062 //< ISP sensor gain MSB
 #define OV5640_REG_ISP_SENSOR_GAIN_L 0x5063 //< ISP sensor gain LSB
+// AWB control 0x5180-0x51D0
+#define OV5640_REG_AWB_CONTROL00 0x5180 //< AWB control 00
+#define OV5640_REG_AWB_CONTROL01 0x5181 //< AWB control 01
+#define OV5640_REG_AWB_CONTROL02 0x5182 //< AWB control 02
+#define OV5640_REG_AWB_CONTROL03 0x5183 //< AWB control 03
+#define OV5640_REG_AWB_CONTROL04 0x5184 //< AWB control 04
+#define OV5640_REG_AWB_CONTROL05 0x5185 //< AWB control 05
+#define OV5640_REG_AWB_CONTROL_ADVANCED 0x5186 //< Advanced AWB registers
+#define OV5640_REG_AWB_CONTROL17 0x5191 //< AWB control 17
+#define OV5640_REG_AWB_CONTROL18 0x5192 //< AWB control 18
+#define OV5640_REG_AWB_CONTROL19 0x5193 //< AWB control 19
+#define OV5640_REG_AWB_CONTROL20 0x5194 //< AWB control 20
+#define OV5640_REG_AWB_CONTROL21 0x5195 //< AWB control 21
+#define OV5640_REG_AWB_CONTROL22 0x5196 //< AWB control 22
+#define OV5640_REG_AWB_CONTROL23 0x5197 //< AWB control 23
+#define OV5640_REG_AWB_CONTROL30 0x519E //< AWB control 30
+#define OV5640_REG_AWB_CURRENT_R_GAIN_HI 0x519F //< Current R setting[11:8]
+#define OV5640_REG_AWB_CURRENT_R_GAIN_LO 0x51A0 //< Current R setting[7:0]
+#define OV5640_REG_AWB_CURRENT_G_GAIN_HI 0x51A1 //< Current G setting[11:8]
+#define OV5640_REG_AWB_CURRENT_G_GAIN_LO 0x51A2 //< Current G setting[7:0]
+#define OV5640_REG_AWB_CURRENT_B_GAIN_HI 0x51A3 //< Current B setting[11:8]
+#define OV5640_REG_AWB_CURRENT_B_GAIN_LO 0x51A4 //< Current B setting[7:0]
+#define OV5640_REG_AWB_AVERAGE_R 0x51A5 //< Average R[9:2]
+#define OV5640_REG_AWB_AVERAGE_G 0x51A6 //< Average G[9:2]
+#define OV5640_REG_AWB_AVERAGE_B 0x51A7 //< Average B[9:2]
+#define OV5640_REG_AWB_CONTROL74 0x51D0 //< AWB control 74
+// CIP control 0x5300-0x530F
 
 
 
@@ -633,6 +660,22 @@ private:
 // Some of these require very fast pixel clocks, which we know isn't clean
 // on a breadboard. So while the resolutions may be valid, actual frame rates
 // will be something less.
+// Sensor array is 2624x1964. 2592x1944 are active pixels. Others are
+// used for black level calibration and interpolation.
+// Reg 0x3821 enables horiz binning (2:1 averaging)
+// Vertical binning is automatic in vertical-subsampled formats
+// Mirror (horiz) and flip (vert) are avail in 0x3820 and 0x3821
+// ISP input size is total data read from the pixel array. Larger this is,
+// lower the frame rate. Data output size is windowed within this.
+// When the scaling function is enabled, it appears that the pre-scaling
+// size must be centered. However, it might be possible to change the
+// x_addr_st and y_addr_st to do flexible windowing (fig 4-3 in datasheet).
+// One test pattern (color bar) is available.
+// Enable defect pixel cancellation to remove black/white flecks.
+// Datasheet 5.9: scaling. Up to 32x is supported.
+// In theory, more flexible sizing should be possible than other cams,
+// using the scaling and windowing functions. e.g. different aspect ratios,
+// not just divisions-of-VGA as before.
 
 // Group write is used to update a group of registers in the same frame.
 // Group addr registers are 3200-3203. See section 2-6 in datasheet.
