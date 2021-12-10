@@ -14,111 +14,149 @@ Adafruit_iCap_OV5640::~Adafruit_iCap_OV5640() {}
 
 // CAMERA STARTUP ----------------------------------------------------------
 
+static const iCap_parallel_config16x8
+    OV5640_init[] = {
+        // OV5640 camera initialization after reset
+        {OV5640_REG_SCCB_SYSTEM_CTRL1, 0x02}, // Enable PLL
+        {OV5640_REG_PAD_OUTPUT_ENABLE01, 0xFF}, // Output enable
+        {OV5640_REG_PAD_OUTPUT_ENABLE02, 0xFF}, // all clocks & GPIO
+        {OV5640_REG_PAD_CONTROL00, 0xC2}, // 4X drive, FREX enable
+        {OV5640_REG_POLARITY_CTRL00, 0x20}, // PCLK +active, VSYNC -active
+        {OV5640_REG_JPG_MODE_SELECT, 0x02}, // JPEG mode 2
+        {OV5640_REG_SYSTEM_RESET00, 0x00}, // Enable all blocks
+        {OV5640_REG_SYSTEM_RESET02, 0x1C}, // Reset JFIFO, SFIFO, JPG
+        {OV5640_REG_CLOCK_ENABLE00, 0xFF}, // Enable various clocks
+        {OV5640_REG_CLOCK_ENABLE02, 0xC3}, // and more (except JPEG)
+        {OV5640_REG_ISP_CONTROL00, 0xA7}, // LENC, GMA, B+W pix cancel, etc
+        {OV5640_REG_ISP_CONTROL01, 0xA3}, // +digital FX, scale, matrix, AWB
+        {OV5640_REG_ISP_CONTROL03, 0x08}, // ? debug bit
+        {0x370C, 0x02}, // Unknown "debug" registers,
+        {0x3634, 0x40}, // but necessary
+        // AEC/AGC
+        {OV5640_REG_AEC_MAX_EXPO_60_HI, 0x03}, // Exposure limit 60 Hz
+        {OV5640_REG_AEC_MAX_EXPO_60_LO, 0xD8},
+        {OV5640_REG_B50_STEP_HI, 0x01},
+        {OV5640_REG_B50_STEP_LO, 0x27},
+        {OV5640_REG_B60_STEP_HI, 0x00},
+        {OV5640_REG_B60_STEP_LO, 0xF6},
+        {OV5640_REG_AEC_CTRL0D, 0x04},
+        {OV5640_REG_AEC_CTRL0E, 0x03},
+        {OV5640_REG_AEC_CTRL0F, 0x30}, // Stable range limits
+        {OV5640_REG_AEC_CTRL10, 0x28},
+        {OV5640_REG_AEC_CTRL11, 0x60}, // Fast zone high limit
+        {OV5640_REG_AEC_CTRL13, 0x43},
+        {OV5640_REG_AEC_MAX_EXPO_50_HI, 0x03}, // Exposire limit 50 Hz
+        {OV5640_REG_AEC_MAX_EXPO_50_LO, 0xD8},
+        {OV5640_REG_AEC_GAIN_CEIL_HI, 0x00}, // Gain ceiling
+        {OV5640_REG_AEC_GAIN_CEIL_LO, 0xF8},
+        {OV5640_REG_AEC_CTRL1B, 0x30}, // Stable range limits
+        {OV5640_REG_AEC_CTRL1E, 0x26},
+        {OV5640_REG_AEC_CTRL1F, 0x14}, // Fast zone low limit
+        {0x3600, 0x08}, // Unknown VCM debug registers
+        {0x3601, 0x33},
+        {OV5640_REG_5060HZ_CTRL01, 0xA4}, // 50/60 Hz control
+        {OV5640_REG_5060HZ_CTRL04, 0x28},
+        {OV5640_REG_5060HZ_CTRL05, 0x98},
+        {OV5640_REG_LIGHT_METER1_HI, 0x00},
+        {OV5640_REG_LIGHT_METER1_LO, 0x08},
+        {OV5640_REG_LIGHT_METER2_HI, 0x00},
+        {OV5640_REG_LIGHT_METER2_LO, 0x1C},
+        {OV5640_REG_SAMPLE_NUMBER_HI, 0x9C},
+        {OV5640_REG_SAMPLE_NUMBER_LO, 0x40},
+        {OV5640_REG_VFIFO_CTRL0C, 0x22}, // Disable JPEG footer
+        {OV5640_REG_BLC_CTRL01, 0x02}, // BLC
+        {OV5640_REG_BLC_CTRL04, 0x02},
+        {OV5640_REG_AWB_CONTROL00, 0xFF}, // AWB
+        {OV5640_REG_AWB_CONTROL01, 0xF2},
+        {OV5640_REG_AWB_CONTROL02, 0x00},
+        {OV5640_REG_AWB_CONTROL03, 0x14},
+        {OV5640_REG_AWB_CONTROL04, 0x25},
+        {OV5640_REG_AWB_CONTROL05, 0x24},
+        {OV5640_REG_AWB_CONTROL_ADVANCED, 0x09},
+        {0x5187, 0x09}, // AWB mystery debug registers
+        {0x5188, 0x09},
+        {0x5189, 0x75},
+        {0x518A, 0x54},
+        {0x518B, 0xE0},
+        {0x518C, 0xB2},
+        {0x518D, 0x42},
+        {0x518E, 0x3D},
+        {0x518F, 0x56},
+        {0x5190, 0x46},
+        {OV5640_REG_AWB_CONTROL17, 0xF8},
+        {OV5640_REG_AWB_CONTROL18, 0x04},
+        {OV5640_REG_AWB_CONTROL19, 0x70},
+        {OV5640_REG_AWB_CONTROL20, 0xF0},
+        {OV5640_REG_AWB_CONTROL21, 0xF0},
+        {OV5640_REG_AWB_CONTROL22, 0x03},
+        {OV5640_REG_AWB_CONTROL23, 0x01},
+        {0x5198, 0x04}, // AWB mystery debug registers
+        {0x5199, 0x12},
+        {0x519A, 0x04},
+        {0x519B, 0x00},
+        {0x519C, 0x06},
+        {0x519D, 0x82},
+        {OV5640_REG_AWB_CONTROL30, 0x38},
+        {0x5381, 0x1E}, // Color matrix (saturation)
+        {0x5382, 0x5B},
+        {0x5383, 0x08},
+        {0x5384, 0x0A},
+        {0x5385, 0x7E},
+        {0x5386, 0x88},
+        {0x5387, 0x7C},
+        {0x5388, 0x6C},
+        {0x5389, 0x10},
+        {0x538A, 0x01},
+        {0x538B, 0x98},
+        {0x5300, 0x10}, // CIP control (sharpness)
+        {0x5301, 0x10},
+        {0x5302, 0x18},
+        {0x5303, 0x19},
+        {0x5304, 0x10},
+        {0x5305, 0x10},
+        {0x5306, 0x08}, // Denoise
+        {0x5307, 0x16},
+        {0x5308, 0x40},
+        {0x5309, 0x10}, // Sharpness
+        {0x530A, 0x10}, // Sharpness
+        {0x530B, 0x04}, // Sharpness
+        {0x530C, 0x06}, // Sharpness
+        {0x5480, 0x01}, // Gamma
+        {0x5481, 0x00},
+        {0x5482, 0x1E},
+        {0x5483, 0x3B},
+        {0x5484, 0x58},
+        {0x5485, 0x66},
+        {0x5486, 0x71},
+        {0x5487, 0x7D},
+        {0x5488, 0x83},
+        {0x5489, 0x8F},
+        {0x548A, 0x98},
+        {0x548B, 0xA6},
+        {0x548C, 0xB8},
+        {0x548D, 0xCA},
+        {0x548E, 0xD7},
+        {0x548F, 0xE3},
+        {0x5490, 0x1D},
+        // Special Digital Effects (SDE) (UV adjust)
+        {0x5580, 0x06}, // enable brightness and contrast
+        {0x5583, 0x40}, // special_effect
+        {0x5584, 0x10}, // special_effect
+        {0x5586, 0x20}, // contrast
+        {0x5587, 0x00}, // brightness
+        {0x5588, 0x00}, // brightness
+        {0x5589, 0x10},
+        {0x558A, 0x00},
+        {0x558B, 0xF8},
+        {0x501D, 0x40}, // enable manual offset of contrast
+        {OV5640_REG_SYSTEM_CTROL0, 0x02}, // Mystery debug bit, power on?
+        //{OV5640_REG_5060HZ_CTRL00, 0x04}, // 50 Hz
+};
+
+
 #if 0
+
 static const iCap_parallel_config
-    OV7670_init[] =
-        {
-            // OV7670 camera initialization after reset
-            {OV7670_REG_TSLB, OV7670_TSLB_YLAST},    // No auto window
-            {OV7670_REG_COM10, OV7670_COM10_VS_NEG}, // -VSYNC (req by SAMD PCC)
-            {OV7670_REG_SLOP, 0x20},
-            {OV7670_REG_GAM_BASE, 0x1C},
-            {OV7670_REG_GAM_BASE + 1, 0x28},
-            {OV7670_REG_GAM_BASE + 2, 0x3C},
-            {OV7670_REG_GAM_BASE + 3, 0x55},
-            {OV7670_REG_GAM_BASE + 4, 0x68},
-            {OV7670_REG_GAM_BASE + 5, 0x76},
-            {OV7670_REG_GAM_BASE + 6, 0x80},
-            {OV7670_REG_GAM_BASE + 7, 0x88},
-            {OV7670_REG_GAM_BASE + 8, 0x8F},
-            {OV7670_REG_GAM_BASE + 9, 0x96},
-            {OV7670_REG_GAM_BASE + 10, 0xA3},
-            {OV7670_REG_GAM_BASE + 11, 0xAF},
-            {OV7670_REG_GAM_BASE + 12, 0xC4},
-            {OV7670_REG_GAM_BASE + 13, 0xD7},
-            {OV7670_REG_GAM_BASE + 14, 0xE8},
-            {OV7670_REG_COM8,
-             OV7670_COM8_FASTAEC | OV7670_COM8_AECSTEP | OV7670_COM8_BANDING},
-            {OV7670_REG_GAIN, 0x00},
-            {OV7670_COM2_SSLEEP, 0x00},
-            {OV7670_REG_COM4, 0x00},
-            {OV7670_REG_COM9, 0x20}, // Max AGC value
-            {OV7670_REG_BD50MAX, 0x05},
-            {OV7670_REG_BD60MAX, 0x07},
-            {OV7670_REG_AEW, 0x75},
-            {OV7670_REG_AEB, 0x63},
-            {OV7670_REG_VPT, 0xA5},
-            {OV7670_REG_HAECC1, 0x78},
-            {OV7670_REG_HAECC2, 0x68},
-            {0xA1, 0x03},              // Reserved register?
-            {OV7670_REG_HAECC3, 0xDF}, // Histogram-based AEC/AGC setup
-            {OV7670_REG_HAECC4, 0xDF},
-            {OV7670_REG_HAECC5, 0xF0},
-            {OV7670_REG_HAECC6, 0x90},
-            {OV7670_REG_HAECC7, 0x94},
-            {OV7670_REG_COM8, OV7670_COM8_FASTAEC | OV7670_COM8_AECSTEP |
-                                  OV7670_COM8_BANDING | OV7670_COM8_AGC |
-                                  OV7670_COM8_AEC},
-            {OV7670_REG_COM5, 0x61},
-            {OV7670_REG_COM6, 0x4B},
-            {0x16, 0x02},            // Reserved register?
-            {OV7670_REG_MVFP, 0x07}, // 0x07,
-            {OV7670_REG_ADCCTR1, 0x02},
-            {OV7670_REG_ADCCTR2, 0x91},
-            {0x29, 0x07}, // Reserved register?
-            {OV7670_REG_CHLF, 0x0B},
-            {0x35, 0x0B}, // Reserved register?
-            {OV7670_REG_ADC, 0x1D},
-            {OV7670_REG_ACOM, 0x71},
-            {OV7670_REG_OFON, 0x2A},
-            {OV7670_REG_COM12, 0x78},
-            {0x4D, 0x40}, // Reserved register?
-            {0x4E, 0x20}, // Reserved register?
-            {OV7670_REG_GFIX, 0x5D},
-            {OV7670_REG_REG74, 0x19},
-            {0x8D, 0x4F}, // Reserved register?
-            {0x8E, 0x00}, // Reserved register?
-            {0x8F, 0x00}, // Reserved register?
-            {0x90, 0x00}, // Reserved register?
-            {0x91, 0x00}, // Reserved register?
-            {OV7670_REG_DM_LNL, 0x00},
-            {0x96, 0x00}, // Reserved register?
-            {0x9A, 0x80}, // Reserved register?
-            {0xB0, 0x84}, // Reserved register?
-            {OV7670_REG_ABLC1, 0x0C},
-            {0xB2, 0x0E}, // Reserved register?
-            {OV7670_REG_THL_ST, 0x82},
-            {0xB8, 0x0A}, // Reserved register?
-            {OV7670_REG_AWBC1, 0x14},
-            {OV7670_REG_AWBC2, 0xF0},
-            {OV7670_REG_AWBC3, 0x34},
-            {OV7670_REG_AWBC4, 0x58},
-            {OV7670_REG_AWBC5, 0x28},
-            {OV7670_REG_AWBC6, 0x3A},
-            {0x59, 0x88}, // Reserved register?
-            {0x5A, 0x88}, // Reserved register?
-            {0x5B, 0x44}, // Reserved register?
-            {0x5C, 0x67}, // Reserved register?
-            {0x5D, 0x49}, // Reserved register?
-            {0x5E, 0x0E}, // Reserved register?
-            {OV7670_REG_LCC3, 0x04},
-            {OV7670_REG_LCC4, 0x20},
-            {OV7670_REG_LCC5, 0x05},
-            {OV7670_REG_LCC6, 0x04},
-            {OV7670_REG_LCC7, 0x08},
-            {OV7670_REG_AWBCTR3, 0x0A},
-            {OV7670_REG_AWBCTR2, 0x55},
-            {OV7670_REG_MTX1, 0x80},
-            {OV7670_REG_MTX2, 0x80},
-            {OV7670_REG_MTX3, 0x00},
-            {OV7670_REG_MTX4, 0x22},
-            {OV7670_REG_MTX5, 0x5E},
-            {OV7670_REG_MTX6, 0x80}, // 0x40?
-            {OV7670_REG_AWBCTR1, 0x11},
-            {OV7670_REG_AWBCTR0, 0x9F}, // Or use 0x9E for advance AWB
-            {OV7670_REG_BRIGHT, 0x00},
-            {OV7670_REG_CONTRAS, 0x40},
-            {OV7670_REG_CONTRAS_CENTER, 0x80}}, // 0x40?
     OV7670_rgb[] =
         {
             // Manual output format, RGB, use RGB565 and full 0-255 output range
@@ -155,14 +193,12 @@ iCap_status Adafruit_iCap_OV5640::begin(void) {
     delayMicroseconds(1000); // From datasheet power-up sequence 2.7
     digitalWrite(pins.reset, HIGH);
   } else { // Soft reset
-    writeRegister(OV5640_REG_SYSTEM_CTROL0, 0x80);
+    writeRegister16x8(OV5640_REG_SYSTEM_CTROL0, 0x80);
   }
   delay(20); // From datasheet power-up sequence 2.7
 
   // Init main camera settings
-#if 0
-  writeList(OV7670_init, sizeof OV7670_init / sizeof OV7670_init[0]);
-#endif
+  writeList(OV5640_init, sizeof OV5640_init / sizeof OV5640_init[0]);
 
   // Further initialization for specific colorspaces, frame sizes, timing,
   // etc. are done in other functions.
@@ -247,6 +283,8 @@ void Adafruit_iCap_OV5640::setColorspace(iCap_colorspace space) {
 // evaluated without reconfiguring the camera, or without it even started.
 
 float Adafruit_iCap_OV5640::setFPS(float fps) {
+
+// 5640 PLL control is in registers 0x3034-3039
 
 #if 0
   // Pixel clock (PCLK), which determines overall frame rate, is a

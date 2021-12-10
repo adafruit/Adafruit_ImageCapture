@@ -134,6 +134,22 @@ public:
   void writeList(const iCap_parallel_config *cfg, uint16_t len);
 
   /*!
+    @brief  Writes a list of settings to the camera over I2C, with 16-bit
+            register addresses and 8-bit data values.
+    @param  cfg  Array (pointer-to) of settings to write.
+    @param  len  Length of array.
+  */
+  void writeList(const iCap_parallel_config16x8 *cfg, uint16_t len);
+
+  /*!
+    @brief  Writes a list of settings to the camera over I2C, with 16-bit
+            register addresses and 16-bit data values.
+    @param  cfg  Array (pointer-to) of settings to write.
+    @param  len  Length of array.
+  */
+  void writeList(const iCap_parallel_config16x16 *cfg, uint16_t len);
+
+  /*!
     @brief   Reads value of one register (16-bit address, 8-bit value) from
              the camera over I2C.
     @param   reg  Register to read, from values defined in camera-specific
@@ -153,14 +169,6 @@ public:
   void writeRegister16x8(uint16_t reg, uint8_t value);
 
   /*!
-    @brief  Writes a list of settings to the camera over I2C, with 16-bit
-            peripheral register addresses and 8-bit values.
-    @param  cfg  Array (pointer-to) of settings to write.
-    @param  len  Length of array.
-  */
-  void writeList16x8(const iCap_parallel_config16x8 *cfg, uint16_t len);
-
-  /*!
     @brief   Reads value of one register (16-bit address, 16-bit value) from
              the camera over I2C.
     @param   reg  Register to read, from values defined in camera-specific
@@ -178,14 +186,6 @@ public:
     @param  value  Value to write, 0-65535.
   */
   void writeRegister16x16(uint16_t reg, uint16_t value);
-
-  /*!
-    @brief  Writes a list of settings to the camera over I2C, with 16-bit
-            peripheral register addresses and 16-bit values.
-    @param  cfg  Array (pointer-to) of settings to write.
-    @param  len  Length of array.
-  */
-  void writeList16x16(const iCap_parallel_config16x16 *cfg, uint16_t len);
 
   /*!
     @brief  Pause DMA background capture (if supported by architecture)
