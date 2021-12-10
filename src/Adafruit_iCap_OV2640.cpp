@@ -519,11 +519,12 @@ iCap_status Adafruit_iCap_OV2640::begin(OV2640_size size, iCap_colorspace space,
 }
 
 void Adafruit_iCap_OV2640::setColorspace(iCap_colorspace space) {
-  if (colorspace == ICAP_COLOR_RGB565) {
+  if (colorspace == ICAP_COLORSPACE_RGB565) {
     writeList(OV2640_rgb, sizeof OV2640_rgb / sizeof OV2640_rgb[0]);
-  } else {
+  } else if (colorspace == ICAP_COLORSPACE_YUV) {
     writeList(OV2640_yuv, sizeof OV2640_yuv / sizeof OV2640_yuv[0]);
   }
+  // 8-bit grayscale not supported by OV2640 (extract from 16-bit YUV)
 }
 
 iCap_status Adafruit_iCap_OV2640::config(OV2640_size size,

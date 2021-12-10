@@ -46,8 +46,9 @@ typedef enum {
 
 /** Supported color formats */
 typedef enum {
-  ICAP_COLOR_RGB565 = 0, ///< RGB565 big-endian
-  ICAP_COLOR_YUV,        ///< YUV/YCbCr 4:2:2 big-endian
+  ICAP_COLORSPACE_RGB565 = 0, ///< RGB565 big-endian
+  ICAP_COLORSPACE_YUV,        ///< YUV/YCbCr 4:2:2 big-endian
+  ICAP_COLORSPACE_GRAYSCALE,  ///< 8-bit gray (not supported by all cameras)
 } iCap_colorspace;
 
 /** Buffer reallocation behaviors when changing captured image size */
@@ -91,10 +92,12 @@ public:
                      allowable value (e.g. one of several fixed sizes).
     @param   height  Height in pixels. Subclass will limit this to a known
                      allowable value (e.g. one of several fixed sizes).
-    @param   space   Colorspace: currently ICAP_COLOR_RGB565 or
-                     ICAP_COLOR_YUV are supported, both 16 bits/pixel.
-                     This value is only used for figuring memory allocation,
-                     subclass needs to actually configure camera to match.
+    @param   space   Colorspace: ICAP_COLORSPACE_RGB565 and
+                     ICAP_COLORSPACE_YUV are 16 bits/pixel.
+                     ICAP_COLORSPACE_GRAYSCALE (not supported by all
+                     cameras) is 8 bits/pixel. This value is only used
+                     for figuring memory allocation, subclass needs to
+                     actually configure camera to match.
     @param   nbuf    Number of image buffers, 1-3. Currently only 1 is
                      supported...you can request more but this just wastes
                      RAM right now, but eventually will help with latency
@@ -116,7 +119,7 @@ public:
              appropriately, perhaps reattempting at a smaller size.
   */
   iCap_status bufferConfig(uint16_t width, uint16_t height,
-                           iCap_colorspace space = ICAP_COLOR_RGB565,
+                           iCap_colorspace space = ICAP_COLORSPACE_RGB565,
                            uint8_t nbuf = 1,
                            iCap_realloc allo = ICAP_REALLOC_CHANGE);
 

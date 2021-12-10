@@ -59,7 +59,7 @@ public:
              background. Really just a one-step wrapper around begin(void)
              and config(...).
     @param   size   Frame size as a OV2640_size enum value.
-    @param   space  ICAP_COLOR_RGB or ICAP_COLOR_YUV.
+    @param   space  ICAP_COLORSPACE_RGB or ICAP_COLORSPACE_YUV.
     @param   fps    Desired capture framerate, in frames per second, as a
                     float up to 30.0. Actual device frame rate may differ
                     from this, depending on a host's available PWM timing.
@@ -67,13 +67,14 @@ public:
                     1, multi-buffering isn't handled yet.
     @return  Status code. ICAP_STATUS_OK on successful init.
   */
-  iCap_status begin(OV2640_size size, iCap_colorspace space = ICAP_COLOR_RGB565,
+  iCap_status begin(OV2640_size size,
+                    iCap_colorspace space = ICAP_COLORSPACE_RGB565,
                     float fps = 30.0, uint8_t nbuf = 1);
 
   /*!
     @brief   Change frame configuration on an already-running camera.
     @param   size  One of the OV2640_size values (TBD).
-    @param   space  ICAP_COLOR_RGB or ICAP_COLOR_YUV.
+    @param   space  ICAP_COLORSPACE_RGB or ICAP_COLORSPACE_YUV.
     @param   fps    Desired capture framerate, in frames per second, as a
                     float up to 30.0. Actual device frame rate may differ
                     from this, depending on a host's available PWM timing.
@@ -100,15 +101,15 @@ public:
              the camera mid-run.
   */
   iCap_status config(OV2640_size size,
-                     iCap_colorspace space = ICAP_COLOR_RGB565,
+                     iCap_colorspace space = ICAP_COLORSPACE_RGB565,
                      float fps = 30.0, uint8_t nbuf = 1,
                      iCap_realloc allo = ICAP_REALLOC_CHANGE);
 
   /*!
     @brief  Configure camera colorspace.
-    @param  space  ICAP_COLOR_RGB565 or ICAP_COLOR_YUV.
+    @param  space  ICAP_COLORSPACE_RGB565 or ICAP_COLORSPACE_YUV.
   */
-  void setColorspace(iCap_colorspace space = ICAP_COLOR_RGB565);
+  void setColorspace(iCap_colorspace space = ICAP_COLORSPACE_RGB565);
 };
 
 #endif // end ICAP_FULL_SUPPORT

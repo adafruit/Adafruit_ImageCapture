@@ -50,9 +50,9 @@ OV7670_pins pins = {
   .scl    = 21, // I2C clock
 };
 
-#define CAM_I2C Wire               // I2C to camera
-#define CAM_SIZE OV7670_SIZE_DIV4  // QQVGA (160x120 pixels)
-#define CAM_MODE ICAP_COLOR_RGB565 // RGB plz
+#define CAM_I2C Wire                    // I2C to camera
+#define CAM_SIZE OV7670_SIZE_DIV4       // QQVGA (160x120 pixels)
+#define CAM_MODE ICAP_COLORSPACE_RGB565 // RGB plz
 
 // Use fixed-size image buffer, do NOT dynamically allocate in lib
 uint16_t pixelBuf[320 * 240]; // 150KB

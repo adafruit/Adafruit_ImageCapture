@@ -157,13 +157,10 @@ static const iCap_parallel_config16x8
         {OV5640_REG_FORMAT_CONTROL00, 0x61}}, // RGB565 (BGR)
     OV5640_yuv[] = {
         {OV5640_REG_FORMAT_MUX_CONTROL, 0x00}, // YUV422
-        {OV5640_REG_FORMAT_CONTROL00, 0x30}}; // YUYV
-    // 5640 has a true grayscale option. See CircuitPython code,
-    // might extend this (and iCap_colorspace) to include it.
-    // To start though, following along w/prior cameras that only did YUV
-    // and gray requires extraction. True gray might only need half the
-    // buffer size and things just aren't set up for that right now.
-    // See bufferConfig() in Adafruit_ImageCapture.cpp -- would go there.
+        {OV5640_REG_FORMAT_CONTROL00, 0x30}}, // YUYV
+    OV5640_gray[] = {
+        {OV5640_REG_FORMAT_MUX_CONTROL, 0x00}, // YUV422
+        {OV5640_REG_FORMAT_CONTROL00, 0x10}}; // YYYY
 
 iCap_status Adafruit_iCap_OV5640::begin(void) {
   iCap_status status;
@@ -222,7 +219,7 @@ iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
   suspend();
   iCap_status status = bufferConfig(width, height, space, nbuf, allo);
   if (status == ICAP_STATUS_OK) {
-    setColorspace(space); // Select RGB/YUV
+    setColorspace(space); // Select RGB/YUV/Grayscale
     fps = setFPS(fps);    // Frame timing
     // Array of five window settings, index of each (0-4) aligns with the 5
     // OV7670_size enumeration values. If enum changes, list must change!
@@ -257,10 +254,13 @@ iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
 }
 
 void Adafruit_iCap_OV5640::setColorspace(iCap_colorspace space) {
-  if (space == ICAP_COLOR_RGB565) {
-    writeList(OV5640_rgb, sizeof OV5640_rgb / sizeof OV5640_rgb[0]);
-  } else {
-    writeList(OV5640_yuv, sizeof OV5640_yuv / sizeof OV5640_yuv[0]);
+  switch (space) {
+    case ICAP_COLORSPACE_RGB565:
+      writeList(OV5640_rgb, sizeof OV5640_rgb / sizeof OV5640_rgb[0]);
+    case ICAP_COLORSPACE_YUV:
+      writeList(OV5640_yuv, sizeof OV5640_yuv / sizeof OV5640_yuv[0]);
+    case ICAP_COLORSPACE_GRAYSCALE:
+      writeList(OV5640_gray, sizeof OV5640_gray / sizeof OV5640_gray[0]);
   }
 }
 
@@ -278,7 +278,12 @@ void Adafruit_iCap_OV5640::setColorspace(iCap_colorspace space) {
 
 float Adafruit_iCap_OV5640::setFPS(float fps) {
 
-// 5640 PLL control is in registers 0x3034-3039
+// 5640 PLL control is in registers 0x3034-3039 SC_PLL_CONTRL*
+// PLL multiplier can be any integer for 4-127 and any even
+// integer for 128-252
+// PLL root divider is bypass or /2
+// PLL pre-divider is 1,2,3,4,6,8
+// See also reg 3108
 
 #if 0
   // Pixel clock (PCLK), which determines overall frame rate, is a

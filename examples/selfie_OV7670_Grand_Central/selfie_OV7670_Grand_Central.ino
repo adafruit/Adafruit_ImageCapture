@@ -45,8 +45,8 @@ iCap_arch arch = {.timer = TCC1, .xclk_pdec = false};
 OV7670_pins pins = {.enable = PIN_PCC_D8, .reset = PIN_PCC_D9,
                     .xclk = PIN_PCC_XCLK};
 #define CAM_I2C  Wire1 // Second I2C bus next to PCC pins
-#define CAM_SIZE OV7670_SIZE_DIV4  // QQVGA (160x120 pixels)
-#define CAM_MODE ICAP_COLOR_RGB565 // RGB plz
+#define CAM_SIZE OV7670_SIZE_DIV4       // QQVGA (160x120 pixels)
+#define CAM_MODE ICAP_COLORSPACE_RGB565 // RGB plz
 
 // Rather than having the library allocate anything, declare a large
 // enough buffer here for the maximum anticipated image size (even though
@@ -145,7 +145,7 @@ void loop() {
   // Pause the camera DMA - hold buffer steady to avoid tearing
   cam.suspend();
 
-  if(CAM_MODE == ICAP_COLOR_YUV) {
+  if(CAM_MODE == ICAP_COLORSPACE_YUV) {
     // Convert grayscale for TFT preview
     cam.Y2RGB565();
   }

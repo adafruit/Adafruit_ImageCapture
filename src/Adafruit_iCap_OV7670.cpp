@@ -223,11 +223,12 @@ iCap_status Adafruit_iCap_OV7670::config(OV7670_size size,
 }
 
 void Adafruit_iCap_OV7670::setColorspace(iCap_colorspace space) {
-  if (space == ICAP_COLOR_RGB565) {
+  if (space == ICAP_COLORSPACE_RGB565) {
     writeList(OV7670_rgb, sizeof OV7670_rgb / sizeof OV7670_rgb[0]);
-  } else {
+  } else if (space == ICAP_COLORSPACE_YUV) {
     writeList(OV7670_yuv, sizeof OV7670_yuv / sizeof OV7670_yuv[0]);
   }
+  // 8-bit grayscale not supported by OV2640 (extract from 16-bit YUV)
 }
 
 // Configure camera frame rate. Actual resulting frame rate (returned) may

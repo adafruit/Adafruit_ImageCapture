@@ -95,7 +95,7 @@ public:
                     (640x480), OV7670_SIZE_DIV2 (320x240), OV7670_SIZE_DIV4
                     (160x120), OV7670_SIZE_DIV8 and OV7670_SIZE_DIV16.
                     This argument is required.
-    @param   space  ICAP_COLOR_RGB565 (default) or ICAP_COLOR_YUV.
+    @param   space  ICAP_COLORSPACE_RGB565 (default) or ICAP_COLORSPACE_YUV.
     @param   fps    Desired capture framerate, in frames per second, as a
                     float up to 30.0 (default). Actual device frame rate may
                     differ from this, depending on a host's available PWM
@@ -111,7 +111,8 @@ public:
                     1, multi-buffering isn't handled yet.
     @return  Status code. ICAP_STATUS_OK on successful init.
   */
-  iCap_status begin(OV7670_size size, iCap_colorspace space = ICAP_COLOR_RGB565,
+  iCap_status begin(OV7670_size size,
+                    iCap_colorspace space = ICAP_COLORSPACE_RGB565,
                     float fps = 30.0, uint8_t nbuf = 1);
 
   /*!
@@ -121,7 +122,7 @@ public:
                     (640x480), OV7670_SIZE_DIV2 (320x240), OV7670_SIZE_DIV4
                     (160x120), OV7670_SIZE_DIV8 and OV7670_SIZE_DIV16.
                     This argument is required.
-    @param   space  ICAP_COLOR_RGB565 (default) or ICAP_COLOR_YUV.
+    @param   space  ICAP_COLORSPACE_RGB565 (default) or ICAP_COLORSPACE_YUV.
     @param   fps    Desired capture framerate, in frames per second, as a
                     float up to 30.0 (default). Actual device frame rate may
                     differ from this, depending on a host's available PWM
@@ -149,15 +150,15 @@ public:
              buffer resize fails.
   */
   iCap_status config(OV7670_size size,
-                     iCap_colorspace space = ICAP_COLOR_RGB565,
+                     iCap_colorspace space = ICAP_COLORSPACE_RGB565,
                      float fps = 30.0, uint8_t nbuf = 1, 
                      iCap_realloc allo = ICAP_REALLOC_CHANGE);
 
   /*!
     @brief  Configure camera colorspace.
-    @param  space  ICAP_COLOR_RGB565 or ICAP_COLOR_YUV.
+    @param  space  ICAP_COLORSPACE_RGB565 or ICAP_COLORSPACE_YUV.
   */
-  void setColorspace(iCap_colorspace space = ICAP_COLOR_RGB565);
+  void setColorspace(iCap_colorspace space = ICAP_COLORSPACE_RGB565);
 
   // Configure camera frame rate. Actual resulting frame rate (returned) may
   // be different depending on available clock frequencies. Result will only

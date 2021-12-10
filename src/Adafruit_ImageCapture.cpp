@@ -64,7 +64,15 @@ iCap_status Adafruit_ImageCapture::bufferConfig(uint16_t width, uint16_t height,
   colorspace = space;
   if (nbuf < 1) nbuf = 1;      // Constrain number of buffers to 1-3
   else if (nbuf > 3) nbuf = 3;
-  uint32_t new_buffer_size = width * height * nbuf * sizeof(uint16_t);
+  // 8-bit grayscale is only supported by certain cameras (e.g. OV5640).
+  // Others can approximate this by capturing 16-bit YUV and extracting
+  // the Y component for each pixel, but must still allocate 16bpp and
+  // do the extraction in user code via the library's Y2RGB565() function,
+  // this doesn't occur automatically. No check for camera suitability is
+  // performed here, since this function is only called by camera-specific
+  // subclasses that should already embody that knowledge.
+  uint8_t bytesPerPixel = (space == ICAP_COLORSPACE_GRAYSCALE) ? 1 : 2;
+  uint32_t new_buffer_size = width * height * bytesPerPixel * nbuf;
   bool ra = false; // Gets set true only if a reallocation is needed
 
   // If static buffer was passed to constructor, reallocation not possible.
@@ -137,7 +145,7 @@ void Adafruit_ImageCapture::image_negative() {
 void Adafruit_ImageCapture::image_threshold(uint8_t threshold) {
   uint32_t i, num_pixels = _width * _height;
   uint16_t *pixels = pixbuf[0];
-  if (colorspace == ICAP_COLOR_RGB565) {
+  if (colorspace == ICAP_COLORSPACE_RGB565) {
     // Testing RGB thresholds "in place" in the packed RGB565 value
     // avoids some bit-shifting on every pixel (just bit masking).
     uint16_t rlimit = (threshold >> 3) << 11;  // In-place 565 red threshold
@@ -180,7 +188,7 @@ void Adafruit_ImageCapture::image_posterize(uint8_t levels) {
   uint8_t lm1 = levels - 1; // Values used in fixed-
   uint8_t lm1d2 = lm1 / 2;  // point interpolation
 
-  if (colorspace == ICAP_COLOR_RGB565) {
+  if (colorspace == ICAP_COLORSPACE_RGB565) {
     if (levels >= 32) {
       return;
     } else {
@@ -244,7 +252,7 @@ void Adafruit_ImageCapture::image_mosaic(uint8_t tile_width,
   uint32_t pixels_in_tile;
   uint16_t *pixels = pixbuf[0];
 
-  if (colorspace == ICAP_COLOR_RGB565) {
+  if (colorspace == ICAP_COLORSPACE_RGB565) {
     uint16_t rgb;
     uint32_t red_sum, green_sum, blue_sum;
     uint32_t yy1, yy2;
@@ -513,7 +521,7 @@ static inline uint8_t iCap_med9(uint8_t *list) {
 // RGB image. YUV is not currently supported.
 void Adafruit_ImageCapture::image_median() {
   uint16_t *pixels = pixbuf[0];
-  if (colorspace == ICAP_COLOR_RGB565) {
+  if (colorspace == ICAP_COLORSPACE_RGB565) {
     uint8_t *buf;
     uint32_t buf_bytes_per_channel = (_width + 2) * 3 + _height - 1;
     if ((buf = (uint8_t *)malloc(buf_bytes_per_channel * 3))) {
@@ -595,7 +603,7 @@ static inline bool iCap_edge9(uint8_t *list, uint8_t sensitivity) {
 void Adafruit_ImageCapture::image_edges(uint8_t sensitivity) {
   uint16_t *pixels = pixbuf[0];
 
-  if (colorspace == ICAP_COLOR_RGB565) {
+  if (colorspace == ICAP_COLORSPACE_RGB565) {
     uint8_t *buf;
     uint32_t buf_bytes_per_channel = (_width + 2) * 3 + _height - 1;
     if ((buf = (uint8_t *)malloc(buf_bytes_per_channel * 3))) {

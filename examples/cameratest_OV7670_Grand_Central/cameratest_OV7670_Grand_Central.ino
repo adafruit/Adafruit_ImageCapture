@@ -24,8 +24,8 @@ OV7670_pins pins = {.enable = PIN_PCC_D8, .reset = PIN_PCC_D9,
 #define CAM_I2C Wire1 // Second I2C bus next to PCC pins
 #endif // end __SAMD51__
 
-#define CAM_SIZE OV7670_SIZE_DIV2  // QVGA (320x240 pixels)
-#define CAM_MODE ICAP_COLOR_RGB565 // RGB plz
+#define CAM_SIZE OV7670_SIZE_DIV2       // QVGA (320x240 pixels)
+#define CAM_MODE ICAP_COLORSPACE_RGB565 // RGB plz
 
 Adafruit_iCap_OV7670 cam(pins, &arch, CAM_I2C);
 
@@ -121,7 +121,7 @@ void loop() {
   //cam.image_median();
   //cam.image_edges(4);      // 0-31, smaller = more edges
 
-  if(CAM_MODE == ICAP_COLOR_YUV) {
+  if(CAM_MODE == ICAP_COLORSPACE_YUV) {
     cam.Y2RGB565(); // Convert grayscale for TFT preview
   }
 

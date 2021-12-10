@@ -63,7 +63,7 @@ void loop() {
 
   Serial.println("Configuring...");
   if (++size_index >= (sizeof sizes / sizeof sizes[0])) size_index = 0;
-  int status = cam.config(sizes[size_index], ICAP_COLOR_RGB565, 30.0);
+  int status = cam.config(sizes[size_index], ICAP_COLORSPACE_RGB565, 30.0);
 
   Serial.println("Capturing...");
   int32_t bytes = cam.capture();

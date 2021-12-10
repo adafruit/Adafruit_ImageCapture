@@ -36,8 +36,8 @@ OV2640_pins pins = {
 };
 
 #define CAM_I2C Wire
-#define CAM_SIZE OV2640_SIZE_QQVGA // QQVGA (160x120 pixels)
-#define CAM_MODE ICAP_COLOR_RGB565 // RGB plz
+#define CAM_SIZE OV2640_SIZE_QQVGA      // QQVGA (160x120 pixels)
+#define CAM_MODE ICAP_COLORSPACE_RGB565 // RGB plz
 
 Adafruit_iCap_OV2640 cam(pins, &arch, CAM_I2C);
 
@@ -117,7 +117,7 @@ void loop() {
   // Pause the camera DMA - hold buffer steady to avoid tearing
 //  cam.suspend();
 
-  if(CAM_MODE == ICAP_COLOR_YUV) {
+  if(CAM_MODE == ICAP_COLORSPACE_YUV) {
     // Convert grayscale for TFT preview
     cam.Y2RGB565();
   }
