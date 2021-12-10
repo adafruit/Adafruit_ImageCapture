@@ -151,23 +151,19 @@ static const iCap_parallel_config16x8
         {0x501D, 0x40}, // enable manual offset of contrast
         {OV5640_REG_SYSTEM_CTROL0, 0x02}, // Mystery debug bit, power on?
         //{OV5640_REG_5060HZ_CTRL00, 0x04}, // 50 Hz
-};
-
-
-#if 0
-
-static const iCap_parallel_config
-    OV7670_rgb[] =
-        {
-            // Manual output format, RGB, use RGB565 and full 0-255 output range
-            {OV7670_REG_COM7, OV7670_COM7_RGB},
-            {OV7670_REG_RGB444, 0},
-            {OV7670_REG_COM15, OV7670_COM15_RGB565 | OV7670_COM15_R00FF}},
-    OV7670_yuv[] = {
-        // Manual output format, YUV, use full output range
-        {OV7670_REG_COM7, OV7670_COM7_YUV},
-        {OV7670_REG_COM15, OV7670_COM15_R00FF}};
-#endif // 0
+        },
+    OV5640_rgb[] = {
+        {OV5640_REG_FORMAT_MUX_CONTROL, 0x01}, // RGB
+        {OV5640_REG_FORMAT_CONTROL00, 0x61}}, // RGB565 (BGR)
+    OV5640_yuv[] = {
+        {OV5640_REG_FORMAT_MUX_CONTROL, 0x00}, // YUV422
+        {OV5640_REG_FORMAT_CONTROL00, 0x30}}; // YUYV
+    // 5640 has a true grayscale option. See CircuitPython code,
+    // might extend this (and iCap_colorspace) to include it.
+    // To start though, following along w/prior cameras that only did YUV
+    // and gray requires extraction. True gray might only need half the
+    // buffer size and things just aren't set up for that right now.
+    // See bufferConfig() in Adafruit_ImageCapture.cpp -- would go there.
 
 iCap_status Adafruit_iCap_OV5640::begin(void) {
   iCap_status status;
@@ -261,13 +257,11 @@ iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
 }
 
 void Adafruit_iCap_OV5640::setColorspace(iCap_colorspace space) {
-#if 0
   if (space == ICAP_COLOR_RGB565) {
-    writeList(OV7670_rgb, sizeof OV7670_rgb / sizeof OV7670_rgb[0]);
+    writeList(OV5640_rgb, sizeof OV5640_rgb / sizeof OV5640_rgb[0]);
   } else {
-    writeList(OV7670_yuv, sizeof OV7670_yuv / sizeof OV7670_yuv[0]);
+    writeList(OV5640_yuv, sizeof OV5640_yuv / sizeof OV5640_yuv[0]);
   }
-#endif
 }
 
 // Configure camera frame rate. Actual resulting frame rate (returned) may
