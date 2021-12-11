@@ -214,36 +214,82 @@ iCap_status Adafruit_iCap_OV5640::begin(OV5640_size size, iCap_colorspace space,
 iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
                                          iCap_colorspace space, float fps,
                                          uint8_t nbuf, iCap_realloc allo) {
-  uint16_t width = 640 >> size;
-  uint16_t height = 480 >> size;
+  uint16_t width = 160;
+  uint16_t height = 120;
   suspend();
   iCap_status status = bufferConfig(width, height, space, nbuf, allo);
   if (status == ICAP_STATUS_OK) {
+// For now, just to get a pic up, let's rig all the register init
+// for a known fixed size. We'll use QQVGA because that's what the
+// prior 2640/7670 code was doing. 160x120 pixels (4:3 aspect)
+
+// Here's the ratio table values for 4:3
+//  mw,   mh,sx,sy,   ex,   ey, ox, oy,   tx,   ty
+//2560, 1920, 0, 0, 2623, 1951, 32, 16, 2844, 1968
+// And these, if they're helpful:
+//_pll_pre_div2x_factors = [1, 1, 2, 3, 4, 1.5, 6, 2.5, 8]
+//_pll_pclk_root_div_factors = [1,2,4,8]
+
+//self._binning = (width <= max_width // 2) and (height <= max_height // 2)
+//self._scale = not (
+//    (width == max_width and height == max_height)
+//    or (width == max_width // 2 and height == max_height // 2)
+//)
+// binning is true because small, scale is true because not max size
+
+    // Because binning true
+    writeRegister16x8(OV5640_REG_TIMING_TC_REG20, 1);
+    writeRegister16x8(OV5640_REG_TIMING_TC_REG21, 1);
+    writeRegister16x8(0x4514, 0xAA);
+    writeRegister16x8(0x4520, 0x0B);
+    writeRegister16x8(OV5640_REG_TIMING_X_INC, 0x31);
+    writeRegister16x8(OV5640_REG_TIMING_Y_INC, 0x31);
+
+    writeRegister16x16(OV5640_REG_TIMING_HS_HI, 0);
+    writeRegister16x16(OV5640_REG_TIMING_VS_HI, 0);
+    writeRegister16x16(OV5640_REG_TIMING_HW_HI, 2623);
+    writeRegister16x16(OV5640_REG_TIMING_VH_HI, 1951);
+    writeRegister16x16(OV5640_REG_TIMING_DVPHO_HI, 160);
+    writeRegister16x16(OV5640_REG_TIMING_DVPVO_HI, 120);
+
+    writeRegister16x16(OV5640_REG_TIMING_HTS_HI, 2060);
+    writeRegister16x16(OV5640_REG_TIMING_VTS_HI, 1968 / 2);
+    writeRegister16x16(OV5640_REG_TIMING_HOFFSET_HI, 32 / 2);
+    writeRegister16x16(OV5640_REG_TIMING_VOFFSET_HI, 16 / 2);
+
+    uint8_t x = readRegister16x8(OV5640_REG_ISP_CONTROL00);
+    x |= 0x20; // Enable scale
+    writeRegister16x8(OV5640_REG_ISP_CONTROL00, x);
+
+    // Set up PLL (hardcoded for 160x120 case from Python code)
+    // bypass = False, multiplier = 32, sys_div = 1, pre_div = 1,
+    // root_2x = False, pclk_root_div = 1, pclk_manual = True, pclk_div = 4
+    writeRegister16x8(0x3039, 0);
+    writeRegister16x8(0x3034, 0x1A);
+    writeRegister16x8(0x3035, 1 | (1 << 4));
+    writeRegister16x8(0x3036, 32);
+    writeRegister16x8(0x3037, 1);
+    writeRegister16x8(0x3108, (1 << 4) | 0x06);
+    writeRegister16x8(0x3824, 4);
+    writeRegister16x8(0x460C, 0x22);
+    writeRegister16x8(0x3103, 0x13);
+
+    setColorspace(space); // Select RGB/YUV/Grayscale
+
+    delay(1000 / 30); // Settling time
+
+
+
+#if 0
     setColorspace(space); // Select RGB/YUV/Grayscale
     fps = setFPS(fps);    // Frame timing
-    // Array of five window settings, index of each (0-4) aligns with the 5
-    // OV7670_size enumeration values. If enum changes, list must change!
-    static struct {
-      uint8_t vstart;
-      uint8_t hstart;
-      uint8_t edge_offset;
-      uint8_t pclk_delay;
-    } window[] = {
-      // Window settings were tediously determined empirically.
-      // I hope there's a formula for this, if a do-over is needed.
-      {9, 162, 2, 2},  // SIZE_DIV1  640x480 VGA
-      {10, 175, 0, 2}, // SIZE_DIV2  320x240 QVGA
-      {11, 186, 2, 2}, // SIZE_DIV4  160x120 QQVGA
-      {12, 210, 0, 2}, // SIZE_DIV8  80x60   ...
-      {15, 252, 3, 2}, // SIZE_DIV16 40x30
-    };
-#if 0
     frameControl(size, window[size].vstart, window[size].hstart,
                  window[size].edge_offset, window[size].pclk_delay);
-#endif
     if (fps > 0.0) {
       delayMicroseconds((int)(10000000.0 / fps)); // 10 frame settling time
     }
+#endif
+// Note: if grayscale, this will change (1 byte/pixel)
     dma_change(pixbuf[0], _width * _height);
     resume(); // Start DMA cycle
   } else {

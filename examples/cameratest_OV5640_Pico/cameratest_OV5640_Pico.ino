@@ -80,7 +80,7 @@ void setup() {
 
   uint16_t chip_id = cam.readRegister16x16(OV5640_REG_CHIP_ID_HIGH);
   Serial.println(chip_id, HEX); // Should be 0x5640
-  for (;;) delay(10);
+//  for (;;) delay(10);
 }
 
 // MAIN LOOP - RUNS REPEATEDLY UNTIL RESET OR POWER OFF --------------------
