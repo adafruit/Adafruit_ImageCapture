@@ -80,7 +80,6 @@ iCap_status Adafruit_ImageCapture::bufferConfig(uint16_t width, uint16_t height,
   if (!pixbuf_allocable) allo = ICAP_REALLOC_NONE;
   else if (pixbuf[0] == NULL) allo = ICAP_REALLOC_CHANGE;
 
-Serial.printf("%d %d %d %d\n", width, height, allo, new_buffer_size);
   switch (allo) {
   case ICAP_REALLOC_NONE:
     // Don't reallocate, keep existing buffer...test if it fits though...

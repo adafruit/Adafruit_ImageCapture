@@ -39,7 +39,9 @@ OV5640_pins pins = {
 #define CAM_SIZE OV5640_SIZE_DIV1
 #define CAM_MODE ICAP_COLORSPACE_RGB565 // RGB plz
 
-Adafruit_iCap_OV5640 cam(pins, &arch, CAM_I2C);
+//Adafruit_iCap_OV5640 cam(pins, &arch, CAM_I2C);
+// Alloc buffer for me, 1 MHz I2C, no delay
+Adafruit_iCap_OV5640 cam(pins, &arch, CAM_I2C, NULL, 0, OV5640_ADDR, 1000000, 0);
 
 // DISPLAY CONFIG ----------------------------------------------------------
 
@@ -68,11 +70,10 @@ void setup() {
   tft.setSPISpeed(48000000);
   tft.fillScreen(ST77XX_BLACK);
   tft.println("Howdy");
-  tft.setRotation(3);
+  tft.setRotation(2);
   // Once started, the camera continually fills a frame buffer
   // automagically; no need to request a frame.
   iCap_status status = cam.begin(CAM_SIZE, CAM_MODE, 30.0);
-//  iCap_status status = cam.begin();
   if (status != ICAP_STATUS_OK) {
     Serial.println("Camera begin() fail");
     for(;;);

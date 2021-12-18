@@ -17,6 +17,7 @@ Adafruit_iCap_OV5640::~Adafruit_iCap_OV5640() {}
 static const iCap_parallel_config16x8
     OV5640_init[] = {
         // OV5640 camera initialization after reset
+        //{OV5640_REG_SYSTEM_CTROL0, 0x40}, // Power down
         {OV5640_REG_SCCB_SYSTEM_CTRL1, 0x02}, // Enable PLL
         {OV5640_REG_PAD_OUTPUT_ENABLE01, 0xFF}, // Output enable
         {OV5640_REG_PAD_OUTPUT_ENABLE02, 0xFF}, // all clocks & GPIO
@@ -148,19 +149,20 @@ static const iCap_parallel_config16x8
         {0x5589, 0x10},
         {0x558A, 0x00},
         {0x558B, 0xF8},
-        {0x501D, 0x40}, // enable manual offset of contrast
-        {OV5640_REG_SYSTEM_CTROL0, 0x02}, // Mystery debug bit, power on?
-        //{OV5640_REG_5060HZ_CTRL00, 0x04}, // 50 Hz
+        {0x501D, 0x40},                   // enable manual contrast offset
+//        {OV5640_REG_SYSTEM_CTROL0, 0x02}, // Mystery debug bit, power on?
+        {OV5640_REG_SYSTEM_CTROL0, 0x00}, // Software power on
+//        {OV5640_REG_5060HZ_CTRL00, 0x04}, // 50 Hz
         },
     OV5640_rgb[] = {
         {OV5640_REG_FORMAT_MUX_CONTROL, 0x01}, // RGB
-        {OV5640_REG_FORMAT_CONTROL00, 0x61}}, // RGB565 (BGR)
+        {OV5640_REG_FORMAT_CONTROL00, 0x61}},  // RGB565 (BGR)
     OV5640_yuv[] = {
         {OV5640_REG_FORMAT_MUX_CONTROL, 0x00}, // YUV422
-        {OV5640_REG_FORMAT_CONTROL00, 0x30}}, // YUYV
+        {OV5640_REG_FORMAT_CONTROL00, 0x30}},  // YUYV
     OV5640_gray[] = {
         {OV5640_REG_FORMAT_MUX_CONTROL, 0x00}, // YUV422
-        {OV5640_REG_FORMAT_CONTROL00, 0x10}}; // YYYY
+        {OV5640_REG_FORMAT_CONTROL00, 0x10}};  // YYYY
 
 iCap_status Adafruit_iCap_OV5640::begin(void) {
   iCap_status status;
@@ -237,7 +239,7 @@ iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
 //)
 // binning is true because small, scale is true because not max size
 
-    // Because binning true
+    // Because binning true (use 0 for no binning)
     writeRegister16x8(OV5640_REG_TIMING_TC_REG20, 1);
     writeRegister16x8(OV5640_REG_TIMING_TC_REG21, 1);
     writeRegister16x8(0x4514, 0xAA);
@@ -273,6 +275,7 @@ iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
     writeRegister16x8(0x3824, 4);
     writeRegister16x8(0x460C, 0x22);
     writeRegister16x8(0x3103, 0x13);
+    // Getting a 20 MHz PCLK out from 12.5 MHz in
 
     setColorspace(space); // Select RGB/YUV/Grayscale
 
