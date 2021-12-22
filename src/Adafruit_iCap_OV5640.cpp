@@ -217,14 +217,14 @@ iCap_status Adafruit_iCap_OV5640::begin(OV5640_size size, iCap_colorspace space,
 iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
                                          iCap_colorspace space, float fps,
                                          uint8_t nbuf, iCap_realloc allo) {
+// For now, just to get a pic up, let's rig all the register init
+// for a known fixed size. We'll use QQVGA because that's what the
+// prior 2640/7670 code was doing. 160x120 pixels (4:3 aspect)
   uint16_t width = 160;
   uint16_t height = 120;
   suspend();
   iCap_status status = bufferConfig(width, height, space, nbuf, allo);
   if (status == ICAP_STATUS_OK) {
-// For now, just to get a pic up, let's rig all the register init
-// for a known fixed size. We'll use QQVGA because that's what the
-// prior 2640/7670 code was doing. 160x120 pixels (4:3 aspect)
 
 // This is all from the _set_size_and_colorspace() func in CircuitPython
 // Here's the ratio table values for 4:3
@@ -267,14 +267,14 @@ iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
     writeRegister16x16(OV5640_REG_TIMING_HOFFSET_HI, 32 / 2);
     writeRegister16x16(OV5640_REG_TIMING_VOFFSET_HI, 16 / 2);
 
-    uint8_t x = readRegister16x8(OV5640_REG_ISP_CONTROL01);
-    x |= 0x20; // Enable scale
-    writeRegister16x8(OV5640_REG_ISP_CONTROL00, x);
-
-
-
+    //uint8_t x = readRegister16x8(OV5640_REG_ISP_CONTROL01);
+    //x |= 0x20; // Enable scale
+    //writeRegister16x8(OV5640_REG_ISP_CONTROL01, x);
+// Let's try just scale and AWB enable for now:
+    writeRegister16x8(OV5640_REG_ISP_CONTROL01, 0x21);
 
     // Set up PLL (hardcoded for 160x120 case from Python code)
+    //self._set_pll(False, 32, 1, 1, False, 1, True, 4)
     // bypass = False, multiplier = 32, sys_div = 1, pre_div = 1,
     // root_2x = False, pclk_root_div = 1, pclk_manual = True, pclk_div = 4
     writeRegister16x8(0x3039, 0);
@@ -292,10 +292,8 @@ iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
 
     delay(1000 / 30); // Settling time
 
-
-
 #if 0
-// This is old 7670-specific stuff
+// This is old 7670-specific stuff, will update for 5640 later.
     setColorspace(space); // Select RGB/YUV/Grayscale
     fps = setFPS(fps);    // Frame timing
     frameControl(size, window[size].vstart, window[size].hstart,
