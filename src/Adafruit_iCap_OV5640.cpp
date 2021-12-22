@@ -230,9 +230,6 @@ iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
 // Here's the ratio table values for 4:3
 //  mw,   mh,sx,sy,   ex,   ey, ox, oy,   tx,   ty
 //2560, 1920, 0, 0, 2623, 1951, 32, 16, 2844, 1968
-// And these, if they're helpful:
-//_pll_pre_div2x_factors = [1, 1, 2, 3, 4, 1.5, 6, 2.5, 8]
-//_pll_pclk_root_div_factors = [1,2,4,8]
 
 //self._binning = (width <= max_width // 2) and (height <= max_height // 2)
 //self._scale = not (
