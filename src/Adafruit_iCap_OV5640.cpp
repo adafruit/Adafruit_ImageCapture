@@ -157,7 +157,10 @@ static const iCap_parallel_config16x8
         },
     OV5640_rgb[] = {
         {OV5640_REG_FORMAT_MUX_CONTROL, 0x01}, // RGB
-        {OV5640_REG_FORMAT_CONTROL00, 0x61}},  // RGB565 (BGR)
+        {OV5640_REG_FORMAT_CONTROL00, 0x6F}},  // RGB565 (BGR little-endian)
+//Want one of these for CONTROL00 reg:
+//0x61: RRRRRGGG GGGBBBBB {r[4:0], g[5:3]}, {g[2:0], b[4:0]} big-endian
+//0x6F: GGGBBBBB RRRRRGGG {g[2:0], b[4:0]}, {r[4:0], g[5:3]} little-endian
     OV5640_yuv[] = {
         {OV5640_REG_FORMAT_MUX_CONTROL, 0x00}, // YUV422
         {OV5640_REG_FORMAT_CONTROL00, 0x30}},  // YUYV
@@ -313,10 +316,13 @@ void Adafruit_iCap_OV5640::setColorspace(iCap_colorspace space) {
   switch (space) {
     case ICAP_COLORSPACE_RGB565:
       writeList(OV5640_rgb, sizeof OV5640_rgb / sizeof OV5640_rgb[0]);
+      break;
     case ICAP_COLORSPACE_YUV:
       writeList(OV5640_yuv, sizeof OV5640_yuv / sizeof OV5640_yuv[0]);
+      break;
     case ICAP_COLORSPACE_GRAYSCALE:
       writeList(OV5640_gray, sizeof OV5640_gray / sizeof OV5640_gray[0]);
+      break;
   }
 }
 

@@ -127,11 +127,12 @@ void loop() {
   // Pause the camera DMA - hold buffer steady to avoid tearing
   //cam.suspend();
 
-  if(CAM_MODE == ICAP_COLORSPACE_YUV) {
+  if (CAM_MODE == ICAP_COLORSPACE_YUV) {
     cam.Y2RGB565(); // Convert grayscale for TFT preview
   }
 
-  tft.writePixels(cam.getBuffer(), cam.width() * cam.height(), false, true);
+  // Blocking, little-endian source data
+  tft.writePixels(cam.getBuffer(), cam.width() * cam.height(), true, false);
 
   //cam.resume(); // Resume DMA into camera buffer
 }
