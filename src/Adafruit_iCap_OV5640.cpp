@@ -24,6 +24,7 @@ static const iCap_parallel_config16x8
         {OV5640_REG_PAD_CONTROL00, 0xC2}, // 4X drive, FREX enable
         {OV5640_REG_POLARITY_CTRL00, 0x20}, // PCLK +active, VSYNC -active
         {OV5640_REG_JPG_MODE_SELECT, 0x02}, // JPEG mode 2
+{ OV5640_REG_ISP_CONTROL01, 0x83}, // turn color matrix, awb and SDE
         {OV5640_REG_SYSTEM_RESET00, 0x00}, // Enable all blocks
         {OV5640_REG_SYSTEM_RESET02, 0x1C}, // Reset JFIFO, SFIFO, JPG
         {OV5640_REG_CLOCK_ENABLE00, 0xFF}, // Enable various clocks
@@ -152,7 +153,7 @@ static const iCap_parallel_config16x8
         {0x501D, 0x40},                   // enable manual contrast offset
 //        {OV5640_REG_SYSTEM_CTROL0, 0x02}, // Mystery debug bit, power on?
         {OV5640_REG_SYSTEM_CTROL0, 0x00}, // Software power on
-//        {OV5640_REG_5060HZ_CTRL00, 0x04}, // 50 Hz
+        {OV5640_REG_5060HZ_CTRL00, 0x04}, // 50 Hz
         },
     OV5640_rgb[] = {
         {OV5640_REG_FORMAT_MUX_CONTROL, 0x01}, // RGB
@@ -225,6 +226,7 @@ iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
 // for a known fixed size. We'll use QQVGA because that's what the
 // prior 2640/7670 code was doing. 160x120 pixels (4:3 aspect)
 
+// This is all from the _set_size_and_colorspace() func in CircuitPython
 // Here's the ratio table values for 4:3
 //  mw,   mh,sx,sy,   ex,   ey, ox, oy,   tx,   ty
 //2560, 1920, 0, 0, 2623, 1951, 32, 16, 2844, 1968
@@ -247,6 +249,9 @@ iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
     writeRegister16x8(OV5640_REG_TIMING_X_INC, 0x31);
     writeRegister16x8(OV5640_REG_TIMING_Y_INC, 0x31);
 
+    //self._write_addr_reg(_X_ADDR_ST_H, start_x, start_y)
+    //self._write_addr_reg(_X_ADDR_END_H, end_x, end_y)
+    //self._write_addr_reg(_X_OUTPUT_SIZE_H, width, height)
     writeRegister16x16(OV5640_REG_TIMING_HS_HI, 0);
     writeRegister16x16(OV5640_REG_TIMING_VS_HI, 0);
     writeRegister16x16(OV5640_REG_TIMING_HW_HI, 2623);
@@ -254,14 +259,20 @@ iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
     writeRegister16x16(OV5640_REG_TIMING_DVPHO_HI, 160);
     writeRegister16x16(OV5640_REG_TIMING_DVPVO_HI, 120);
 
+    //self._write_addr_reg(_X_TOTAL_SIZE_H, 2060, total_y // 2)
+    //self._write_addr_reg(_X_OFFSET_H, offset_x // 2, offset_y // 2)
+    // Binning is true
     writeRegister16x16(OV5640_REG_TIMING_HTS_HI, 2060);
     writeRegister16x16(OV5640_REG_TIMING_VTS_HI, 1968 / 2);
     writeRegister16x16(OV5640_REG_TIMING_HOFFSET_HI, 32 / 2);
     writeRegister16x16(OV5640_REG_TIMING_VOFFSET_HI, 16 / 2);
 
-    uint8_t x = readRegister16x8(OV5640_REG_ISP_CONTROL00);
+    uint8_t x = readRegister16x8(OV5640_REG_ISP_CONTROL01);
     x |= 0x20; // Enable scale
     writeRegister16x8(OV5640_REG_ISP_CONTROL00, x);
+
+
+
 
     // Set up PLL (hardcoded for 160x120 case from Python code)
     // bypass = False, multiplier = 32, sys_div = 1, pre_div = 1,
@@ -275,7 +286,7 @@ iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
     writeRegister16x8(0x3824, 4);
     writeRegister16x8(0x460C, 0x22);
     writeRegister16x8(0x3103, 0x13);
-    // Getting a 20 MHz PCLK out from 12.5 MHz in
+    // Getting a 20 MHz PCLK out from 12.5 MHz in, good
 
     setColorspace(space); // Select RGB/YUV/Grayscale
 
@@ -284,6 +295,7 @@ iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
 
 
 #if 0
+// This is old 7670-specific stuff
     setColorspace(space); // Select RGB/YUV/Grayscale
     fps = setFPS(fps);    // Frame timing
     frameControl(size, window[size].vstart, window[size].hstart,
