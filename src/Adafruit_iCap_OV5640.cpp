@@ -491,52 +491,198 @@ void Adafruit_iCap_OV7670::night(OV7670_night_mode night) {
 #endif
 }
 
-#if 0
-// Flips camera output on horizontal and/or vertical axes.
-// Note: datasheet refers to horizontal flip as "mirroring," but
-// avoiding that terminology here that it might be mistaken for a
-// split-down-middle-and-reflect funhouse effect, which it isn't.
-// Also note: mirrored image isn't always centered quite the same,
-// looks like frame control settings might need to be tweaked
-// depending on flips. Similar issue to color bars?
-void Adafruit_iCap_OV7670::flip(bool flip_x, bool flip_y) {
-  // Read current MVFP register setting, so we don't corrupt any
-  // reserved bits or the "black sun" bit if it was previously set.
-  uint8_t mvfp = readRegister(OV7670_REG_MVFP);
-  if (flip_x) {
-    mvfp |= OV7670_MVFP_MIRROR; // Horizontal flip
-  } else {
-    mvfp &= ~OV7670_MVFP_MIRROR;
-  }
-  if (flip_y) {
-    mvfp |= OV7670_MVFP_VFLIP; // Vertical flip
-  } else {
-    mvfp &= ~OV7670_MVFP_VFLIP;
-  }
-  // Write modified result back to MVFP register
-  writeRegister(OV7670_REG_MVFP, mvfp);
-}
 
-// Selects one of the camera's test patterns (or disable).
-void Adafruit_iCap_OV7670::test_pattern(OV7670_pattern pattern) {
-  // Read current SCALING_XSC and SCALING_YSC register settings,
-  // so image scaling settings aren't corrupted.
-  uint8_t xsc = readRegister(OV7670_REG_SCALING_XSC);
-  uint8_t ysc = readRegister(OV7670_REG_SCALING_YSC);
-  if (pattern & 1) {
-    xsc |= 0x80;
-  } else {
-    xsc &= ~0x80;
-  }
-  if (pattern & 2) {
-    ysc |= 0x80;
-  } else {
-    ysc &= ~0x80;
-  }
-  // Write modified results back to SCALING_XSC and SCALING_YSC registers
-  writeRegister(OV7670_REG_SCALING_XSC, xsc);
-  writeRegister(OV7670_REG_SCALING_YSC, ysc);
-}
+#if 0
+
+_contrast_settings = [
+    [0x20, 0x00], #  0
+    [0x24, 0x10], # +1
+    [0x28, 0x18], # +2
+    [0x2c, 0x1c], # +3
+    [0x14, 0x14], # -3
+    [0x18, 0x18], # -2
+    [0x1c, 0x1c], # -1
+]
+
+_sensor_saturation_levels = [
+    [0x1D, 0x60, 0x03, 0x0C, 0x78, 0x84, 0x7D, 0x6B, 0x12, 0x01, 0x98],  # 0
+    [0x1D, 0x60, 0x03, 0x0D, 0x84, 0x91, 0x8A, 0x76, 0x14, 0x01, 0x98],  # +1
+    [0x1D, 0x60, 0x03, 0x0E, 0x90, 0x9E, 0x96, 0x80, 0x16, 0x01, 0x98],  # +2
+    [0x1D, 0x60, 0x03, 0x10, 0x9C, 0xAC, 0xA2, 0x8B, 0x17, 0x01, 0x98],  # +3
+    [0x1D, 0x60, 0x03, 0x11, 0xA8, 0xB9, 0xAF, 0x96, 0x19, 0x01, 0x98],  # +4
+    [0x1D, 0x60, 0x03, 0x07, 0x48, 0x4F, 0x4B, 0x40, 0x0B, 0x01, 0x98],  # -4
+    [0x1D, 0x60, 0x03, 0x08, 0x54, 0x5C, 0x58, 0x4B, 0x0D, 0x01, 0x98],  # -3
+    [0x1D, 0x60, 0x03, 0x0A, 0x60, 0x6A, 0x64, 0x56, 0x0E, 0x01, 0x98],  # -2
+    [0x1D, 0x60, 0x03, 0x0B, 0x6C, 0x77, 0x70, 0x60, 0x10, 0x01, 0x98],  # -1
+]
+
+_sensor_ev_levels = [
+    [0x38, 0x30, 0x61, 0x38, 0x30, 0x10], #  0
+    [0x40, 0x38, 0x71, 0x40, 0x38, 0x10], # +1
+    [0x50, 0x48, 0x90, 0x50, 0x48, 0x20], # +2
+    [0x60, 0x58, 0xa0, 0x60, 0x58, 0x20], # +3
+    [0x10, 0x08, 0x10, 0x08, 0x20, 0x10], # -3
+    [0x20, 0x18, 0x41, 0x20, 0x18, 0x10], # -2
+    [0x30, 0x28, 0x61, 0x30, 0x28, 0x10], # -1
+]
+
+OV5640_WHITE_BALANCE_AUTO = 0
+OV5640_WHITE_BALANCE_SUNNY = 1
+OV5640_WHITE_BALANCE_FLUORESCENT = 2
+OV5640_WHITE_BALANCE_CLOUDY = 3
+OV5640_WHITE_BALANCE_INCANDESCENT = 4
+
+_light_registers = [0x3406, 0x3400, 0x3401, 0x3402, 0x3403, 0x3404, 0x3405]
+_light_modes = [
+    [0x00, 0x04, 0x00, 0x04, 0x00, 0x04, 0x00], # auto
+    [0x01, 0x06, 0x1c, 0x04, 0x00, 0x04, 0xf3], # sunny
+    [0x01, 0x05, 0x48, 0x04, 0x00, 0x07, 0xcf], # office / fluorescent
+    [0x01, 0x06, 0x48, 0x04, 0x00, 0x04, 0xd3], # cloudy
+    [0x01, 0x04, 0x10, 0x04, 0x00, 0x08, 0x40], # home / incandescent
+
+]
+
+OV5640_SPECIAL_EFFECT_NONE = 0
+OV5640_SPECIAL_EFFECT_NEGATIVE = 1
+OV5640_SPECIAL_EFFECT_GRAYSCALE = 2
+OV5640_SPECIAL_EFFECT_RED_TINT = 3
+OV5640_SPECIAL_EFFECT_GREEN_TINT = 4
+OV5640_SPECIAL_EFFECT_BLUE_TINT = 5
+OV5640_SPECIAL_EFFECT_SEPIA = 6
+
+_sensor_special_effects = [
+    [0x06, 0x40, 0x10, 0x08],  # Normal
+    [0x46, 0x40, 0x28, 0x08],  # Negative
+    [0x1E, 0x80, 0x80, 0x08],  # Grayscale
+    [0x1E, 0x80, 0xC0, 0x08],  # Red Tint
+    [0x1E, 0x60, 0x60, 0x08],  # Green Tint
+    [0x1E, 0xA0, 0x40, 0x08],  # Blue Tint
+    [0x1E, 0x40, 0xA0, 0x08],  # Sepia
+]
+
+_sensor_regs_gamma0 = [
+    0x5480, 0x01,
+    0x5481, 0x08,
+    0x5482, 0x14,
+    0x5483, 0x28,
+    0x5484, 0x51,
+    0x5485, 0x65,
+    0x5486, 0x71,
+    0x5487, 0x7D,
+    0x5488, 0x87,
+    0x5489, 0x91,
+    0x548A, 0x9A,
+    0x548B, 0xAA,
+    0x548C, 0xB8,
+    0x548D, 0xCD,
+    0x548E, 0xDD,
+    0x548F, 0xEA,
+    0x5490, 0x1D,
+]
+
+sensor_regs_gamma1 = [
+    0x5480, 0x1,
+    0x5481, 0x0,
+    0x5482, 0x1E,
+    0x5483, 0x3B,
+    0x5484, 0x58,
+    0x5485, 0x66,
+    0x5486, 0x71,
+    0x5487, 0x7D,
+    0x5488, 0x83,
+    0x5489, 0x8F,
+    0x548A, 0x98,
+    0x548B, 0xA6,
+    0x548C, 0xB8,
+    0x548D, 0xCA,
+    0x548E, 0xD7,
+    0x548F, 0xE3,
+    0x5490, 0x1D,
+]
+
+sensor_regs_awb0 = [
+    0x5180, 0xFF,
+    0x5181, 0xF2,
+    0x5182, 0x00,
+    0x5183, 0x14,
+    0x5184, 0x25,
+    0x5185, 0x24,
+    0x5186, 0x09,
+    0x5187, 0x09,
+    0x5188, 0x09,
+    0x5189, 0x75,
+    0x518A, 0x54,
+    0x518B, 0xE0,
+    0x518C, 0xB2,
+    0x518D, 0x42,
+    0x518E, 0x3D,
+    0x518F, 0x56,
+    0x5190, 0x46,
+    0x5191, 0xF8,
+    0x5192, 0x04,
+    0x5193, 0x70,
+    0x5194, 0xF0,
+    0x5195, 0xF0,
+    0x5196, 0x03,
+    0x5197, 0x01,
+    0x5198, 0x04,
+    0x5199, 0x12,
+    0x519A, 0x04,
+    0x519B, 0x00,
+    0x519C, 0x06,
+    0x519D, 0x82,
+    0x519E, 0x38,
+]
+
+
+@contrast.setter
+    def contrast(self, value):
+        if not -3 <= value <= 3:
+            raise ValueError(
+                "Invalid contrast value {value}, use a value from -3..3 inclusive"
+            )
+        setting = _contrast_settings[value]
+        self._write_group_3_settings([0x5586, setting[0], 0x5585, setting[1]])
+
+@saturation.setter
+    def saturation(self, value):
+        if not -4 <= value <= 4:
+            raise ValueError(
+                "Invalid saturation {value}, use a value from -4..4 inclusive"
+            )
+        for offset, reg_value in enumerate(_sensor_saturation_levels[value]):
+            self._write_register(0x5381 + offset, reg_value)
+        self._saturation = value
+
+@exposure_value.setter
+    def exposure_value(self, value):
+        if not -3 <= value <= 3:
+            raise ValueError(
+                "Invalid exposure value (EV) {value}, use a value from -4..4 inclusive"
+            )
+        for offset, reg_value in enumerate(_sensor_ev_levels[value]):
+            self._write_register(0x5381 + offset, reg_value)
+
+@white_balance.setter
+    def white_balance(self, value):
+        if not OV5640_WHITE_BALANCE_AUTO <= value <= OV5640_WHITE_BALANCE_INCANDESCENT:
+            raise ValueError(
+                "Invalid exposure value (EV) {value}, "
+                "use one of the OV5640_WHITE_BALANCE_* constants"
+            )
+        self._write_register(0x3212, 0x3)  # start group 3
+        for reg_addr, reg_value in zip(_light_registers, _light_modes[value]):
+            self._write_register(reg_addr, reg_value)
+        self._write_register(0x3212, 0x13)  # end group 3
+        self._write_register(0x3212, 0xA3)  # launch group 3
+
+@effect.setter
+    def effect(self, value):
+        for reg_addr, reg_value in zip(
+            (0x5580, 0x5583, 0x5584, 0x5003), _sensor_special_effects[value]
+        ):
+            self._write_register(reg_addr, reg_value)
+        self._effect = value
 #endif // 0
 
 #endif // end ICAP_FULL_SUPPORT
