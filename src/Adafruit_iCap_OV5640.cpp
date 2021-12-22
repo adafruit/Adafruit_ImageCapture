@@ -24,13 +24,13 @@ static const iCap_parallel_config16x8
         {OV5640_REG_PAD_CONTROL00, 0xC2}, // 4X drive, FREX enable
         {OV5640_REG_POLARITY_CTRL00, 0x20}, // PCLK +active, VSYNC -active
         {OV5640_REG_JPG_MODE_SELECT, 0x02}, // JPEG mode 2
-{ OV5640_REG_ISP_CONTROL01, 0x83}, // turn color matrix, awb and SDE
         {OV5640_REG_SYSTEM_RESET00, 0x00}, // Enable all blocks
         {OV5640_REG_SYSTEM_RESET02, 0x1C}, // Reset JFIFO, SFIFO, JPG
         {OV5640_REG_CLOCK_ENABLE00, 0xFF}, // Enable various clocks
         {OV5640_REG_CLOCK_ENABLE02, 0xC3}, // and more (except JPEG)
         {OV5640_REG_ISP_CONTROL00, 0xA7}, // LENC, GMA, B+W pix cancel, etc
-        {OV5640_REG_ISP_CONTROL01, 0xA3}, // +digital FX, scale, matrix, AWB
+{ OV5640_REG_ISP_CONTROL01, 0x83}, // color matrix, awb and SDE on
+//        {OV5640_REG_ISP_CONTROL01, 0xA3}, // +digital FX, scale, matrix, AWB
         {OV5640_REG_ISP_CONTROL03, 0x08}, // ? debug bit
         {0x370C, 0x02}, // Unknown "debug" registers,
         {0x3634, 0x40}, // but necessary
@@ -289,11 +289,9 @@ iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
     writeRegister16x16(OV5640_REG_TIMING_HOFFSET_HI, 32 / 2);
     writeRegister16x16(OV5640_REG_TIMING_VOFFSET_HI, 16 / 2);
 
-    //uint8_t x = readRegister16x8(OV5640_REG_ISP_CONTROL01);
-    //x |= 0x20; // Enable scale
-    //writeRegister16x8(OV5640_REG_ISP_CONTROL01, x);
-// Let's try just scale and AWB enable for now:
-    writeRegister16x8(OV5640_REG_ISP_CONTROL01, 0x21);
+    uint8_t x = readRegister16x8(OV5640_REG_ISP_CONTROL01);
+    x |= 0x20; // Enable scale
+    writeRegister16x8(OV5640_REG_ISP_CONTROL01, x);
 
     // Set up PLL (hardcoded for 160x120 case from Python code)
     //self._set_pll(False, 32, 1, 1, False, 1, True, 4)
