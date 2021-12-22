@@ -99,6 +99,7 @@ static const iCap_parallel_config16x8
         {0x519C, 0x06},
         {0x519D, 0x82},
         {OV5640_REG_AWB_CONTROL30, 0x38},
+#if 0
         {0x5381, 0x1E}, // Color matrix (saturation)
         {0x5382, 0x5B},
         {0x5383, 0x08},
@@ -110,6 +111,19 @@ static const iCap_parallel_config16x8
         {0x5389, 0x10},
         {0x538A, 0x01},
         {0x538B, 0x98},
+#else
+        {0x5381, 0x1D}, // Saturation 0 from CircuitPython code
+        {0x5382, 0x60},
+        {0x5383, 0x03},
+        {0x5384, 0x0C},
+        {0x5385, 0x78},
+        {0x5386, 0x84},
+        {0x5387, 0x7D},
+        {0x5388, 0x6B},
+        {0x5389, 0x12},
+        {0x538A, 0x01},
+        {0x538B, 0x98},
+#endif
         {0x5300, 0x10}, // CIP control (sharpness)
         {0x5301, 0x10},
         {0x5302, 0x18},
@@ -140,11 +154,19 @@ static const iCap_parallel_config16x8
         {0x548E, 0xD7},
         {0x548F, 0xE3},
         {0x5490, 0x1D},
+{0x3406, 0x00}, // Auto white balance (from CircuitPython code)
+{0x3400, 0x04}, // R/G/B gains from same
+{0x3401, 0x00},
+{0x3402, 0x04},
+{0x3403, 0x00},
+{0x3404, 0x04},
+{0x3405, 0x00},
         // Special Digital Effects (SDE) (UV adjust)
         {0x5580, 0x06}, // enable brightness and contrast
         {0x5583, 0x40}, // special_effect
         {0x5584, 0x10}, // special_effect
-        {0x5586, 0x20}, // contrast
+        {0x5586, 0x20}, // contrast +0
+        {0x5585, 0x00}, // more contrast +0
         {0x5587, 0x00}, // brightness
         {0x5588, 0x00}, // brightness
         {0x5589, 0x10},
@@ -157,7 +179,7 @@ static const iCap_parallel_config16x8
         },
     OV5640_rgb[] = {
         {OV5640_REG_FORMAT_MUX_CONTROL, 0x01}, // RGB
-        {OV5640_REG_FORMAT_CONTROL00, 0x6F}},  // RGB565 (BGR little-endian)
+        {OV5640_REG_FORMAT_CONTROL00, 0x6F}},  // RGB565 (RGB little-endian)
 //Want one of these for CONTROL00 reg:
 //0x61: RRRRRGGG GGGBBBBB {r[4:0], g[5:3]}, {g[2:0], b[4:0]} big-endian
 //0x6F: GGGBBBBB RRRRRGGG {g[2:0], b[4:0]}, {r[4:0], g[5:3]} little-endian
