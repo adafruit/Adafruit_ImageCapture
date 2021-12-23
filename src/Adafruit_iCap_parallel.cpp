@@ -11,9 +11,12 @@ Adafruit_iCap_parallel::Adafruit_iCap_parallel(iCap_parallel_pins *pins_ptr,
                                                TwoWire *twi_ptr,
                                                uint8_t addr, uint32_t speed,
                                                uint32_t delay_us)
-    : i2c_address(addr & 0x7F), i2c_speed(speed), i2c_delay_us(delay_us),
-      wire(twi_ptr), Adafruit_ImageCapture(arch, pbuf, pbufsize) {
+    : i2c(addr & 0x7F, twi_ptr), i2c_speed(speed), i2c_delay_us(delay_us),
+      Adafruit_ImageCapture(arch, pbuf, pbufsize) {
   memcpy(&pins, pins_ptr, sizeof pins); // Save pins struct in object
+#if defined(ARDUINO_ARCH_RP2040)
+  wire = twi_ptr; // Needed for setSDA/setSCL in begin()
+#endif
 }
 
 Adafruit_iCap_parallel::~Adafruit_iCap_parallel() {}
@@ -29,8 +32,8 @@ iCap_status Adafruit_iCap_parallel::begin() {
   wire->setSDA(pins.sda);
   wire->setSCL(pins.scl);
 #endif
-  wire->begin();
-  wire->setClock(i2c_speed);
+  i2c.begin();
+  i2c.setSpeed(i2c_speed);
 
   // Set up parallel capture peripheral & DMA. Camera is initially suspended,
   // calling code resumes cam DMA only after I2C init sequence is sent.
@@ -58,18 +61,13 @@ iCap_status Adafruit_iCap_parallel::begin(uint16_t width, uint16_t height,
 #endif
 
 int Adafruit_iCap_parallel::readRegister(uint8_t reg) {
-  wire->beginTransmission(i2c_address);
-  wire->write(reg);
-  wire->endTransmission();
-  wire->requestFrom(i2c_address, (uint8_t)1);
-  return wire->read();
+  i2c.write_then_read(&reg, 1, &reg, 1);
+  return reg; // Result is stored back in reg var
 }
 
 void Adafruit_iCap_parallel::writeRegister(uint8_t reg, uint8_t value) {
-  wire->beginTransmission(i2c_address);
-  wire->write(reg);
-  wire->write(value);
-  wire->endTransmission();
+  uint8_t buf[] = { reg, value };
+  i2c.write(buf, sizeof buf);
 }
 
 void Adafruit_iCap_parallel::writeList(const iCap_parallel_config *cfg,
@@ -96,39 +94,30 @@ void Adafruit_iCap_parallel::writeList(const iCap_parallel_config16x16 *cfg,
   }
 }
 
+// 16-bit registers/values are issued/recived in big-endian order, hence
+// all the shift/mask operations here (most MCUs being LE these days).
+
 int Adafruit_iCap_parallel::readRegister16x8(uint16_t reg) {
-  wire->beginTransmission(i2c_address);
-  wire->write(reg >> 8);
-  wire->write(reg & 0xFF);
-  wire->endTransmission();
-  wire->requestFrom(i2c_address, (uint8_t)1);
-  return wire->read();
+  uint8_t buf[] = { (uint8_t)(reg >> 8), (uint8_t)(reg & 0xFF) };
+  i2c.write_then_read(buf, sizeof buf, buf, 1);
+  return buf[0];
 }
 
 void Adafruit_iCap_parallel::writeRegister16x8(uint16_t reg, uint8_t value) {
-  wire->beginTransmission(i2c_address);
-  wire->write(reg >> 8);
-  wire->write(reg & 0xFF);
-  wire->write(value);
-  wire->endTransmission();
+  uint8_t buf[] = { (uint8_t)(reg >> 8), (uint8_t)(reg & 0xFF), value };
+  i2c.write(buf, sizeof buf);
 }
 
 int Adafruit_iCap_parallel::readRegister16x16(uint16_t reg) {
-  wire->beginTransmission(i2c_address);
-  wire->write(reg >> 8);
-  wire->write(reg & 0xFF);
-  wire->endTransmission();
-  wire->requestFrom(i2c_address, (uint8_t)2);
-  return (wire->read() << 8) | wire->read();
+  uint8_t buf[] = { (uint8_t)(reg >> 8), (uint8_t)(reg & 0xFF) };
+  i2c.write_then_read(buf, sizeof buf, buf, 2);
+  return (buf[0] << 8) | buf[1];
 }
 
 void Adafruit_iCap_parallel::writeRegister16x16(uint16_t reg, uint16_t value) {
-  wire->beginTransmission(i2c_address);
-  wire->write(reg >> 8);
-  wire->write(reg & 0xFF);
-  wire->write(value >> 8);
-  wire->write(value & 0xFF);
-  wire->endTransmission();
+  uint8_t buf[] = { (uint8_t)(reg >> 8), (uint8_t)(reg & 0xFF),
+                    (uint8_t)(value >> 8), (uint8_t)(value & 0xFF) };
+  i2c.write(buf, sizeof buf);
 }
 
 #endif // end ICAP_FULL_SUPPORT

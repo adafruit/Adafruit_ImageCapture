@@ -4,7 +4,6 @@
 
 #if defined(ICAP_FULL_SUPPORT)
 
-#include <Wire.h>
 #include <Adafruit_I2CDevice.h>
 
 /** Pin identifiers for parallel+I2C cameras. */
@@ -227,11 +226,13 @@ protected:
   */
   void dma_change(uint16_t *dest, uint32_t num_pixels);
 
-  TwoWire *wire;            ///< Associated I2C instance
+  Adafruit_I2CDevice i2c;   ///< Associated BusIO I2C instance
   iCap_parallel_pins pins;  ///< Pin structure (copied in constructor)
   uint32_t i2c_speed;       ///< I2C bus speed
   uint32_t i2c_delay_us;    ///< Delay in microseconds between I2C writes
-  uint8_t i2c_address;      ///< Camera I2C address
+#if defined(ARDUINO_ARCH_RP2040)
+  TwoWire *wire;            ///< Associated Wire I2C instance
+#endif
 };
 
 #endif // end ICAP_FULL_SUPPORT
