@@ -5,6 +5,7 @@
 #if defined(ICAP_FULL_SUPPORT)
 
 #include <Wire.h>
+#include <Adafruit_I2CDevice.h>
 
 /** Pin identifiers for parallel+I2C cameras. */
 typedef struct {
