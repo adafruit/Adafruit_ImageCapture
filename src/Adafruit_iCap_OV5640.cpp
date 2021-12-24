@@ -251,7 +251,7 @@ iCap_status Adafruit_iCap_OV5640::config(uint16_t width, uint16_t height,
   suspend();
 
   // Crop dimensions to image sensor limits. Direct and per-axis;
-  // proportions are not necessarily maintained.
+  // proportions are not necessarily maintained if size is exceeded.
   if (width > 2592) width = 2592;
   else if(width < 1) width = 1;
   if (height > 1944) height = 1944;
@@ -296,6 +296,12 @@ iCap_status Adafruit_iCap_OV5640::config(uint16_t width, uint16_t height,
     writeRegister16x8(OV5640_REG_TIMING_TC_REG20, 0); // No vflip
     writeRegister16x8(OV5640_REG_TIMING_TC_REG21, h_binning);
 
+    // ???
+    writeRegister16x8(0x4514, 0xAA);
+    writeRegister16x8(0x4520, 0x0B);
+    writeRegister16x8(OV5640_REG_TIMING_X_INC, 0x31);
+    writeRegister16x8(OV5640_REG_TIMING_Y_INC, 0x31);
+
     writeRegister16x16(OV5640_REG_TIMING_HS_HI, x_addr_start);
     writeRegister16x16(OV5640_REG_TIMING_VS_HI, y_addr_start);
     writeRegister16x16(OV5640_REG_TIMING_HW_HI, x_addr_end);
@@ -329,9 +335,8 @@ iCap_status Adafruit_iCap_OV5640::config(uint16_t width, uint16_t height,
 //)
 // binning is true because small, scale is true because not max size
 
-    // Because binning true (use 0 for no binning)
     writeRegister16x8(OV5640_REG_TIMING_TC_REG20, 1);
-    writeRegister16x8(OV5640_REG_TIMING_TC_REG21, 1);
+    writeRegister16x8(OV5640_REG_TIMING_TC_REG21, 1); // Because binning
     writeRegister16x8(0x4514, 0xAA);
     writeRegister16x8(0x4520, 0x0B);
     writeRegister16x8(OV5640_REG_TIMING_X_INC, 0x31);
