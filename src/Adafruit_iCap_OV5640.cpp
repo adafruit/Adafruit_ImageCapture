@@ -243,15 +243,10 @@ iCap_status Adafruit_iCap_OV5640::begin(uint16_t width, uint16_t height,
 iCap_status Adafruit_iCap_OV5640::config(uint16_t width, uint16_t height,
                                          iCap_colorspace space, float fps,
                                          uint8_t nbuf, iCap_realloc allo) {
-// For now, just to get a pic up, let's rig all the register init
-// for a known fixed size. We'll use QQVGA because that's what the
-// prior 2640/7670 code was doing. 160x120 pixels (4:3 aspect)
-  width = 160;
-  height = 120;
   suspend();
 
-  // Crop dimensions to image sensor limits. Direct and per-axis;
-  // proportions are not necessarily maintained if size is exceeded.
+  // Crop dimensions to image sensor limits. Proportions are not necessarily
+  // maintained if size on either axis is exceeded.
   if (width > 2592) width = 2592;
   else if(width < 1) width = 1;
   if (height > 1944) height = 1944;
@@ -278,24 +273,28 @@ iCap_status Adafruit_iCap_OV5640::config(uint16_t width, uint16_t height,
       isp_width = (1944 * width + (height / 2)) / height;
     }
 
-    bool h_binning = (isp_width <= 2592/2);
-    bool v_binning = (isp_height <= 1944/2);
+    bool h_binning = (width <= 2592 / 2);
+    bool v_binning = (height <= 1944 / 2);
     bool scaling = true; // This'll need some math
 
-#if 0
+#if 1
 // Trying to set up for other sizes here, not yet working.
 
     // Center the isp size within the full sensor. Perimeter pixels are
     // are dummy cols/rows for black level calibration and interpolation.
-    uint16_t x_addr_start = 2624 - (isp_width + 1) / 2;
-    uint16_t y_addr_start = 1964 - (isp_height + 1) / 2;
+    uint16_t x_addr_start = (2624 - isp_width) / 2;
+    uint16_t y_addr_start = (1964 - isp_height) / 2;
     uint16_t x_addr_end = x_addr_start + isp_width - 1;
     uint16_t y_addr_end = y_addr_start + isp_height - 1;
 // x_offset = y_offset = 0
 
+//    writeRegister16x8(OV5640_REG_SRM_GROUP_ACCESS, 0x03); // Start group 3
+
     writeRegister16x8(OV5640_REG_TIMING_TC_REG20, 0); // No vflip
     writeRegister16x8(OV5640_REG_TIMING_TC_REG21, h_binning);
 
+Serial.printf("%d %d %d %d\n", width, height, isp_width, isp_height);
+Serial.printf("%d %d %d %d\n", x_addr_start, y_addr_start, x_addr_end, y_addr_end);
     // ???
     writeRegister16x8(0x4514, 0xAA);
     writeRegister16x8(0x4520, 0x0B);
@@ -309,15 +308,17 @@ iCap_status Adafruit_iCap_OV5640::config(uint16_t width, uint16_t height,
     writeRegister16x16(OV5640_REG_TIMING_DVPHO_HI, width);
     writeRegister16x16(OV5640_REG_TIMING_DVPVO_HI, height);
 
-    writeRegister16x16(OV5640_REG_TIMING_HTS_HI, isp_width);
-    writeRegister16x16(OV5640_REG_TIMING_VTS_HI, isp_height);
     writeRegister16x16(OV5640_REG_TIMING_HOFFSET_HI, 0);
     writeRegister16x16(OV5640_REG_TIMING_VOFFSET_HI, 0);
+    writeRegister16x16(OV5640_REG_TIMING_HTS_HI, isp_width);
+    writeRegister16x16(OV5640_REG_TIMING_VTS_HI, isp_height);
 
     uint8_t x = readRegister16x8(OV5640_REG_ISP_CONTROL01);
     if (scaling) x |= 0x20;
     else x &= ~0x20;
     writeRegister16x8(OV5640_REG_ISP_CONTROL01, x);
+
+//    writeRegister16x8(OV5640_REG_SRM_GROUP_ACCESS, 0xA3); // Launch group 3
 
 #else
 
