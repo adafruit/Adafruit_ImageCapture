@@ -36,7 +36,6 @@ OV5640_pins pins = {
 };
 
 #define CAM_I2C Wire
-#define CAM_SIZE OV5640_SIZE_DIV1
 #define CAM_MODE ICAP_COLORSPACE_RGB565 // RGB plz
 
 //Adafruit_iCap_OV5640 cam(pins, &arch, CAM_I2C);
@@ -73,7 +72,7 @@ void setup() {
   tft.setRotation(2);
   // Once started, the camera continually fills a frame buffer
   // automagically; no need to request a frame.
-  iCap_status status = cam.begin(CAM_SIZE, CAM_MODE, 30.0);
+  iCap_status status = cam.begin(160, 120, CAM_MODE, 30.0);
   if (status != ICAP_STATUS_OK) {
     Serial.println("Camera begin() fail");
     for(;;);

@@ -227,11 +227,12 @@ iCap_status Adafruit_iCap_OV5640::begin(void) {
   return ICAP_STATUS_OK;
 }
 
-iCap_status Adafruit_iCap_OV5640::begin(OV5640_size size, iCap_colorspace space,
-                                        float fps, uint8_t nbuf) {
+iCap_status Adafruit_iCap_OV5640::begin(uint16_t width, uint16_t height,
+                                        iCap_colorspace space, float fps,
+                                        uint8_t nbuf) {
   iCap_status status = begin();
   if (status == ICAP_STATUS_OK) {
-    status = config(size, space, fps, nbuf);
+    status = config(width, height, space, fps, nbuf);
   }
 
   return status;
@@ -239,22 +240,87 @@ iCap_status Adafruit_iCap_OV5640::begin(OV5640_size size, iCap_colorspace space,
 
 // CAMERA CONFIG FUNCTIONS AND MISCELLANY ----------------------------------
 
-iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
+iCap_status Adafruit_iCap_OV5640::config(uint16_t width, uint16_t height,
                                          iCap_colorspace space, float fps,
                                          uint8_t nbuf, iCap_realloc allo) {
 // For now, just to get a pic up, let's rig all the register init
 // for a known fixed size. We'll use QQVGA because that's what the
 // prior 2640/7670 code was doing. 160x120 pixels (4:3 aspect)
-  uint16_t width = 160;
-  uint16_t height = 120;
+  width = 160;
+  height = 120;
   suspend();
+
+  // Crop dimensions to image sensor limits. Direct and per-axis;
+  // proportions are not necessarily maintained.
+  if (width > 2592) width = 2592;
+  else if(width < 1) width = 1;
+  if (height > 1944) height = 1944;
+  else if(height < 1) height = 1;
+
   iCap_status status = bufferConfig(width, height, space, nbuf, allo);
   if (status == ICAP_STATUS_OK) {
+// At this point, determine pre-scaling size that's proportional
+// to width/height, using as much of the sensor as possible.
+// 2592/1944 = 1.333 = 4:3 (factor of 648)
+// So -- if requested size is wider than 4:3, use 2592 width and
+// crop the height. If narrower, use 1944 height and crop the width.
+
+    uint16_t isp_width, isp_height;
+    if ((width * 3) >= (height * 4)) {
+      // Requested size is wider than 4:3 aspect ratio (or equal).
+      // Use max sensor width, crop sensor height.
+      isp_width = 2592;
+      isp_height = (2592 * height + (width / 2)) / width;
+    } else {
+      // Requested size is narrower than 4:3 aspect ratio.
+      // Use max sensor height, crop sensor width.
+      isp_height = 1944;
+      isp_width = (1944 * width + (height / 2)) / height;
+    }
+
+    bool h_binning = (isp_width <= 2592/2);
+    bool v_binning = (isp_height <= 1944/2);
+    bool scaling = true; // This'll need some math
+
+#if 0
+// Trying to set up for other sizes here, not yet working.
+
+    // Center the isp size within the full sensor. Perimeter pixels are
+    // are dummy cols/rows for black level calibration and interpolation.
+    uint16_t x_addr_start = 2624 - (isp_width + 1) / 2;
+    uint16_t y_addr_start = 1964 - (isp_height + 1) / 2;
+    uint16_t x_addr_end = x_addr_start + isp_width - 1;
+    uint16_t y_addr_end = y_addr_start + isp_height - 1;
+// x_offset = y_offset = 0
+
+    writeRegister16x8(OV5640_REG_TIMING_TC_REG20, 0); // No vflip
+    writeRegister16x8(OV5640_REG_TIMING_TC_REG21, h_binning);
+
+    writeRegister16x16(OV5640_REG_TIMING_HS_HI, x_addr_start);
+    writeRegister16x16(OV5640_REG_TIMING_VS_HI, y_addr_start);
+    writeRegister16x16(OV5640_REG_TIMING_HW_HI, x_addr_end);
+    writeRegister16x16(OV5640_REG_TIMING_VH_HI, y_addr_end);
+    writeRegister16x16(OV5640_REG_TIMING_DVPHO_HI, width);
+    writeRegister16x16(OV5640_REG_TIMING_DVPVO_HI, height);
+
+    writeRegister16x16(OV5640_REG_TIMING_HTS_HI, isp_width);
+    writeRegister16x16(OV5640_REG_TIMING_VTS_HI, isp_height);
+    writeRegister16x16(OV5640_REG_TIMING_HOFFSET_HI, 0);
+    writeRegister16x16(OV5640_REG_TIMING_VOFFSET_HI, 0);
+
+    uint8_t x = readRegister16x8(OV5640_REG_ISP_CONTROL01);
+    if (scaling) x |= 0x20;
+    else x &= ~0x20;
+    writeRegister16x8(OV5640_REG_ISP_CONTROL01, x);
+
+#else
 
 // This is all from the _set_size_and_colorspace() func in CircuitPython
 // Here's the ratio table values for 4:3
 //  mw,   mh,sx,sy,   ex,   ey, ox, oy,   tx,   ty
 //2560, 1920, 0, 0, 2623, 1951, 32, 16, 2844, 1968
+
+// Binning provides 2x2 (or 1x2, 2x1) averaging.
 
 //self._binning = (width <= max_width // 2) and (height <= max_height // 2)
 //self._scale = not (
@@ -292,6 +358,7 @@ iCap_status Adafruit_iCap_OV5640::config(OV5640_size size,
     uint8_t x = readRegister16x8(OV5640_REG_ISP_CONTROL01);
     x |= 0x20; // Enable scale
     writeRegister16x8(OV5640_REG_ISP_CONTROL01, x);
+#endif
 
     // Set up PLL (hardcoded for 160x120 case from Python code)
     //self._set_pll(False, 32, 1, 1, False, 1, True, 4)
@@ -432,13 +499,13 @@ float Adafruit_iCap_OV5640::setFPS(float fps) {
 #endif
 }
 
+#if 0
 // Sets up PCLK dividers and sets H/V start/stop window. Rather than
 // rolling this into OV7670_set_size(), it's kept separate so test code
 // can experiment with different settings to find ideal defaults.
 void Adafruit_iCap_OV5640::frameControl(OV5640_size size, uint8_t vstart,
                                         uint16_t hstart, uint8_t edge_offset,
                                         uint8_t pclk_delay) {
-#if 0
   uint8_t value;
 
   // Enable downsampling if sub-VGA, and zoom if 1:16 scale
@@ -508,11 +575,8 @@ void Adafruit_iCap_OV7670::night(OV7670_night_mode night) {
   com11 |= night_bits[night]; // Set night bits for desired mode
   // Write modified result back to COM11 register
   writeRegister(OV7670_REG_COM11, com11);
-#endif
 }
 
-
-#if 0
 
 _contrast_settings = [
     [0x20, 0x00], #  0

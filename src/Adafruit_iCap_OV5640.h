@@ -20,11 +20,6 @@ typedef iCap_parallel_pins OV5640_pins;
 
 #define OV5640_ADDR 0x3C //< Default I2C address if unspecified
 
-/** Supported sizes THIS IS FAKE JUST TO GET THINGS TO COMPILE */
-typedef enum {
-  OV5640_SIZE_DIV1 = 0,
-} OV5640_size;
-
 /*!
     @brief  Class encapsulating OmniVision OV5640 functionality.
 */
@@ -70,68 +65,66 @@ public:
              Adafruit_iCap_OV5640 instance, start capturing data in
              background. Really just a one-step wrapper around begin(void)
              and config(...).
-    @param   size   Frame size as a power-of-two reduction of VGA
-                    resolution. Available sizes are OV7670_SIZE_DIV1
-                    (640x480), OV7670_SIZE_DIV2 (320x240), OV7670_SIZE_DIV4
-                    (160x120), OV7670_SIZE_DIV8 and OV7670_SIZE_DIV16.
-                    This argument is required.
-    @param   space  ICAP_COLORSPACE_RGB565 (default), ICAP_COLORSPACE_YUV
-                    or ICAP_COLORSPACE_GRAYSCALE.
-    @param   fps    Desired capture framerate, in frames per second, as a
-                    float up to 30.0 (default). Actual device frame rate may
-                    differ from this, depending on a host's available PWM
-                    timing. Generally, the actual device fps will be equal
-                    or nearest-available below the requested rate, only in
-                    rare cases of extremely low requested frame rates will
-                    a higher value be used. Since begin() only returns a
-                    status code, if you need to know the actual framerate
-                    you can call OV7670_set_fps(NULL, fps) at any time
-                    before or after begin() and that will return the actual
-                    resulting frame rate as a float.
-    @param   nbuf   Number of full-image buffers, 1-3. For now, always use
-                    1, multi-buffering isn't handled yet.
+    @param   width   Frame width in pixels, limited to available RAM and the
+                     image sensor maximum. This argument is required.
+    @param   height  Frame width in pixels, limited to available RAM and the
+                     image sensor maximum. This argument is required.
+    @param   space   ICAP_COLORSPACE_RGB565 (default), ICAP_COLORSPACE_YUV
+                     or ICAP_COLORSPACE_GRAYSCALE.
+    @param   fps     Desired capture framerate, in frames per second, as a
+                     float up to 30.0 (default). Actual device frame rate may
+                     differ from this, depending on a host's available PWM
+                     timing. Generally, the actual device fps will be equal
+                     or nearest-available below the requested rate, only in
+                     rare cases of extremely low requested frame rates will
+                     a higher value be used. Since begin() only returns a
+                     status code, if you need to know the actual framerate
+                     you can call OV7670_set_fps(NULL, fps) at any time
+                     before or after begin() and that will return the actual
+                     resulting frame rate as a float.
+    @param   nbuf    Number of full-image buffers, 1-3. For now, always use
+                     1, multi-buffering isn't handled yet.
     @return  Status code. ICAP_STATUS_OK on successful init.
   */
-  iCap_status begin(OV5640_size size,
+  iCap_status begin(uint16_t width, uint16_t height,
                     iCap_colorspace space = ICAP_COLORSPACE_RGB565,
                     float fps = 30.0, uint8_t nbuf = 1);
 
   /*!
     @brief   Change frame configuration on an already-running camera.
-    @param   size   Frame size as a power-of-two reduction of VGA
-                    resolution. Available sizes are OV7670_SIZE_DIV1
-                    (640x480), OV7670_SIZE_DIV2 (320x240), OV7670_SIZE_DIV4
-                    (160x120), OV7670_SIZE_DIV8 and OV7670_SIZE_DIV16.
-                    This argument is required.
-    @param   space  ICAP_COLORSPACE_RGB565 (default), ICAP_COLORSPACE_YUV
-                    or ICAP_COLORSPACE_GRAYSCALE.
-    @param   fps    Desired capture framerate, in frames per second, as a
-                    float up to 30.0 (default). Actual device frame rate may
-                    differ from this, depending on a host's available PWM
-                    timing. Generally, the actual device fps will be equal
-                    or nearest-available below the requested rate, only in
-                    rare cases of extremely low requested frame rates will
-                    a higher value be used. Since begin() only returns a
-                    status code, if you need to know the actual framerate
-                    you can call OV7670_set_fps(NULL, fps) at any time
-                    before or after begin() and that will return the actual
-                    resulting frame rate as a float.
-    @param   nbuf   Number of full-image buffers, 1-3. For now, always use
-                    1, multi-buffering isn't handled yet.
-    @param   allo   (Re-)allocation behavior. This value is IGNORED if a
-                    static pixel buffer was passed to the constructor; it
-                    only applies to dynamic allocation. ICAP_REALLOC_NONE
-                    keeps the existing buffer (if new dimensions still fit),
-                    ICAP_REALLOC_CHANGE will reallocate if the new dimensions
-                    are smaller or larger than before. ICAP_REALLOC_LARGER
-                    reallocates only if the new image specs won't fit in the
-                    existing buffer (but ignoring reductions, some RAM will
-                    go unused but avoids fragmentation).
+    @param   width   Frame width in pixels, limited to available RAM and the
+                     image sensor maximum. This argument is required.
+    @param   height  Frame width in pixels, limited to available RAM and the
+                     image sensor maximum. This argument is required.
+    @param   space   ICAP_COLORSPACE_RGB565 (default), ICAP_COLORSPACE_YUV
+                     or ICAP_COLORSPACE_GRAYSCALE.
+    @param   fps     Desired capture framerate, in frames per second, as a
+                     float up to 30.0 (default). Actual device frame rate may
+                     differ from this, depending on a host's available PWM
+                     timing. Generally, the actual device fps will be equal
+                     or nearest-available below the requested rate, only in
+                     rare cases of extremely low requested frame rates will
+                     a higher value be used. Since begin() only returns a
+                     status code, if you need to know the actual framerate
+                     you can call OV7670_set_fps(NULL, fps) at any time
+                     before or after begin() and that will return the actual
+                     resulting frame rate as a float.
+    @param   nbuf    Number of full-image buffers, 1-3. For now, always use
+                     1, multi-buffering isn't handled yet.
+    @param   allo    (Re-)allocation behavior. This value is IGNORED if a
+                     static pixel buffer was passed to the constructor; it
+                     only applies to dynamic allocation. ICAP_REALLOC_NONE
+                     keeps the existing buffer (if new dimensions still fit),
+                     ICAP_REALLOC_CHANGE will reallocate if the new dimensions
+                     are smaller or larger than before. ICAP_REALLOC_LARGER
+                     reallocates only if the new image specs won't fit in the
+                     existing buffer (but ignoring reductions, some RAM will
+                     go unused but avoids fragmentation).
     @return  Status code. ICAP_STATUS_OK on successful update, may return
              ICAP_STATUS_ERR_MALLOC if using dynamic allocation and the
              buffer resize fails.
   */
-  iCap_status config(OV5640_size size,
+  iCap_status config(uint16_t width, uint16_t height,
                      iCap_colorspace space = ICAP_COLORSPACE_RGB565,
                      float fps = 30.0, uint8_t nbuf = 1, 
                      iCap_realloc allo = ICAP_REALLOC_CHANGE);
@@ -159,6 +152,7 @@ public:
   */
   float setFPS(float fps = 30.0);
 
+#if 0 // This is all very 7640-specific right now
   /*!
     @brief  Lower-level resolution register fiddling function, exposed so
             dev code can test variations for setSize() windowing defaults.
@@ -171,7 +165,6 @@ public:
   void frameControl(OV5640_size size, uint8_t vstart, uint16_t hstart,
                     uint8_t edge_offset, uint8_t pclk_delay);
 
-#if 0 // This is all very 7640-specific right now
   /*!
     @brief  Select one of the camera's night modes. Images are less
             grainy in low light, tradeoff being a reduced frame rate.
