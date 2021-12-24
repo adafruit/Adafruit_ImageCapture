@@ -278,12 +278,14 @@ iCap_status Adafruit_iCap_OV5640::config(uint16_t width, uint16_t height,
     bool scaling = true; // This'll need some math
 
 #if 1
-// Trying to set up for other sizes here, not yet working.
+    // Other sizes starting to work, but acting a little weird still.
+    // e.g. try 200x100 vs 201x100 -- the image center is different.
+    // Also, sometimes an off-color column at the left or right edge.
 
     // Center the isp size within the full sensor. Perimeter pixels are
     // are dummy cols/rows for black level calibration and interpolation.
-    uint16_t x_addr_start = (2624 - isp_width) / 2;
-    uint16_t y_addr_start = (1964 - isp_height) / 2;
+    uint16_t x_addr_start = (2624 - isp_width + 1) / 2;
+    uint16_t y_addr_start = (1964 - isp_height + 1) / 2;
     uint16_t x_addr_end = x_addr_start + isp_width - 1;
     uint16_t y_addr_end = y_addr_start + isp_height - 1;
 // x_offset = y_offset = 0
@@ -298,8 +300,10 @@ Serial.printf("%d %d %d %d\n", x_addr_start, y_addr_start, x_addr_end, y_addr_en
     // ???
     writeRegister16x8(0x4514, 0xAA);
     writeRegister16x8(0x4520, 0x0B);
-    writeRegister16x8(OV5640_REG_TIMING_X_INC, 0x31);
-    writeRegister16x8(OV5640_REG_TIMING_Y_INC, 0x31);
+//    writeRegister16x8(OV5640_REG_TIMING_X_INC, 0x31);
+//    writeRegister16x8(OV5640_REG_TIMING_Y_INC, 0x31);
+    writeRegister16x8(OV5640_REG_TIMING_X_INC, 0x22);
+    writeRegister16x8(OV5640_REG_TIMING_Y_INC, 0x22);
 
     writeRegister16x16(OV5640_REG_TIMING_HS_HI, x_addr_start);
     writeRegister16x16(OV5640_REG_TIMING_VS_HI, y_addr_start);

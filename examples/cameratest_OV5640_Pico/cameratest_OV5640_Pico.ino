@@ -100,13 +100,21 @@ void loop() {
   // This was for empirically testing window settings in src/arch/ov7670.c.
   // Your code doesn't need this. Just keeping around for future reference.
   if(Serial.available()) {
+#if 0
     uint32_t vstart = Serial.parseInt();
     uint32_t hstart = Serial.parseInt();
     uint32_t edge_offset = Serial.parseInt();
     uint32_t pclk_delay = Serial.parseInt();
     while(Serial.read() >= 0); // Delete line ending or other cruft
-//    cam.frameControl(CAM_SIZE, vstart, hstart,
-//                     edge_offset, pclk_delay);
+    cam.frameControl(CAM_SIZE, vstart, hstart,
+                     edge_offset, pclk_delay);
+#else
+    uint16_t width = Serial.parseInt();
+    uint16_t height = Serial.parseInt();
+    while(Serial.read() >= 0); // Delete line ending or other cruft
+    tft.fillScreen(ST77XX_BLACK);
+    cam.config(width, height, CAM_MODE, 30.0, 1, ICAP_REALLOC_LARGER);
+#endif
   }
 
   if (++frame >= KEYFRAME) { // Time to sync up a fresh address window?
