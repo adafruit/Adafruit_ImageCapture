@@ -35,14 +35,15 @@
 #include <string.h> // memcpy()
 
 Adafruit_ImageCapture::Adafruit_ImageCapture(iCap_arch *arch, uint16_t *pbuf,
-                                             uint32_t pbufsize) : arch(arch) {
-  if(pbuf && pbufsize) {      // Pixel buffer and size passed in:
+                                             uint32_t pbufsize)
+    : arch(arch) {
+  if (pbuf && pbufsize) {     // Pixel buffer and size passed in:
     pixbuf_size = pbufsize;   //   Static buffer, lib can divvy up as needed
     pixbuf_allocable = false; //   but it cannot be changed or reallocated.
     pixbuf[0] = pbuf;
-  } else {                    // No pixel buffer passed in:
-    pixbuf_allocable = true;  //   Library will realloc as needed,
-    pixbuf_size = 0;          //   size is computed when alloc'd
+  } else {                   // No pixel buffer passed in:
+    pixbuf_allocable = true; //   Library will realloc as needed,
+    pixbuf_size = 0;         //   size is computed when alloc'd
     pixbuf[0] = NULL;
   }
   pixbuf[1] = pixbuf[2] = NULL;
@@ -62,17 +63,21 @@ iCap_status Adafruit_ImageCapture::bufferConfig(uint16_t width, uint16_t height,
   // Currently all (well, both) supported colorspaces are 16bpp...if this
   // changes in the future, the new_buffer_size calc below will need update.
   colorspace = space;
-  if (nbuf < 1) nbuf = 1;      // Constrain number of buffers to 1-3
-  else if (nbuf > 3) nbuf = 3;
+  if (nbuf < 1)
+    nbuf = 1; // Constrain number of buffers to 1-3
+  else if (nbuf > 3)
+    nbuf = 3;
   uint32_t new_buffer_size = width * height * nbuf * sizeof(uint16_t);
   bool ra = false; // Gets set true only if a reallocation is needed
 
   // If static buffer was passed to constructor, reallocation not possible.
   // Otherwise, if current buffer is NULL, allocation is mandatory.
-  if (!pixbuf_allocable) allo = ICAP_REALLOC_NONE;
-  else if (pixbuf[0] == NULL) allo = ICAP_REALLOC_CHANGE;
+  if (!pixbuf_allocable)
+    allo = ICAP_REALLOC_NONE;
+  else if (pixbuf[0] == NULL)
+    allo = ICAP_REALLOC_CHANGE;
 
-Serial.printf("%d %d %d %d\n", width, height, allo, new_buffer_size);
+  Serial.printf("%d %d %d %d\n", width, height, allo, new_buffer_size);
   switch (allo) {
   case ICAP_REALLOC_NONE:
     // Don't reallocate, keep existing buffer...test if it fits though...
@@ -250,7 +255,7 @@ void Adafruit_ImageCapture::image_mosaic(uint8_t tile_width,
     uint32_t yy1, yy2;
     for (y1 = tile_y = 0; tile_y < tiles_down; tile_y++) { // Each tile row...
       y2 = y1 + tile_height - 1; // Last pixel row in current tile row
-      if (y2 >= _height) {        // Clip to bottom of image
+      if (y2 >= _height) {       // Clip to bottom of image
         y2 = _height - 1;
       }
       // Recalc this each tile row because tile x loop may alter it:

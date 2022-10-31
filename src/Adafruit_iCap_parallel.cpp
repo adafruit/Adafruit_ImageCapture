@@ -5,11 +5,10 @@
 #include <Arduino.h>
 
 Adafruit_iCap_parallel::Adafruit_iCap_parallel(iCap_parallel_pins *pins_ptr,
-                                               iCap_arch *arch,
-                                               uint16_t *pbuf,
+                                               iCap_arch *arch, uint16_t *pbuf,
                                                uint32_t pbufsize,
-                                               TwoWire *twi_ptr,
-                                               uint8_t addr, uint32_t speed,
+                                               TwoWire *twi_ptr, uint8_t addr,
+                                               uint32_t speed,
                                                uint32_t delay_us)
     : i2c_address(addr & 0x7F), i2c_speed(speed), i2c_delay_us(delay_us),
       wire(twi_ptr), Adafruit_ImageCapture(arch, pbuf, pbufsize) {

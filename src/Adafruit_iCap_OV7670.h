@@ -150,7 +150,7 @@ public:
   */
   iCap_status config(OV7670_size size,
                      iCap_colorspace space = ICAP_COLOR_RGB565,
-                     float fps = 30.0, uint8_t nbuf = 1, 
+                     float fps = 30.0, uint8_t nbuf = 1,
                      iCap_realloc allo = ICAP_REALLOC_CHANGE);
 
   /*!

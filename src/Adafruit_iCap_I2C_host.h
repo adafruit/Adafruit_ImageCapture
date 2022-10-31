@@ -15,9 +15,9 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <Wire.h>
 #include "Adafruit_iCap_I2C.h"
+#include <Wire.h>
+#include <stdint.h>
 #if !defined(BUFFER_LENGTH)
 #define BUFFER_LENGTH 256
 #endif
@@ -93,4 +93,3 @@ protected:
   uint16_t _height = 0;          //< Current settings height in pixels
   iCap_colorspace colorspace;    //< Colorspace passed to begin()
 };
-
