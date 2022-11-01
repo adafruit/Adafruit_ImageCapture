@@ -60,13 +60,12 @@ public:
                       delay).
   */
   Adafruit_iCap_parallel(iCap_parallel_pins *pins_ptr, iCap_arch *arch,
-                         uint16_t *pbuf, uint32_t pbufsize,
-                         TwoWire *twi_ptr, uint8_t addr, uint32_t speed,
-                         uint32_t delay_us);
+                         uint16_t *pbuf, uint32_t pbufsize, TwoWire *twi_ptr,
+                         uint8_t addr, uint32_t speed, uint32_t delay_us);
   ~Adafruit_iCap_parallel(); // Destructor
 
-// Might only want the basic begin() here, and do the fancy case
-// in the subclass.
+  // Might only want the basic begin() here, and do the fancy case
+  // in the subclass.
   /*!
     @brief   Initialize peripherals behind an Adafruit_iCap_parallel
              instance. Does not actually start capture. Not invoked directly
@@ -137,7 +136,6 @@ public:
   void resume(void);
 
 protected:
-
   /*!
     @brief   Starter function for the XCLK output signal.
     @param   freq  Desired XCLK frequency in Hz. Typically the ICAP_XCLK_HZ
@@ -160,11 +158,11 @@ protected:
   */
   void dma_change(uint16_t *dest, uint32_t num_pixels);
 
-  TwoWire *wire;            ///< Associated I2C instance
-  iCap_parallel_pins pins;  ///< Pin structure (copied in constructor)
-  uint32_t i2c_speed;       ///< I2C bus speed
-  uint32_t i2c_delay_us;    ///< Delay in microseconds between I2C writes
-  uint8_t i2c_address;      ///< Camera I2C address
+  TwoWire *wire;           ///< Associated I2C instance
+  iCap_parallel_pins pins; ///< Pin structure (copied in constructor)
+  uint32_t i2c_speed;      ///< I2C bus speed
+  uint32_t i2c_delay_us;   ///< Delay in microseconds between I2C writes
+  uint8_t i2c_address;     ///< Camera I2C address
 };
 
 #endif // end ICAP_FULL_SUPPORT

@@ -200,13 +200,13 @@ iCap_status Adafruit_iCap_OV7670::config(OV7670_size size,
       uint8_t edge_offset;
       uint8_t pclk_delay;
     } window[] = {
-      // Window settings were tediously determined empirically.
-      // I hope there's a formula for this, if a do-over is needed.
-      {9, 162, 2, 2},  // SIZE_DIV1  640x480 VGA
-      {10, 175, 0, 2}, // SIZE_DIV2  320x240 QVGA
-      {11, 186, 2, 2}, // SIZE_DIV4  160x120 QQVGA
-      {12, 210, 0, 2}, // SIZE_DIV8  80x60   ...
-      {15, 252, 3, 2}, // SIZE_DIV16 40x30
+        // Window settings were tediously determined empirically.
+        // I hope there's a formula for this, if a do-over is needed.
+        {9, 162, 2, 2},  // SIZE_DIV1  640x480 VGA
+        {10, 175, 0, 2}, // SIZE_DIV2  320x240 QVGA
+        {11, 186, 2, 2}, // SIZE_DIV4  160x120 QQVGA
+        {12, 210, 0, 2}, // SIZE_DIV8  80x60   ...
+        {15, 252, 3, 2}, // SIZE_DIV16 40x30
     };
     frameControl(size, window[size].vstart, window[size].hstart,
                  window[size].edge_offset, window[size].pclk_delay);

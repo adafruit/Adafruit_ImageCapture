@@ -17,12 +17,10 @@
 #include <Arduino.h>
 
 Adafruit_iCap_peripheral::Adafruit_iCap_peripheral(uint8_t addr, TwoWire *w,
-                                                   uint32_t s) :
-                          i2cAddress(addr), wire(w), i2cSpeed(s) {
-}
+                                                   uint32_t s)
+    : i2cAddress(addr), wire(w), i2cSpeed(s) {}
 
-Adafruit_iCap_peripheral::~Adafruit_iCap_peripheral() {
-}
+Adafruit_iCap_peripheral::~Adafruit_iCap_peripheral() {}
 
 void Adafruit_iCap_peripheral::begin(void) {
   wire->begin();
@@ -32,17 +30,16 @@ void Adafruit_iCap_peripheral::begin(void) {
   // i2cMaxLen was previously initialized to a small value known valid for
   // AVR etc., but might get upgraded on successful negotiation. Peripheral
   // performs similar operation, so both have same value at end.
-  i2cBuf[0] = ICAP_CMD_BUFSIZ;              // Plz tell your I2C limit,
-  i2cBuf[1] =  sizeof i2cBuf        & 0xFF; // here's mine (32 bytes)
-  i2cBuf[2] = (sizeof i2cBuf >>  8) & 0xFF;
+  i2cBuf[0] = ICAP_CMD_BUFSIZ;      // Plz tell your I2C limit,
+  i2cBuf[1] = sizeof i2cBuf & 0xFF; // here's mine (32 bytes)
+  i2cBuf[2] = (sizeof i2cBuf >> 8) & 0xFF;
   i2cBuf[3] = (sizeof i2cBuf >> 16) & 0xFF;
   i2cBuf[4] = (sizeof i2cBuf >> 24) & 0xFF;
   i2cWrite(5);
   if (i2cRead(4) == 4) { // 32-bit request/response
-    uint32_t response = (uint32_t)i2cBuf[0]        |
-                       ((uint32_t)i2cBuf[1] <<  8) |
-                       ((uint32_t)i2cBuf[2] << 16) |
-                       ((uint32_t)i2cBuf[3] << 24);
+    uint32_t response = (uint32_t)i2cBuf[0] | ((uint32_t)i2cBuf[1] << 8) |
+                        ((uint32_t)i2cBuf[2] << 16) |
+                        ((uint32_t)i2cBuf[3] << 24);
     i2cMaxLen = min(sizeof i2cBuf, response); // Use smaller of both
   }
 
@@ -59,34 +56,34 @@ void Adafruit_iCap_peripheral::begin(uint8_t size, uint8_t space, float fps,
 
 int Adafruit_iCap_peripheral::config(uint8_t size, uint8_t space, float fps,
                                      uint32_t timeout_ms) {
-Serial.println("A");
+  Serial.println("A");
   i2cBuf[0] = ICAP_CMD_CONFIG;
   i2cBuf[1] = size;
   i2cBuf[2] = space;
   i2cBuf[3] = (int)fps;
-Serial.println("B");
+  Serial.println("B");
   int n = i2cWrite(4);
-Serial.println("C");
+  Serial.println("C");
   if (n != 4) {
     Serial.println("I2C write error");
   }
-Serial.println("D");
+  Serial.println("D");
 
   // Poll until camera ready or timeout has elapsed
   uint32_t startTime = millis();
-Serial.println("E");
+  Serial.println("E");
   do {
-Serial.println("F");
+    Serial.println("F");
     delay(100); // Don't hit it too fast, else trouble
-Serial.println("G");
+    Serial.println("G");
     if (getState() == CAM_ON) {
       _width = 640 >> (int)size;
       _height = 480 >> (int)size;
-Serial.println("Yay");
+      Serial.println("Yay");
       return ICAP_STATUS_OK;
     }
-  } while((millis() - startTime) < timeout_ms);
-Serial.println("Camera start timeout");
+  } while ((millis() - startTime) < timeout_ms);
+  Serial.println("Camera start timeout");
 
   _width = 0;
   _height = 0;
@@ -106,7 +103,7 @@ int Adafruit_iCap_peripheral::getReturnValue(void) {
   int response = 0;
   if (i2cRead(4) == 4) { // 32-bit response
     response = (uint32_t)i2cBuf[0] | ((uint32_t)i2cBuf[1] << 8) |
-      ((uint32_t)i2cBuf[2] << 16) | ((uint32_t)i2cBuf[3] << 24);
+               ((uint32_t)i2cBuf[2] << 16) | ((uint32_t)i2cBuf[3] << 24);
   }
   return response;
 }
@@ -130,18 +127,18 @@ void Adafruit_iCap_peripheral::writeRegister(uint8_t reg, uint8_t val) {
 uint32_t Adafruit_iCap_peripheral::capture() {
   i2cBuf[0] = ICAP_CMD_CAPTURE;
   i2cWrite(1);
-//  delay(100);
+  //  delay(100);
   uint32_t response = 0;
-// To do: add timeout
-do {
-  delay(100);
-  if (i2cRead(4) == 4) { // 32-bit response
-    response = (uint32_t)i2cBuf[0] | ((uint32_t)i2cBuf[1] << 8) |
-      ((uint32_t)i2cBuf[2] << 16) | ((uint32_t)i2cBuf[3] << 24);
-  }
-} while(response == 0);
-Serial.print("response = ");
-Serial.println(response);
+  // To do: add timeout
+  do {
+    delay(100);
+    if (i2cRead(4) == 4) { // 32-bit response
+      response = (uint32_t)i2cBuf[0] | ((uint32_t)i2cBuf[1] << 8) |
+                 ((uint32_t)i2cBuf[2] << 16) | ((uint32_t)i2cBuf[3] << 24);
+    }
+  } while (response == 0);
+  Serial.print("response = ");
+  Serial.println(response);
 
 // Polling isn't necessary now, tripWire behavior in periph-side
 // code was changed. Requests for data return 0 bytes, and the
@@ -170,12 +167,14 @@ Serial.println("OK");
 // pending I2C bytes available. Returns number of bytes actually read.
 int Adafruit_iCap_peripheral::i2cRead(int len) {
   // Limit read to our buffer size...
-  if (len > sizeof i2cBuf) len = sizeof i2cBuf;
+  if (len > sizeof i2cBuf)
+    len = sizeof i2cBuf;
   wire->requestFrom(i2cAddress, (uint8_t)len);
   // ...and to available incoming bytes...
   int avail = wire->available();
-  if (len > avail) len = avail;
-  for (int i=0; i<len; i++) {
+  if (len > avail)
+    len = avail;
+  for (int i = 0; i < len; i++) {
     i2cBuf[i] = wire->read();
   }
   return len;

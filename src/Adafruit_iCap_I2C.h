@@ -43,4 +43,3 @@ typedef enum {     // Camera states:
   CAM_PAUSED,      // Camera currently paused
   CAM_REQ_RESUME,  // Request to resume camera DMA (goes to CAM_ON)
 } iCap_state;
-
