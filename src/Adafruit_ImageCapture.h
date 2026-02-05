@@ -63,7 +63,7 @@ typedef enum {
     @brief  Class encapsulating common image sensor functionality.
 */
 class Adafruit_ImageCapture {
-public:
+ public:
   /*!
     @brief  Constructor for Adafruit_ImageCapture class. This constructor
             is never invoked directly by user code. Instead, a subclass is
@@ -81,7 +81,7 @@ public:
                       resolution is selected.
     @param  pbufsize  Size of passed-in buffer (or 0 if NULL).
   */
-  Adafruit_ImageCapture(iCap_arch *arch, uint16_t *pbuf, uint32_t pbufsize);
+  Adafruit_ImageCapture(iCap_arch* arch, uint16_t* pbuf, uint32_t pbufsize);
   ~Adafruit_ImageCapture(); // Destructor
 
   /*!
@@ -124,19 +124,25 @@ public:
     @brief   Get image width of camera's current resolution setting.
     @return  Width in pixels.
   */
-  uint16_t width(void) { return _width; }
+  uint16_t width(void) {
+    return _width;
+  }
 
   /*!
     @brief   Get image height of camera's current resolution setting.
     @return  Height in pixels.
   */
-  uint16_t height(void) { return _height; }
+  uint16_t height(void) {
+    return _height;
+  }
 
   /*!
     @brief   Get address of image buffer being used by camera.
     @return  uint16_t pointer to last-captured image data.
   */
-  uint16_t *getBuffer(void) { return pixbuf[0]; }
+  uint16_t* getBuffer(void) {
+    return pixbuf[0];
+  }
 
   /*!
     @brief  Produces a negative image. This is a postprocessing effect,
@@ -211,15 +217,15 @@ public:
   */
   void Y2RGB565(void);
 
-protected:
-  uint16_t *pixbuf[3];        ///< Frame pointers (up to 3) into pixel buffer
+ protected:
+  uint16_t* pixbuf[3];        ///< Frame pointers (up to 3) into pixel buffer
   uint32_t pixbuf_size = 0;   ///< Full size of pixbuf, in bytes
   uint8_t bufmode;            ///< 1-3 = single-, double-, triple-buffered
   bool pixbuf_allocable;      ///< Internally allocated vs static buffer
   uint16_t _width = 0;        ///< Current settings width in pixels
   uint16_t _height = 0;       ///< Current settings height in pixels
   iCap_colorspace colorspace; ///< Current settings colorspace
-  iCap_arch *arch = NULL;     ///< Device-specific data, if needed
+  iCap_arch* arch = NULL;     ///< Device-specific data, if needed
 
   // No longer used
   //  iCap_status setSize(uint16_t width, uint16_t height, uint8_t nbuf=1,

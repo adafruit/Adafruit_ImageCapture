@@ -1,10 +1,11 @@
 #if defined(ARDUINO_ARCH_RP2040)
+#include <Adafruit_iCap_parallel.h>
+
 #include "../../hardware_dma/include/hardware/dma.h"
 #include "hardware/gpio.h"
 #include "hardware/irq.h"
 #include "hardware/pio.h"
 #include "hardware/pwm.h"
-#include <Adafruit_iCap_parallel.h>
 
 // PIO code in this table is modified at runtime so that PCLK is
 // configurable (rather than fixed GP## or PIN offset). Data pins
@@ -28,8 +29,8 @@ static struct pio_program iCap_pio_program = {
 // needs to access to object- and arch-specific data like the camera buffer
 // and DMA settings, pointers are kept (initialized in the begin() function).
 // This does mean that only a single OV7670 can be active.
-static Adafruit_ImageCapture *capptr = NULL; // Camera buffer, size, etc.
-static iCap_arch *archptr = NULL;            // DMA settings
+static Adafruit_ImageCapture* capptr = NULL; // Camera buffer, size, etc.
+static iCap_arch* archptr = NULL;            // DMA settings
 static volatile bool frameReady = false;     // true at end-of-frame
 static volatile bool suspended = true;       // Initially stopped
 
@@ -74,7 +75,7 @@ static void iCap_dma_finish_irq() {
   frameReady = true;
   // Channel MUST be reconfigured each time (to reset the dest address).
   dma_channel_set_write_addr(archptr->dma_channel,
-                             (uint8_t *)(capptr->getBuffer()), false);
+                             (uint8_t*)(capptr->getBuffer()), false);
   dma_hw->ints0 = 1u << archptr->dma_channel; // Clear IRQ
 }
 
@@ -82,7 +83,6 @@ static void iCap_dma_finish_irq() {
 // e.g. Adafruit_iCap_parallel.begin() checks the value of the xlck pin and
 // skips this if -1.
 iCap_status Adafruit_iCap_parallel::xclk_start(uint32_t freq) {
-
   // LOOK UP PWM SLICE & CHANNEL BASED ON XCLK PIN -------------------------
 
   uint8_t slice = pwm_gpio_to_slice_num(pins.xclk);
@@ -111,7 +111,6 @@ iCap_status Adafruit_iCap_parallel::xclk_start(uint32_t freq) {
 // Start parallel capture peripheral and DMA. Transfers are not started
 // yet, until frame size and buffer are established.
 iCap_status Adafruit_iCap_parallel::pcc_start(void) {
-
   // TO DO: verify the DATA pins are contiguous.
 
   archptr = arch; // Save arch pointer for interrupts
@@ -192,7 +191,7 @@ iCap_status Adafruit_iCap_parallel::pcc_start(void) {
 // Changing resolution also requires stopping DMA temporarily...
 // wait for frame to finish, do realloc/cam config, then restart.
 // That'll go in Adafruit_iCap_parallel.cpp
-void Adafruit_iCap_parallel::dma_change(uint16_t *dest, uint32_t num_pixels) {
+void Adafruit_iCap_parallel::dma_change(uint16_t* dest, uint32_t num_pixels) {
   dma_channel_set_write_addr(archptr->dma_channel, dest, false);
   dma_channel_set_trans_count(archptr->dma_channel, num_pixels, false);
 }

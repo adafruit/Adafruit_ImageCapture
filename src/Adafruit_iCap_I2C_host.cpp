@@ -14,9 +14,10 @@
  */
 
 #include "Adafruit_iCap_I2C_host.h"
+
 #include <Arduino.h>
 
-Adafruit_iCap_peripheral::Adafruit_iCap_peripheral(uint8_t addr, TwoWire *w,
+Adafruit_iCap_peripheral::Adafruit_iCap_peripheral(uint8_t addr, TwoWire* w,
                                                    uint32_t s)
     : i2cAddress(addr), wire(w), i2cSpeed(s) {}
 
