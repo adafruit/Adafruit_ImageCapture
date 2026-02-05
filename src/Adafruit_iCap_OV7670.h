@@ -49,7 +49,7 @@ typedef iCap_parallel_pins OV7670_pins;
     @brief  Class encapsulating OmniVision OV7670 functionality.
 */
 class Adafruit_iCap_OV7670 : public Adafruit_iCap_parallel {
-public:
+ public:
   /*!
     @brief  Constructor for OV7670 camera class.
     @param  pins      OV7670_pins structure, describing physical connection
@@ -71,8 +71,8 @@ public:
     @param  speed     I2C communication speed to camera.
     @param  delay_us  Delay in microseconds between register writes.
   */
-  Adafruit_iCap_OV7670(iCap_parallel_pins &pins, iCap_arch *arch = NULL,
-                       TwoWire &twi = Wire, uint16_t *pbuf = NULL,
+  Adafruit_iCap_OV7670(iCap_parallel_pins& pins, iCap_arch* arch = NULL,
+                       TwoWire& twi = Wire, uint16_t* pbuf = NULL,
                        uint32_t pbufsize = 0, uint8_t addr = OV7670_ADDR,
                        uint32_t speed = 100000, uint32_t delay_us = 1000);
   ~Adafruit_iCap_OV7670();
@@ -234,7 +234,7 @@ public:
   */
   void test_pattern(OV7670_pattern pattern);
 
-private:
+ private:
 };
 
 #endif // end ICAP_FULL_SUPPORT

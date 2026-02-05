@@ -3,18 +3,19 @@
 
 #if defined(ICAP_FULL_SUPPORT)
 
-Adafruit_iCap_OV2640::Adafruit_iCap_OV2640(OV2640_pins &pins, iCap_arch *arch,
-                                           TwoWire &twi, uint16_t *pbuf,
+Adafruit_iCap_OV2640::Adafruit_iCap_OV2640(OV2640_pins& pins, iCap_arch* arch,
+                                           TwoWire& twi, uint16_t* pbuf,
                                            uint32_t pbufsize, uint8_t addr,
                                            uint32_t speed, uint32_t delay_us)
-    : Adafruit_iCap_parallel((iCap_parallel_pins *)&pins, arch, pbuf, pbufsize,
-                             (TwoWire *)&twi, addr, speed, delay_us) {}
+    : Adafruit_iCap_parallel((iCap_parallel_pins*)&pins, arch, pbuf, pbufsize,
+                             (TwoWire*)&twi, addr, speed, delay_us) {}
 
 Adafruit_iCap_OV2640::~Adafruit_iCap_OV2640() {}
 
 // CAMERA STARTUP ----------------------------------------------------------
 
-static const iCap_parallel_config OV2640_init[] = {
+static const iCap_parallel_config OV2640_init[] =
+    {
 #if 0
 // Ideas from esp32-camera
 // not working yet (scrambled image)
@@ -176,7 +177,7 @@ static const iCap_parallel_config OV2640_init[] = {
         {OV2640_REG0_RESET, 0}, // Go
         {OV2640_REG0_R_BYPASS, OV2640_R_BYPASS_DSP_ENABLE}},
 #else
-// Ideas from rp2040_ov2640-main repo
+        // Ideas from rp2040_ov2640-main repo
         // OV2640 camera initialization after reset
         // WIP STUFF, don't take this seriously yet
         {OV2640_REG_RA_DLMT, OV2640_RA_DLMT_DSP},    // DSP bank select 0
@@ -191,17 +192,18 @@ static const iCap_parallel_config OV2640_init[] = {
         {OV2640_REG1_COM8, 0xC0 | OV2640_COM8_BANDING | OV2640_COM8_AGC_AUTO |
                                OV2640_COM8_EXP_AUTO},
         {OV2640_REG1_COM9, OV2640_COM9_AGC_GAIN_8X | 0x08},
-        {0x2C, 0x0c},            // Reserved
-        {0x33, 0x78},            // Reserved
-        {0x3A, 0x33},            // Reserved
-        {0x3B, 0xfB},            // Reserved
-        {0x3E, 0x00},            // Reserved
-        {0x43, 0x11},            // Reserved
-        {0x16, 0x10},            // Reserved
-        {0x4A, 0x81},            // Reserved
-        {0x21, 0x99},            // Reserved
-//        {OV2640_REG1_AEW, 0x40}, // High range for AEC/AGC
-//        {OV2640_REG1_AEB, 0x38}, // Low range for AEC/AGC
+        {0x2C, 0x0c}, // Reserved
+        {0x33, 0x78}, // Reserved
+        {0x3A, 0x33}, // Reserved
+        {0x3B, 0xfB}, // Reserved
+        {0x3E, 0x00}, // Reserved
+        {0x43, 0x11}, // Reserved
+        {0x16, 0x10}, // Reserved
+        {0x4A, 0x81}, // Reserved
+        {0x21,
+         0x99}, // Reserved
+                //        {OV2640_REG1_AEW, 0x40}, // High range for AEC/AGC
+                //        {OV2640_REG1_AEB, 0x38}, // Low range for AEC/AGC
         {OV2640_REG1_AEW, 0xFF}, // High range for AEC/AGC
         {OV2640_REG1_AEB, 0x00}, // Low range for AEC/AGC
         {OV2640_REG1_VV, 0x82},  // Fast mode thresholds
@@ -375,11 +377,11 @@ static const iCap_parallel_config OV2640_init[] = {
         {OV2640_REG0_ZMHH, 0x00},                       // OUTW/H high bits
         {OV2640_REG0_R_DVP_SP, 0x04},                   // Manual DVP PCLK
         {0x7F, 0x00},                                   // Reserved
-//        {OV2640_REG0_IMAGE_MODE, 0x00},                 // YUV MSB first
-        {0xE5, 0x1F},                                   // Reserved
-        {0xE1, 0x67},                                   // Reserved
-        {OV2640_REG0_RESET, 0x00},                      // Reset nothing?
-        {0xDD, 0x7F},                                   // Reserved
+                      //        {OV2640_REG0_IMAGE_MODE, 0x00}, // YUV MSB first
+        {0xE5, 0x1F},              // Reserved
+        {0xE1, 0x67},              // Reserved
+        {OV2640_REG0_RESET, 0x00}, // Reset nothing?
+        {0xDD, 0x7F},              // Reserved
         {OV2640_REG0_R_BYPASS, OV2640_R_BYPASS_DSP_ENABLE},
         {OV2640_REG_RA_DLMT, OV2640_RA_DLMT_DSP}, // DSP bank select 0
         {OV2640_REG0_RESET, OV2640_RESET_DVP},
@@ -429,25 +431,25 @@ static const iCap_parallel_config OV2640_init[] = {
         {OV2640_REG0_RESET, 0x00}},   // Go
 #endif
     OV2640_qqvga[] =
-        {// Configure OV2640 for QQVGA output
-         {OV2640_REG_RA_DLMT, OV2640_RA_DLMT_DSP}, // DSP bank select 0
-         {OV2640_REG0_RESET, OV2640_RESET_DVP},
-         {OV2640_REG0_HSIZE8, 0x64}, // HSIZE high bits
-         {OV2640_REG0_VSIZE8, 0x4B}, // VSIZE high bits
-         {OV2640_REG0_CTRL2, OV2640_CTRL2_DCW | OV2640_CTRL2_SDE |
-                                 OV2640_CTRL2_UV_AVG | OV2640_CTRL2_CMX},
-         {OV2640_REG0_CTRLI, OV2640_CTRLI_LP_DP | 0x12},
-         {OV2640_REG0_HSIZE, 0xC8},    // H_SIZE low bits
-         {OV2640_REG0_VSIZE, 0x96},    // V_SIZE low bits
-         {OV2640_REG0_XOFFL, 0x00},    // OFFSET_X low bits
-         {OV2640_REG0_YOFFL, 0x00},    // OFFSET_Y low bits
-         {OV2640_REG0_VHYX, 0x00},     // V/H/Y/X high bits
-         {OV2640_REG0_TEST, 0x00},     // ?
-         {OV2640_REG0_ZMOW, 0x28},     // OUTW low bits
-         {OV2640_REG0_ZMOH, 0x1E},     // OUTH low bits
-         {OV2640_REG0_ZMHH, 0x00},     // OUTW/H high bits
-         {OV2640_REG0_R_DVP_SP, 0x08}, // Manual DVP PCLK setting
-         {OV2640_REG0_RESET, 0x00}},   // Go
+        { // Configure OV2640 for QQVGA output
+            {OV2640_REG_RA_DLMT, OV2640_RA_DLMT_DSP}, // DSP bank select 0
+            {OV2640_REG0_RESET, OV2640_RESET_DVP},
+            {OV2640_REG0_HSIZE8, 0x64}, // HSIZE high bits
+            {OV2640_REG0_VSIZE8, 0x4B}, // VSIZE high bits
+            {OV2640_REG0_CTRL2, OV2640_CTRL2_DCW | OV2640_CTRL2_SDE |
+                                    OV2640_CTRL2_UV_AVG | OV2640_CTRL2_CMX},
+            {OV2640_REG0_CTRLI, OV2640_CTRLI_LP_DP | 0x12},
+            {OV2640_REG0_HSIZE, 0xC8},    // H_SIZE low bits
+            {OV2640_REG0_VSIZE, 0x96},    // V_SIZE low bits
+            {OV2640_REG0_XOFFL, 0x00},    // OFFSET_X low bits
+            {OV2640_REG0_YOFFL, 0x00},    // OFFSET_Y low bits
+            {OV2640_REG0_VHYX, 0x00},     // V/H/Y/X high bits
+            {OV2640_REG0_TEST, 0x00},     // ?
+            {OV2640_REG0_ZMOW, 0x28},     // OUTW low bits
+            {OV2640_REG0_ZMOH, 0x1E},     // OUTH low bits
+            {OV2640_REG0_ZMHH, 0x00},     // OUTW/H high bits
+            {OV2640_REG0_R_DVP_SP, 0x08}, // Manual DVP PCLK setting
+            {OV2640_REG0_RESET, 0x00}},   // Go
     OV2640_rgb[] = {{OV2640_REG_RA_DLMT,
                      OV2640_RA_DLMT_DSP}, // DSP bank select 0
                     {OV2640_REG0_RESET, OV2640_RESET_DVP},

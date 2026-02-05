@@ -3,12 +3,12 @@
 
 #if defined(ICAP_FULL_SUPPORT)
 
-Adafruit_iCap_OV7670::Adafruit_iCap_OV7670(OV7670_pins &pins, iCap_arch *arch,
-                                           TwoWire &twi, uint16_t *pbuf,
+Adafruit_iCap_OV7670::Adafruit_iCap_OV7670(OV7670_pins& pins, iCap_arch* arch,
+                                           TwoWire& twi, uint16_t* pbuf,
                                            uint32_t pbufsize, uint8_t addr,
                                            uint32_t speed, uint32_t delay_us)
-    : Adafruit_iCap_parallel((iCap_parallel_pins *)&pins, arch, pbuf, pbufsize,
-                             (TwoWire *)&twi, addr, speed, delay_us) {}
+    : Adafruit_iCap_parallel((iCap_parallel_pins*)&pins, arch, pbuf, pbufsize,
+                             (TwoWire*)&twi, addr, speed, delay_us) {}
 
 Adafruit_iCap_OV7670::~Adafruit_iCap_OV7670() {}
 
@@ -243,7 +243,6 @@ void Adafruit_iCap_OV7670::setColorspace(iCap_colorspace space) {
 // evaluated without reconfiguring the camera, or without it even started.
 
 float Adafruit_iCap_OV7670::setFPS(float fps) {
-
   // Pixel clock (PCLK), which determines overall frame rate, is a
   // function of XCLK input frequency (OV7670_XCLK_HZ), a PLL multiplier
   // and then an integer division factor (1-32). These are the available

@@ -15,17 +15,18 @@
 
 #pragma once
 
-#include "Adafruit_iCap_I2C.h"
 #include <Wire.h>
 #include <stdint.h>
+
+#include "Adafruit_iCap_I2C.h"
 #if !defined(BUFFER_LENGTH)
 #define BUFFER_LENGTH 256
 #endif
 
 class Adafruit_iCap_peripheral {
-public:
+ public:
   Adafruit_iCap_peripheral(uint8_t addr = ICAP_DEFAULT_ADDRESS,
-                           TwoWire *w = &Wire, uint32_t s = 400000UL);
+                           TwoWire* w = &Wire, uint32_t s = 400000UL);
   ~Adafruit_iCap_peripheral(); // Destructor
 
   void begin(void);
@@ -33,7 +34,7 @@ public:
              uint32_t timeout_ms = 3000);
   int getReturnValue();
   iCap_state getState();
-  uint8_t *getData(int len);
+  uint8_t* getData(int len);
   int config(uint8_t size, uint8_t space, float fps = 30.0,
              uint32_t timeout_ms = 3000);
   int readRegister(uint8_t reg);
@@ -45,20 +46,26 @@ public:
     @brief   Get image width of camera's current resolution setting.
     @return  Width in pixels.
   */
-  uint16_t width(void) { return _width; }
+  uint16_t width(void) {
+    return _width;
+  }
 
   /*!
     @brief   Get image height of camera's current resolution setting.
     @return  Height in pixels.
   */
-  uint16_t height(void) { return _height; }
+  uint16_t height(void) {
+    return _height;
+  }
 
   /*!
     @brief   Get maximum I2C transfer size that was negotiated between
              host and peripheral during begin().
     @return  Maximum single transfer size, in bytes.
   */
-  uint32_t maxTransferSize(void) { return i2cMaxLen; }
+  uint32_t maxTransferSize(void) {
+    return i2cMaxLen;
+  }
 
   /*!
     @brief   Get address of I2C receive buffer. When capturing image,
@@ -66,7 +73,9 @@ public:
              to display or other code.
     @return  Pointer to receive buffer (BUFFER_LENGTH bytes).
   */
-  uint8_t *getBuffer(void) { return i2cBuf; };
+  uint8_t* getBuffer(void) {
+    return i2cBuf;
+  };
 
   /*!
     @brief   Read data from I2C peripheral camera, up to a maximum length
@@ -83,8 +92,8 @@ public:
   // Write data to I2C peripheral camera from library's transfer buffer.
   int i2cWrite(int len);
 
-protected:
-  TwoWire *wire;                 //< Pointer to I2C periph (e.g. &Wire)
+ protected:
+  TwoWire* wire;                 //< Pointer to I2C periph (e.g. &Wire)
   uint32_t i2cSpeed;             //< I2C data rate, bps (e.g. 100000)
   uint8_t i2cAddress;            //< I2C peripheral address
   uint8_t i2cBuf[BUFFER_LENGTH]; //< TX/RX buffer, size from Wire lib

@@ -32,7 +32,7 @@ typedef struct {
             any later sensors instead use SPI, etc. for the pixel interface.)
 */
 class Adafruit_iCap_parallel : public Adafruit_ImageCapture {
-public:
+ public:
   /*!
     @brief  Constructor for Adafruit_iCap_parallel class. This constructor
             is never invoked directly by user code. Instead, a subclass is
@@ -59,8 +59,8 @@ public:
                       MCUs and/or cameras may cause lockup without some
                       delay).
   */
-  Adafruit_iCap_parallel(iCap_parallel_pins *pins_ptr, iCap_arch *arch,
-                         uint16_t *pbuf, uint32_t pbufsize, TwoWire *twi_ptr,
+  Adafruit_iCap_parallel(iCap_parallel_pins* pins_ptr, iCap_arch* arch,
+                         uint16_t* pbuf, uint32_t pbufsize, TwoWire* twi_ptr,
                          uint8_t addr, uint32_t speed, uint32_t delay_us);
   ~Adafruit_iCap_parallel(); // Destructor
 
@@ -118,7 +118,7 @@ public:
     @param  cfg  Array (pointer-to) of settings to write.
     @param  len  Length of array.
   */
-  void writeList(const iCap_parallel_config *cfg, uint16_t len);
+  void writeList(const iCap_parallel_config* cfg, uint16_t len);
 
   /*!
     @brief  Pause DMA background capture (if supported by architecture)
@@ -135,7 +135,7 @@ public:
   */
   void resume(void);
 
-protected:
+ protected:
   /*!
     @brief   Starter function for the XCLK output signal.
     @param   freq  Desired XCLK frequency in Hz. Typically the ICAP_XCLK_HZ
@@ -156,9 +156,9 @@ protected:
     @param   dest        Destination for data received from camera.
     @param   num_pixels  Number of pixels in image.
   */
-  void dma_change(uint16_t *dest, uint32_t num_pixels);
+  void dma_change(uint16_t* dest, uint32_t num_pixels);
 
-  TwoWire *wire;           ///< Associated I2C instance
+  TwoWire* wire;           ///< Associated I2C instance
   iCap_parallel_pins pins; ///< Pin structure (copied in constructor)
   uint32_t i2c_speed;      ///< I2C bus speed
   uint32_t i2c_delay_us;   ///< Delay in microseconds between I2C writes
