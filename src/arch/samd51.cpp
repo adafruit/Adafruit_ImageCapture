@@ -15,7 +15,7 @@
 // single parallel capture peripheral).
 
 static Adafruit_ZeroDMA dma;
-static DmacDescriptor *descriptor;       ///< DMA descriptor
+static DmacDescriptor* descriptor;       ///< DMA descriptor
 static volatile bool frameReady = false; ///< true at end-of-frame
 static volatile bool suspended = true;   ///< Start in suspended state
 
@@ -49,74 +49,75 @@ static void startFrame(void) {
 }
 
 // End-of-DMA-transfer callback
-static void dmaCallback(Adafruit_ZeroDMA *dma) { frameReady = true; }
+static void dmaCallback(Adafruit_ZeroDMA* dma) {
+  frameReady = true;
+}
 
 // XCLK clock out setup. For self-clocking cameras, don't call this function,
 // e.g. Adafruit_iCap_parallel.begin() checks the value of the xlck pin and
 // skips this if -1.
 iCap_status Adafruit_iCap_parallel::xclk_start(uint32_t freq) {
-
   // LOOK UP TIMER OR TCC BASED ON ADDRESS IN ARCH STRUCT ------------------
 
   static const struct {
-    void *base;       ///< TC or TCC peripheral base address
+    void* base;       ///< TC or TCC peripheral base address
     uint8_t GCLK_ID;  ///< Timer ID for GCLK->PCHCTRL
-    const char *name; ///< Printable timer ID for debug use
+    const char* name; ///< Printable timer ID for debug use
   } timer[] = {
 #if defined(TC0)
-    {TC0, TC0_GCLK_ID, "TC0"},
+      {TC0, TC0_GCLK_ID, "TC0"},
 #endif
 #if defined(TC1)
-    {TC1, TC1_GCLK_ID, "TC1"},
+      {TC1, TC1_GCLK_ID, "TC1"},
 #endif
 #if defined(TC2)
-    {TC2, TC2_GCLK_ID, "TC2"},
+      {TC2, TC2_GCLK_ID, "TC2"},
 #endif
 #if defined(TC3)
-    {TC3, TC3_GCLK_ID, "TC3"},
+      {TC3, TC3_GCLK_ID, "TC3"},
 #endif
 #if defined(TC4)
-    {TC4, TC4_GCLK_ID, "TC4"},
+      {TC4, TC4_GCLK_ID, "TC4"},
 #endif
 #if defined(TC5)
-    {TC5, TC5_GCLK_ID, "TC5"},
+      {TC5, TC5_GCLK_ID, "TC5"},
 #endif
 #if defined(TC6)
-    {TC6, TC6_GCLK_ID, "TC6"},
+      {TC6, TC6_GCLK_ID, "TC6"},
 #endif
 #if defined(TC7)
-    {TC7, TC7_GCLK_ID, "TC7"},
+      {TC7, TC7_GCLK_ID, "TC7"},
 #endif
 #if defined(TC8)
-    {TC8, TC8_GCLK_ID, "TC8"},
+      {TC8, TC8_GCLK_ID, "TC8"},
 #endif
 #if defined(TC9)
-    {TC9, TC9_GCLK_ID, "TC9"},
+      {TC9, TC9_GCLK_ID, "TC9"},
 #endif
 #if defined(TC10)
-    {TC10, TC10_GCLK_ID, "TC10"},
+      {TC10, TC10_GCLK_ID, "TC10"},
 #endif
 #if defined(TC11)
-    {TC11, TC11_GCLK_ID, "TC11"},
+      {TC11, TC11_GCLK_ID, "TC11"},
 #endif
 #if defined(TC12)
-    {TC12, TC12_GCLK_ID, "TC12"},
+      {TC12, TC12_GCLK_ID, "TC12"},
 #endif
-    {NULL, 0, NULL}, // NULL separator between TC and TCC lists
+      {NULL, 0, NULL}, // NULL separator between TC and TCC lists
 #if defined(TCC0)
-    {TCC0, TCC0_GCLK_ID, "TCC0"},
+      {TCC0, TCC0_GCLK_ID, "TCC0"},
 #endif
 #if defined(TCC1)
-    {TCC1, TCC1_GCLK_ID, "TCC1"},
+      {TCC1, TCC1_GCLK_ID, "TCC1"},
 #endif
 #if defined(TCC2)
-    {TCC2, TCC2_GCLK_ID, "TCC2"},
+      {TCC2, TCC2_GCLK_ID, "TCC2"},
 #endif
 #if defined(TCC3)
-    {TCC3, TCC3_GCLK_ID, "TCC3"},
+      {TCC3, TCC3_GCLK_ID, "TCC3"},
 #endif
 #if defined(TCC4)
-    {TCC4, TCC4_GCLK_ID, "TCC4"},
+      {TCC4, TCC4_GCLK_ID, "TCC4"},
 #endif
   };
 
@@ -151,7 +152,7 @@ iCap_status Adafruit_iCap_parallel::xclk_start(uint32_t freq) {
 
   if (is_tcc) { // Is a TCC peripheral
 
-    Tcc *tcc = (Tcc *)timer[timer_list_index].base;
+    Tcc* tcc = (Tcc*)timer[timer_list_index].base;
 
     tcc->CTRLA.bit.ENABLE = 0; // Disable TCC before configuring
     while (tcc->SYNCBUSY.bit.ENABLE)
@@ -176,7 +177,7 @@ iCap_status Adafruit_iCap_parallel::xclk_start(uint32_t freq) {
 
   } else { // Is a TC peripheral
 
-    Tc *tc = (Tc *)timer[timer_list_index].base;
+    Tc* tc = (Tc*)timer[timer_list_index].base;
 
     // TO DO: ADD TC PERIPHERAL (NOT TCC) CODE HERE
 
@@ -189,7 +190,6 @@ iCap_status Adafruit_iCap_parallel::xclk_start(uint32_t freq) {
 
 // Start parallel capture peripheral
 iCap_status Adafruit_iCap_parallel::pcc_start(void) {
-
   PCC->MR.bit.PCEN = 0; // Make sure PCC is disabled before setting MR reg
 
   PCC->IDR.reg = 0b1111;       // Disable all PCC interrupts
@@ -229,12 +229,12 @@ iCap_status Adafruit_iCap_parallel::pcc_start(void) {
   dma.setPriority(DMA_PRIORITY_3);
 
   // Use 32-bit PCC transfers (4 bytes accumulate in RHR.reg)
-  descriptor = dma.addDescriptor((void *)(&PCC->RHR.reg), // Source
-                                 NULL,                    // Dest set later
-                                 0,                       // Count set later
-                                 DMA_BEAT_SIZE_WORD,      // 32-bit words
-                                 false,                   // Don't src++
-                                 true);                   // Do dest++
+  descriptor = dma.addDescriptor((void*)(&PCC->RHR.reg), // Source
+                                 NULL,                   // Dest set later
+                                 0,                      // Count set later
+                                 DMA_BEAT_SIZE_WORD,     // 32-bit words
+                                 false,                  // Don't src++
+                                 true);                  // Do dest++
 
   // A pin FALLING interrupt is used to detect the start of a new frame.
   // Seems like the PCC RXBUFF and/or ENDRX interrupts could take care
@@ -245,8 +245,8 @@ iCap_status Adafruit_iCap_parallel::pcc_start(void) {
   return ICAP_STATUS_OK;
 }
 
-void Adafruit_iCap_parallel::dma_change(uint16_t *dest, uint32_t num_pixels) {
-  dma.changeDescriptor(descriptor, (void *)(&PCC->RHR.reg), (void *)dest,
+void Adafruit_iCap_parallel::dma_change(uint16_t* dest, uint32_t num_pixels) {
+  dma.changeDescriptor(descriptor, (void*)(&PCC->RHR.reg), (void*)dest,
                        num_pixels / 2);
 }
 

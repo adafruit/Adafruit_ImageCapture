@@ -4,14 +4,17 @@
 
 #include <Arduino.h>
 
-Adafruit_iCap_parallel::Adafruit_iCap_parallel(iCap_parallel_pins *pins_ptr,
-                                               iCap_arch *arch, uint16_t *pbuf,
+Adafruit_iCap_parallel::Adafruit_iCap_parallel(iCap_parallel_pins* pins_ptr,
+                                               iCap_arch* arch, uint16_t* pbuf,
                                                uint32_t pbufsize,
-                                               TwoWire *twi_ptr, uint8_t addr,
+                                               TwoWire* twi_ptr, uint8_t addr,
                                                uint32_t speed,
                                                uint32_t delay_us)
-    : i2c_address(addr & 0x7F), i2c_speed(speed), i2c_delay_us(delay_us),
-      wire(twi_ptr), Adafruit_ImageCapture(arch, pbuf, pbufsize) {
+    : i2c_address(addr & 0x7F),
+      i2c_speed(speed),
+      i2c_delay_us(delay_us),
+      wire(twi_ptr),
+      Adafruit_ImageCapture(arch, pbuf, pbufsize) {
   memcpy(&pins, pins_ptr, sizeof pins); // Save pins struct in object
 }
 
@@ -71,7 +74,7 @@ void Adafruit_iCap_parallel::writeRegister(uint8_t reg, uint8_t value) {
   wire->endTransmission();
 }
 
-void Adafruit_iCap_parallel::writeList(const iCap_parallel_config *cfg,
+void Adafruit_iCap_parallel::writeList(const iCap_parallel_config* cfg,
                                        uint16_t len) {
   for (int i = 0; i < len; i++) {
     writeRegister(cfg[i].reg, cfg[i].value);

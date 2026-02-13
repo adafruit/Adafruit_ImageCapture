@@ -34,7 +34,7 @@
 
 #include <string.h> // memcpy()
 
-Adafruit_ImageCapture::Adafruit_ImageCapture(iCap_arch *arch, uint16_t *pbuf,
+Adafruit_ImageCapture::Adafruit_ImageCapture(iCap_arch* arch, uint16_t* pbuf,
                                              uint32_t pbufsize)
     : arch(arch) {
   if (pbuf && pbufsize) {     // Pixel buffer and size passed in:
@@ -79,25 +79,25 @@ iCap_status Adafruit_ImageCapture::bufferConfig(uint16_t width, uint16_t height,
 
   Serial.printf("%d %d %d %d\n", width, height, allo, new_buffer_size);
   switch (allo) {
-  case ICAP_REALLOC_NONE:
-    // Don't reallocate, keep existing buffer...test if it fits though...
-    if (new_buffer_size > pixbuf_size) { // New size won't fit
-      // No realloc. Keep current camera settings, return error.
-      return ICAP_STATUS_ERR_MALLOC;
-    }
-    break;
-  case ICAP_REALLOC_CHANGE:
-    // Realloc on any size change, up or down
-    ra = (new_buffer_size != pixbuf_size);
-    break;
-  case ICAP_REALLOC_LARGER:
-    // Realloc on size increase, keep existing buffer if size decrease
-    ra = (new_buffer_size > pixbuf_size);
-    break;
+    case ICAP_REALLOC_NONE:
+      // Don't reallocate, keep existing buffer...test if it fits though...
+      if (new_buffer_size > pixbuf_size) { // New size won't fit
+        // No realloc. Keep current camera settings, return error.
+        return ICAP_STATUS_ERR_MALLOC;
+      }
+      break;
+    case ICAP_REALLOC_CHANGE:
+      // Realloc on any size change, up or down
+      ra = (new_buffer_size != pixbuf_size);
+      break;
+    case ICAP_REALLOC_LARGER:
+      // Realloc on size increase, keep existing buffer if size decrease
+      ra = (new_buffer_size > pixbuf_size);
+      break;
   }
 
   if (ra) { // Reallocate?
-    pixbuf[0] = (uint16_t *)realloc(pixbuf[0], new_buffer_size);
+    pixbuf[0] = (uint16_t*)realloc(pixbuf[0], new_buffer_size);
     if (pixbuf[0] == NULL) { // ALLOC FAIL
       _width = _height = pixbuf_size = 0;
       pixbuf[1] = pixbuf[2] = NULL;
@@ -129,7 +129,7 @@ void Adafruit_ImageCapture::image_negative() {
   // on a 32-bit-safe boundary. This is one of those operations that
   // can probably be implemented through the camera's gamma curve
   // settings, and if so this function will go away.
-  uint32_t *p32 = (uint32_t *)pixbuf[0];
+  uint32_t* p32 = (uint32_t*)pixbuf[0];
   uint32_t i, num_pairs = _width * _height / 2;
   for (i = 0; i < num_pairs; i++) {
     p32[i] ^= 0xFFFFFFFF;
@@ -141,7 +141,7 @@ void Adafruit_ImageCapture::image_negative() {
 // range for the colorspace.
 void Adafruit_ImageCapture::image_threshold(uint8_t threshold) {
   uint32_t i, num_pixels = _width * _height;
-  uint16_t *pixels = pixbuf[0];
+  uint16_t* pixels = pixbuf[0];
   if (colorspace == ICAP_COLOR_RGB565) {
     // Testing RGB thresholds "in place" in the packed RGB565 value
     // avoids some bit-shifting on every pixel (just bit masking).
@@ -164,7 +164,7 @@ void Adafruit_ImageCapture::image_threshold(uint8_t threshold) {
       pixels[i] = __builtin_bswap16(rgb565out); //   Back to cam-native endian
     }
   } else {                                    // YUV...
-    uint8_t *p8 = (uint8_t *)pixels;          // Separate Y's, U's, V's
+    uint8_t* p8 = (uint8_t*)pixels;           // Separate Y's, U's, V's
     num_pixels *= 2;                          // Actually num bytes now
     for (i = 0; i < num_pixels; i++) {        // For each byte...
       p8[i] = (p8[i] >= threshold) ? 255 : 0; //   Threshold to 0 or 255
@@ -176,7 +176,7 @@ void Adafruit_ImageCapture::image_threshold(uint8_t threshold) {
 
 // Reduce color fidelity to a specified number of steps or levels.
 void Adafruit_ImageCapture::image_posterize(uint8_t levels) {
-  uint16_t *pixels = pixbuf[0];
+  uint16_t* pixels = pixbuf[0];
   uint32_t i, num_pixels = _width * _height;
 
   if (levels < 1) {
@@ -218,7 +218,7 @@ void Adafruit_ImageCapture::image_posterize(uint8_t levels) {
       for (i = 0; i < 256; i++) {
         table[i] = (((i * levels + lm1d2) / 256) * 255 + lm1d2) / lm1;
       }
-      uint8_t *p8 = (uint8_t *)pixels;   // Separate Ys, Us, Vs
+      uint8_t* p8 = (uint8_t*)pixels;    // Separate Ys, Us, Vs
       num_pixels *= 2;                   // Actually num bytes now
       for (i = 0; i < num_pixels; i++) { // For each byte...
         p8[i] = table[p8[i]];            //   Remap through lookup table
@@ -247,7 +247,7 @@ void Adafruit_ImageCapture::image_mosaic(uint8_t tile_width,
   uint16_t tile_x, tile_y;
   uint16_t x1, x2, y1, y2, xx, yy; // Tile bounds, counters
   uint32_t pixels_in_tile;
-  uint16_t *pixels = pixbuf[0];
+  uint16_t* pixels = pixbuf[0];
 
   if (colorspace == ICAP_COLOR_RGB565) {
     uint16_t rgb;
@@ -400,10 +400,10 @@ void Adafruit_ImageCapture::image_mosaic(uint8_t tile_width,
 // median to operate on all source image pixels, no black border or other
 // uglies. Pixels within each channel are not sequential in memory, but
 // increment by 3's -- corresponding to the prior, current and next rows.
-static void iCap_filter_row_prep(uint16_t *src, uint8_t *r_dst, uint16_t width,
+static void iCap_filter_row_prep(uint16_t* src, uint8_t* r_dst, uint16_t width,
                                  uint32_t channel_bytes) {
-  uint8_t *g_dst = &r_dst[channel_bytes];
-  uint8_t *b_dst = &g_dst[channel_bytes];
+  uint8_t* g_dst = &r_dst[channel_bytes];
+  uint8_t* b_dst = &g_dst[channel_bytes];
 
   uint16_t x, rgb, offset = 3;
   for (x = 0; x < width; x++) {        // For each pixel in row...
@@ -423,12 +423,12 @@ static void iCap_filter_row_prep(uint16_t *src, uint8_t *r_dst, uint16_t width,
 }
 
 // Copy a single row in the 3x3 filter weird increment-by-3 pixel format.
-static void iCap_filter_row_copy(uint8_t *r_src, uint8_t *r_dst, uint16_t width,
+static void iCap_filter_row_copy(uint8_t* r_src, uint8_t* r_dst, uint16_t width,
                                  uint32_t channel_bytes) {
-  uint8_t *g_src = &r_src[channel_bytes];
-  uint8_t *b_src = &g_src[channel_bytes];
-  uint8_t *g_dst = &r_dst[channel_bytes];
-  uint8_t *b_dst = &g_dst[channel_bytes];
+  uint8_t* g_src = &r_src[channel_bytes];
+  uint8_t* b_src = &g_src[channel_bytes];
+  uint8_t* g_dst = &r_dst[channel_bytes];
+  uint8_t* b_dst = &g_dst[channel_bytes];
   uint16_t x, offset;
 
   for (x = offset = 0; x < width; x++, offset += 3) {
@@ -439,8 +439,7 @@ static void iCap_filter_row_copy(uint8_t *r_src, uint8_t *r_dst, uint16_t width,
 }
 
 // Determine median value of 9-element list
-static inline uint8_t iCap_med9(uint8_t *list) {
-
+static inline uint8_t iCap_med9(uint8_t* list) {
   // Find median value in a list of 9 (index 0 to 8). Ostensibly,
   // conceptually, this would involve sorting the list (ascending or
   // descending, doesn't matter) and returning the value at index 4.
@@ -517,14 +516,14 @@ static inline uint8_t iCap_med9(uint8_t *list) {
 // ((width + 2) * 3 + height - 1) * 3 bytes, or about 3.6K for a 320x240
 // RGB image. YUV is not currently supported.
 void Adafruit_ImageCapture::image_median() {
-  uint16_t *pixels = pixbuf[0];
+  uint16_t* pixels = pixbuf[0];
   if (colorspace == ICAP_COLOR_RGB565) {
-    uint8_t *buf;
+    uint8_t* buf;
     uint32_t buf_bytes_per_channel = (_width + 2) * 3 + _height - 1;
-    if ((buf = (uint8_t *)malloc(buf_bytes_per_channel * 3))) {
-      uint8_t *rptr = buf;                          // -> red buffer
-      uint8_t *gptr = &rptr[buf_bytes_per_channel]; // -> green buffer
-      uint8_t *bptr = &gptr[buf_bytes_per_channel]; // -> blue buffer
+    if ((buf = (uint8_t*)malloc(buf_bytes_per_channel * 3))) {
+      uint8_t* rptr = buf;                          // -> red buffer
+      uint8_t* gptr = &rptr[buf_bytes_per_channel]; // -> green buffer
+      uint8_t* bptr = &gptr[buf_bytes_per_channel]; // -> blue buffer
 
       // For each of the three channel pointers (rptr, gptr, bptr),
       // ptr[0] is the first pixel of the row ABOVE the current one,
@@ -541,7 +540,7 @@ void Adafruit_ImageCapture::image_median() {
       // (Because edge pixels are repeated so we can 3x3 filter full image)
       iCap_filter_row_copy(&rptr[1], rptr, _width + 2, buf_bytes_per_channel);
 
-      uint16_t *ptr = pixels; // Dest pointer, back into source image
+      uint16_t* ptr = pixels; // Dest pointer, back into source image
       uint16_t x, y, offset, rgb;
       uint8_t r_med, g_med, b_med;
       for (y = 0; y < _height; y++) { // For each row of image...
@@ -586,7 +585,7 @@ void Adafruit_ImageCapture::image_median() {
 // pixel and the four pixels above, below, left and right, sets result 'on'
 // if any of those 4 exceeds a given threshold. Note to future self: might
 // instead evaluate sum-of-four rather than any-of-four.
-static inline bool iCap_edge9(uint8_t *list, uint8_t sensitivity) {
+static inline bool iCap_edge9(uint8_t* list, uint8_t sensitivity) {
   int8_t center = (int16_t)list[4];                 // Must be signed!
   return ((abs(center - list[1]) >= sensitivity) || // left
           (abs(center - list[3]) >= sensitivity) || // up
@@ -598,15 +597,15 @@ static inline bool iCap_edge9(uint8_t *list, uint8_t sensitivity) {
 // ((width + 2) * 3 + height - 1) * 3 bytes, or about 3.6K for a
 // 320x240 RGB image. YUV is not currently supported.
 void Adafruit_ImageCapture::image_edges(uint8_t sensitivity) {
-  uint16_t *pixels = pixbuf[0];
+  uint16_t* pixels = pixbuf[0];
 
   if (colorspace == ICAP_COLOR_RGB565) {
-    uint8_t *buf;
+    uint8_t* buf;
     uint32_t buf_bytes_per_channel = (_width + 2) * 3 + _height - 1;
-    if ((buf = (uint8_t *)malloc(buf_bytes_per_channel * 3))) {
-      uint8_t *rptr = buf;                          // -> red buffer
-      uint8_t *gptr = &rptr[buf_bytes_per_channel]; // -> green buffer
-      uint8_t *bptr = &gptr[buf_bytes_per_channel]; // -> blue buffer
+    if ((buf = (uint8_t*)malloc(buf_bytes_per_channel * 3))) {
+      uint8_t* rptr = buf;                          // -> red buffer
+      uint8_t* gptr = &rptr[buf_bytes_per_channel]; // -> green buffer
+      uint8_t* bptr = &gptr[buf_bytes_per_channel]; // -> blue buffer
 
       // For each of the three channel pointers (rptr, gptr, bptr),
       // ptr[0] is the first pixel of the row ABOVE the current one,
@@ -625,7 +624,7 @@ void Adafruit_ImageCapture::image_edges(uint8_t sensitivity) {
 
       uint8_t s2 = sensitivity * 2; // Because green has extra bit
 
-      uint16_t *ptr = pixels; // Dest pointer, back into source image
+      uint16_t* ptr = pixels; // Dest pointer, back into source image
       uint16_t x, y, offset, rgb;
       for (y = 0; y < _height; y++) { // For each row of image...
         // Set up 'below' row buffer...
@@ -661,7 +660,7 @@ void Adafruit_ImageCapture::image_edges(uint8_t sensitivity) {
 // Reformat YUV gray component to RGB565 for TFT preview.
 // Big-endian in and out.
 void Adafruit_ImageCapture::Y2RGB565() {
-  uint16_t *pixels = pixbuf[0];
+  uint16_t* pixels = pixbuf[0];
   uint32_t len = _width * _height;
   while (len--) {
     uint8_t y = *pixels & 0xFF; // Y (brightness) component of YUV
